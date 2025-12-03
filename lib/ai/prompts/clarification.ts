@@ -1,60 +1,55 @@
-export const CLARIFICATION_SYSTEM_PROMPT = `You are a helpful AI assistant specialized in gathering website requirements. Your goal is to understand what kind of website the user wants to build through a conversational interview.
+export const CLARIFICATION_SYSTEM_PROMPT = `You are a helpful AI assistant specialized in gathering website requirements. Your goal is to understand what kind of website the user wants to build through a brief, focused interview.
 
-Ask clear, specific questions one at a time. Keep questions focused and relevant. Use the user's previous answers to ask better follow-up questions.
+CRITICAL RULES:
+- Ask MAXIMUM 4 questions total
+- Be smart and efficient
+- After 4 questions, you MUST say you're ready to build
 
-You should cover these key areas (but don't ask all at once):
-1. Website type/purpose (landing page, portfolio, blog, e-commerce, etc.)
-2. Target audience (who will visit this website?)
-3. Main goal/CTA (what should visitors do?)
-4. Key features/sections needed
-5. Content requirements
-6. Brand/style preferences
-7. Reference websites (if any)
+If the user has uploaded documents:
+1. Carefully analyze ALL document content first
+2. Extract business info, target audience, value propositions
+3. Only ask questions about critical gaps in information
+4. If documents are comprehensive, ask only 1-2 questions
 
-Keep your questions conversational and friendly. Don't overwhelm the user with too many questions at once.
+If NO documents uploaded:
+1. Ask about website type and target audience (combined)
+2. Ask about main goal/CTA
+3. Ask about key sections needed
+4. Ask about style preferences
 
-After 6-8 questions (or when you have enough information), politely indicate that you have enough information to start building.`;
+ESSENTIAL INFORMATION NEEDED:
+1. Website type (landing page, portfolio, etc.)
+2. Target audience
+3. Main call-to-action
+4. 2-3 key sections/features
+
+Be conversational and brief. Combine topics when possible.
+
+After 3-4 questions, say something like:
+"Perfect! I have everything I need. Let me build your website now. Click 'Generate Website' when you're ready!"
+
+Then stop asking questions.`;
 
 export const INTERVIEW_QUESTIONS = [
   {
-    id: "website_type",
-    question: "What type of website would you like to build?",
-    examples: ["Landing page", "Portfolio", "Blog", "E-commerce", "Company website"],
-  },
-  {
-    id: "target_audience",
-    question: "Who is your target audience? Who will be visiting this website?",
-    followUp: "Understanding your audience helps me create content that resonates with them.",
+    id: "website_basics",
+    question: "What type of website do you need and who is it for?",
+    followUp: "For example: 'A landing page for my SaaS targeting small business owners'",
   },
   {
     id: "main_goal",
-    question: "What's the main goal of this website? What action should visitors take?",
-    examples: [
-      "Sign up for a service",
-      "Contact you",
-      "Purchase a product",
-      "Read content",
-      "Download something",
-    ],
+    question: "What's the main action you want visitors to take?",
+    examples: ["Sign up", "Contact you", "Buy a product", "Learn more"],
   },
   {
     id: "key_sections",
-    question: "What key sections or pages do you need?",
-    examples: ["About", "Services", "Portfolio", "Pricing", "Testimonials", "Contact", "FAQ"],
+    question: "What key sections should the website have?",
+    examples: ["Hero, Features, Pricing, Contact", "About, Services, Portfolio, Testimonials"],
   },
   {
     id: "brand_style",
-    question: "Do you have any specific brand colors or style preferences?",
-    followUp: "Or would you like me to suggest a style based on your industry?",
-  },
-  {
-    id: "content",
-    question: "Tell me about your business/product. What makes it unique?",
-    followUp: "This will help me write compelling copy for your website.",
-  },
-  {
-    id: "references",
-    question: "Are there any websites you like that I should use as inspiration? (Optional)",
+    question:
+      "Any specific brand colors or style preferences? (Optional - I can suggest based on your industry)",
   },
 ];
 
@@ -65,18 +60,24 @@ export function generateContextPrompt(
   let context = CLARIFICATION_SYSTEM_PROMPT;
 
   if (documentSummaries && documentSummaries.length > 0) {
-    context += `\n\nThe user has uploaded documents. Here are the summaries:\n\n`;
+    context += `\n\nIMPORTANT: The user has uploaded ${documentSummaries.length} document(s). Here are the summaries:\n\n`;
     documentSummaries.forEach((summary, index) => {
-      context += `Document ${index + 1}: ${summary}\n`;
+      context += `Document ${index + 1}: ${summary}\n\n`;
     });
-    context += `\nUse this information to ask more targeted questions and validate the user's requirements.`;
+    context += `Based on these documents, you should already understand a lot about their business. Only ask questions about what's NOT clear from the documents. You may only need 1-2 questions total.`;
+  }
+
+  const userMessageCount = messages.filter((m) => m.role === "user").length;
+
+  if (userMessageCount >= 3) {
+    context += `\n\nIMPORTANT: The user has answered ${userMessageCount} questions. This should be enough. Confirm you have what you need and tell them you're ready to build their website. Do NOT ask more questions.`;
   }
 
   return context;
 }
 
 export function shouldCompleteInterview(messageCount: number, hasEnoughInfo: boolean): boolean {
-  // Complete if we have 6+ messages and enough information
-  // Or if we've asked 10+ questions regardless
-  return (messageCount >= 6 && hasEnoughInfo) || messageCount >= 10;
+  // Complete if we have 3+ messages and enough information
+  // Or if we've asked 4+ questions regardless
+  return (messageCount >= 3 && hasEnoughInfo) || messageCount >= 4;
 }
