@@ -3,15 +3,9 @@ import { logger } from "@/lib/utils/logger";
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // pdf-parse is tricky with ESM - use dynamic import and type assertion
-    const pdfParse = await import("pdf-parse").then(
-      (mod) =>
-        (
-          mod as unknown as {
-            default: (buffer: Buffer) => Promise<{ text: string; numpages: number }>;
-          }
-        ).default
-    );
+    // Import directly from lib/pdf-parse.js to bypass debug mode
+    // Based on NextGenWeb's working implementation
+    const pdfParse = await import("pdf-parse/lib/pdf-parse.js").then((mod) => mod.default);
 
     const data = await pdfParse(buffer);
 
@@ -24,8 +18,6 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   } catch (error) {
     console.error("PDF extraction error:", error);
     logger.error("Failed to extract text from PDF", error);
-
-    // Return empty string to allow upload to continue
     logger.warn("PDF text extraction failed, continuing with empty text");
     return "";
   }
