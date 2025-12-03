@@ -5,6 +5,7 @@ import { MessageBubble } from "./message-bubble";
 import { MessageInput } from "./message-input";
 import { TypingIndicator } from "./typing-indicator";
 import { ChatProgress } from "./chat-progress";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface Message {
@@ -136,12 +137,35 @@ export function ChatInterface({ siteId, conversationId }: ChatInterfaceProps) {
   };
 
   const userMessageCount = messages.filter((m) => m.role === "user").length;
+  const showGenerateButton = userMessageCount >= 3;
 
   return (
     <div className="flex h-full flex-col">
       {/* Progress bar */}
       <div className="border-b border-gray-200 bg-white p-4">
-        <ChatProgress current={userMessageCount} total={4} />
+        <div className="space-y-3">
+          <ChatProgress current={userMessageCount} total={4} />
+          {showGenerateButton && (
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => {
+                // TODO: Navigate to generation page
+                window.location.href = `/dashboard/sites/${siteId}/generate`;
+              }}
+            >
+              Generate Website
+              <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
