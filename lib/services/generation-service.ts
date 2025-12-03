@@ -30,9 +30,14 @@ export async function generateWebsite(input: GenerationInput) {
       throw new Error("Site not found");
     }
 
-    // Get document summaries
+    // Get FULL document content (not just summaries)
     const documents = await documentService.getDocumentsForSite(siteId);
-    const documentContext = documents
+    const fullDocumentText = documents
+      .filter((d) => d.extracted_text)
+      .map((d) => `--- Document: ${d.filename} ---\n${d.extracted_text}`)
+      .join("\n\n");
+
+    const documentSummaries = documents
       .filter((d) => d.summary)
       .map((d) => d.summary)
       .join("\n\n");
@@ -59,12 +64,14 @@ export async function generateWebsite(input: GenerationInput) {
         targetAudience: siteData.target_audience,
         mainGoal: siteData.main_goal,
         businessDescription: conversationText,
-        documentContext,
+        documentContent: fullDocumentText,
+        documentSummary: documentSummaries,
       };
     } else {
       requirements = {
         websiteType: "landing page",
-        documentContext,
+        documentContent: fullDocumentText,
+        documentSummary: documentSummaries,
       };
     }
 

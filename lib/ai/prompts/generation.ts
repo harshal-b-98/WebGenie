@@ -44,12 +44,19 @@ export function generatePrompt(requirements: {
   keySections?: string[];
   brandStyle?: string;
   businessDescription?: string;
-  documentContext?: string;
+  documentContent?: string;
+  documentSummary?: string;
 }): string {
   let prompt = "Create a complete, modern, responsive website with the following requirements:\n\n";
 
-  if (requirements.documentContext) {
-    prompt += `BUSINESS CONTEXT (from uploaded documents):\n${requirements.documentContext}\n\n`;
+  if (requirements.documentContent) {
+    prompt += `IMPORTANT: Use the ACTUAL CONTENT from these documents. Extract real information, don't make up anything:\n\n`;
+    prompt += `${requirements.documentContent.substring(0, 8000)}\n\n`;
+    prompt += `CRITICAL: Use the company name, product names, features, benefits, and any other details from the documents above. This is REAL content that must appear in the website.\n\n`;
+  }
+
+  if (requirements.documentSummary && !requirements.documentContent) {
+    prompt += `BUSINESS CONTEXT:\n${requirements.documentSummary}\n\n`;
   }
 
   if (requirements.websiteType) {
@@ -76,7 +83,14 @@ export function generatePrompt(requirements: {
     prompt += `BRAND/STYLE: ${requirements.brandStyle}\n`;
   }
 
-  prompt += `\nGenerate a beautiful, professional, fully functional single-page website. Use Tailwind CSS for styling. Make it modern and engaging.`;
+  prompt += `\n\nREQUIREMENTS:
+- Use REAL content from documents (company names, product features, benefits, etc.)
+- Do NOT use placeholder text like "Acme Corp" or "Lorem ipsum"
+- Extract actual quotes, statistics, features from the document content
+- Make it specific to this business
+- Generate a beautiful, professional, fully functional single-page website
+- Use Tailwind CSS CDN for styling
+- Make it modern, responsive, and engaging`;
 
   return prompt;
 }
