@@ -3,9 +3,9 @@ import { logger } from "@/lib/utils/logger";
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // Import directly from lib/pdf-parse.js to bypass debug mode
-    // Based on NextGenWeb's working implementation
-    const pdfParse = await import("pdf-parse/lib/pdf-parse.js").then((mod) => mod.default);
+    // pdf-parse has issues with ESM in Next.js - use require for now
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse");
 
     const data = await pdfParse(buffer);
 
