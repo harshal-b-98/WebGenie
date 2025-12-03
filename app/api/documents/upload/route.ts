@@ -37,7 +37,13 @@ export async function POST(request: Request) {
     }
 
     // Upload to Supabase Storage
-    const fileName = `${siteId}/${Date.now()}-${file.name}`;
+    // Sanitize filename: replace spaces and special chars
+    const sanitizedFileName = file.name
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.-]/g, "")
+      .toLowerCase();
+
+    const fileName = `${siteId}/${Date.now()}-${sanitizedFileName}`;
     const { error: uploadError } = await supabase.storage.from("documents").upload(fileName, file);
 
     if (uploadError) {
