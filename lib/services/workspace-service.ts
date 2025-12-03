@@ -71,17 +71,23 @@ export async function deleteWorkspace(workspaceId: string, userId: string) {
 
   logger.info("Deleting workspace", { workspaceId, userId });
 
-  // Also soft delete the associated site
+  // Try to soft delete the associated site (if it exists)
   const supabase = await createClient();
-  await supabase
-    .from("sites")
-    .update({ deleted_at: new Date().toISOString() } as never)
-    .eq("id", workspaceId);
+  try {
+    await supabase
+      .from("sites")
+      .update({ deleted_at: new Date().toISOString() } as never)
+      .eq("id", workspaceId)
+      .eq("user_id", userId);
+  } catch (error) {
+    // Site might not exist for old workspaces - that's okay
+    logger.warn("Could not delete site, might not exist", { workspaceId, error });
+  }
 
   // Then soft delete the workspace
   await workspaceRepository.softDeleteWorkspace(workspaceId, userId);
 
-  logger.info("Workspace and site deleted", { workspaceId });
+  logger.info("Workspace deleted", { workspaceId });
 }
 
 export async function canCreateWorkspace(userId: string): Promise<boolean> {
