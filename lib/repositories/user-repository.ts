@@ -1,7 +1,3 @@
-// User repository - ready after schema deployment
-// Uncomment after running lib/db/schema.sql in Supabase SQL Editor
-
-/*
 import { createClient } from "@/lib/db/server";
 import { Database } from "@/lib/db/types";
 import { DatabaseError } from "@/lib/utils/errors";
@@ -36,7 +32,7 @@ export async function createUserProfile(profile: UserProfileInsert): Promise<Use
 
   const { data, error } = await supabase
     .from("user_profiles")
-    .insert(profile)
+    .insert(profile as never)
     .select()
     .single();
 
@@ -45,8 +41,8 @@ export async function createUserProfile(profile: UserProfileInsert): Promise<Use
     throw new DatabaseError("Failed to create user profile");
   }
 
-  logger.info("User profile created", { userId: data.id });
-  return data;
+  logger.info("User profile created", { userId: (data as UserProfile).id });
+  return data as UserProfile;
 }
 
 export async function updateUserProfile(
@@ -57,7 +53,7 @@ export async function updateUserProfile(
 
   const { data, error } = await supabase
     .from("user_profiles")
-    .update(updates)
+    .update(updates as never)
     .eq("id", userId)
     .select()
     .single();
@@ -68,8 +64,5 @@ export async function updateUserProfile(
   }
 
   logger.info("User profile updated", { userId });
-  return data;
+  return data as UserProfile;
 }
-*/
-
-export {};

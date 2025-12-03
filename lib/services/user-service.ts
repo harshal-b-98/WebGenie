@@ -1,7 +1,3 @@
-// User service - ready after schema deployment
-// Uncomment after running lib/db/schema.sql in Supabase SQL Editor
-
-/*
 import * as userRepository from "@/lib/repositories/user-repository";
 import { logger } from "@/lib/utils/logger";
 
@@ -59,6 +55,3 @@ export async function canUseFeature(userId: string, feature: "generation" | "ref
 
   return true;
 }
-*/
-
-export {};
