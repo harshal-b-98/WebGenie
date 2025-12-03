@@ -83,9 +83,16 @@ export async function POST(request: Request) {
     }
 
     // Create document record
+    // Simplify file type to just extension
+    const simpleType = file.name.endsWith(".pdf")
+      ? "pdf"
+      : file.name.endsWith(".docx")
+        ? "docx"
+        : file.type.substring(0, 50);
+
     const document = await documentService.createDocument(siteId, user.id, {
       filename: file.name,
-      fileType: file.type.substring(0, 255), // Truncate if too long
+      fileType: simpleType,
       fileSize: file.size,
       storagePath: fileName,
     });
