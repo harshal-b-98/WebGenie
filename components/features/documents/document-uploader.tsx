@@ -105,7 +105,7 @@ export function DocumentUploader({ siteId, onUploadComplete }: DocumentUploaderP
 
   return (
     <div
-      className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+      className={`relative rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
         dragActive
           ? "border-blue-500 bg-blue-50"
           : "border-gray-300 bg-gray-50 hover:border-gray-400"

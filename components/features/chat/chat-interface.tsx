@@ -141,7 +141,7 @@ export function ChatInterface({ siteId, conversationId }: ChatInterfaceProps) {
     <div className="flex h-full flex-col">
       {/* Progress bar */}
       <div className="border-b border-gray-200 bg-white p-4">
-        <ChatProgress current={userMessageCount} total={8} />
+        <ChatProgress current={userMessageCount} total={4} />
       </div>
 
       {/* Messages */}
