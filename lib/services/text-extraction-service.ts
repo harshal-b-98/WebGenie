@@ -1,13 +1,20 @@
-import * as pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { logger } from "@/lib/utils/logger";
 
+// pdf-parse needs special handling in Next.js
+let pdfParse: ((buffer: Buffer) => Promise<{ text: string; numpages: number }>) | null = null;
+
+async function getPdfParse() {
+  if (!pdfParse) {
+    pdfParse = (await import("pdf-parse")).default;
+  }
+  return pdfParse;
+}
+
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const pdf = pdfParse as unknown as (
-      buffer: Buffer
-    ) => Promise<{ text: string; numpages: number }>;
-    const data = await pdf(buffer);
+    const parse = await getPdfParse();
+    const data = await parse(buffer);
     logger.info("PDF text extracted", { pages: data.numpages, textLength: data.text.length });
     return data.text;
   } catch (error) {
