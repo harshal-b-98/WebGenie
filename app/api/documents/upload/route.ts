@@ -49,9 +49,23 @@ export async function POST(request: Request) {
       .toLowerCase();
 
     const fileName = `${siteId}/${Date.now()}-${sanitizedFileName}`;
-    const { error: uploadError } = await supabase.storage.from("documents").upload(fileName, file);
+
+    // Use service role client to bypass RLS for now
+    const { createClient: createServiceClient } = await import("@supabase/supabase-js");
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { error: uploadError } = await serviceSupabase.storage
+      .from("documents")
+      .upload(fileName, file, {
+        contentType: file.type,
+        upsert: false,
+      });
 
     if (uploadError) {
+      console.error("Storage upload error:", uploadError);
       throw uploadError;
     }
 
