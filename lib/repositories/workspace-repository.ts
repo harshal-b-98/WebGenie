@@ -118,8 +118,9 @@ export async function softDeleteWorkspace(workspaceId: string, userId: string) {
     .eq("owner_id", userId);
 
   if (error) {
+    console.error("Database error deleting workspace:", error);
     logger.error("Failed to delete workspace", error, { workspaceId, userId });
-    throw new DatabaseError("Failed to delete workspace");
+    throw new DatabaseError(`Failed to delete workspace: ${error.message}`);
   }
 
   logger.info("Workspace soft deleted", { workspaceId, userId });
