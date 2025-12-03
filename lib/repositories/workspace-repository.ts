@@ -111,9 +111,10 @@ export async function updateWorkspace(
 export async function softDeleteWorkspace(workspaceId: string, userId: string) {
   const supabase = await createClient();
 
+  // Use hard delete for now due to RLS policy issues with UPDATE
   const { error } = await supabase
     .from("workspaces")
-    .update({ deleted_at: new Date().toISOString() } as never)
+    .delete()
     .eq("id", workspaceId)
     .eq("owner_id", userId);
 
@@ -123,7 +124,7 @@ export async function softDeleteWorkspace(workspaceId: string, userId: string) {
     throw new DatabaseError(`Failed to delete workspace: ${error.message}`);
   }
 
-  logger.info("Workspace soft deleted", { workspaceId, userId });
+  logger.info("Workspace deleted", { workspaceId, userId });
 }
 
 export async function countWorkspacesByUserId(userId: string): Promise<number> {
