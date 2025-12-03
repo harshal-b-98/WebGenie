@@ -18,9 +18,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ site
       .eq("user_id", user.id)
       .single();
 
+    if (!site) {
+      return NextResponse.json({ htmlContent: null });
+    }
+
     const siteData = site as { current_version_id?: string | null };
 
-    if (!site || !siteData.current_version_id) {
+    if (!siteData.current_version_id) {
       return NextResponse.json({ htmlContent: null });
     }
 
