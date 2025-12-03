@@ -75,22 +75,31 @@ export function DocumentUploader({ siteId, onUploadComplete }: DocumentUploaderP
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    async (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       setDragActive(false);
 
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        uploadFile(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const files = Array.from(e.dataTransfer.files);
+        for (const file of files) {
+          await uploadFile(file);
+        }
       }
     },
     [siteId, uploadFile]
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      uploadFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      // Upload all selected files
+      const files = Array.from(e.target.files);
+      for (const file of files) {
+        await uploadFile(file);
+      }
+      // Clear the input
+      e.target.value = "";
     }
   };
 
@@ -110,9 +119,10 @@ export function DocumentUploader({ siteId, onUploadComplete }: DocumentUploaderP
         type="file"
         id="file-upload"
         className="hidden"
-        accept=".pdf,.docx"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={handleChange}
         disabled={isUploading}
+        multiple
       />
 
       <div className="space-y-4">
@@ -141,7 +151,7 @@ export function DocumentUploader({ siteId, onUploadComplete }: DocumentUploaderP
           <p className="mt-2 text-sm text-gray-600">or drag and drop</p>
         </div>
 
-        <p className="text-xs text-gray-500">PDF or DOCX up to 10MB</p>
+        <p className="text-xs text-gray-500">PDF or DOCX up to 10MB (multiple files supported)</p>
       </div>
     </div>
   );
