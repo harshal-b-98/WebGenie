@@ -122,7 +122,7 @@ CREATE TABLE documents (
 
   -- File information
   filename VARCHAR(255) NOT NULL,
-  file_type VARCHAR(50) NOT NULL, -- pdf, docx
+  file_type VARCHAR(255) NOT NULL, -- MIME type can be long
   file_size INTEGER NOT NULL,
   storage_path TEXT NOT NULL,
 

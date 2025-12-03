@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     // Create document record
     const document = await documentService.createDocument(siteId, user.id, {
       filename: file.name,
-      fileType: file.type,
+      fileType: file.type.substring(0, 255), // Truncate if too long
       fileSize: file.size,
       storagePath: fileName,
     });
