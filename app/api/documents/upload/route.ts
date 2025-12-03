@@ -52,9 +52,21 @@ export async function POST(request: Request) {
 
     // Use service role client to bypass RLS for now
     const { createClient: createServiceClient } = await import("@supabase/supabase-js");
+
+    // Debug: Check if env vars are loaded
+    console.log("Supabase URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log("Service key exists:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    console.log("Service key length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length);
+
     const serviceSupabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
     );
 
     const { error: uploadError } = await serviceSupabase.storage
@@ -66,6 +78,7 @@ export async function POST(request: Request) {
 
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
+      console.error("Bucket:", "documents", "File:", fileName);
       throw uploadError;
     }
 
