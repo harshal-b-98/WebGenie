@@ -80,10 +80,12 @@ export async function processDocument(documentId: string): Promise<void> {
     const extractedText = await extractText(buffer, document.file_type);
 
     // Generate AI summary
+    console.log("Generating AI summary for document...");
     const { text: summary } = await generateText({
       model: defaultChatModel,
       prompt: `Summarize the following document in 2-3 sentences, focusing on key business information, target audience, and main value propositions:\n\n${extractedText.substring(0, 4000)}`,
     });
+    console.log("AI summary generated:", summary.substring(0, 100));
 
     // Update document with extracted text and summary
     await supabase

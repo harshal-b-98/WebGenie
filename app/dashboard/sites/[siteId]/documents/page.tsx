@@ -28,6 +28,13 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     loadDocuments();
+
+    // Poll for document status updates every 3 seconds
+    const interval = setInterval(() => {
+      loadDocuments();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [siteId]);
 
   const loadDocuments = async () => {
