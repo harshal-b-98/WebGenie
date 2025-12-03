@@ -88,7 +88,7 @@ export async function generateWebsite(input: GenerationInput) {
     const generationTime = Date.now() - startTime;
 
     // Save as version
-    const { data: version } = await supabase
+    const { data: version, error: versionError } = await supabase
       .from("site_versions")
       .insert({
         site_id: siteId,
@@ -104,8 +104,9 @@ export async function generateWebsite(input: GenerationInput) {
       .select()
       .single();
 
-    if (!version) {
-      throw new Error("Failed to save version");
+    if (versionError || !version) {
+      console.error("Failed to save version:", versionError);
+      throw new Error(`Failed to save version: ${versionError?.message || "unknown error"}`);
     }
 
     const versionId = (version as { id: string }).id;
