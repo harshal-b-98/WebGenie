@@ -70,7 +70,18 @@ export async function deleteWorkspace(workspaceId: string, userId: string) {
   await getWorkspace(workspaceId, userId);
 
   logger.info("Deleting workspace", { workspaceId, userId });
+
+  // Also soft delete the associated site
+  const supabase = await createClient();
+  await supabase
+    .from("sites")
+    .update({ deleted_at: new Date().toISOString() } as never)
+    .eq("id", workspaceId);
+
+  // Then soft delete the workspace
   await workspaceRepository.softDeleteWorkspace(workspaceId, userId);
+
+  logger.info("Workspace and site deleted", { workspaceId });
 }
 
 export async function canCreateWorkspace(userId: string): Promise<boolean> {
