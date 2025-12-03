@@ -31,26 +31,47 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Hero Image/Demo Placeholder */}
+        {/* Hero Demo */}
         <div className="mt-16 flow-root sm:mt-24">
           <div className="relative -m-2 rounded-xl bg-gray-900/5 p-2 ring-1 ring-inset ring-gray-900/10 lg:-m-4 lg:rounded-2xl lg:p-4">
-            <div className="aspect-[16/9] rounded-md bg-gradient-to-br from-blue-100 to-purple-100 shadow-2xl ring-1 ring-gray-900/10">
-              <div className="flex h-full items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <svg
-                    className="mx-auto h-24 w-24"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1}
-                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="mt-4 text-sm">Live Preview Coming Soon</p>
+            <div className="aspect-[16/9] rounded-md bg-white shadow-2xl ring-1 ring-gray-900/10 p-8">
+              <div className="flex h-full flex-col">
+                {/* Chat Preview */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+                      AI
+                    </div>
+                    <div className="flex-1 rounded-lg bg-gray-100 p-3">
+                      <p className="text-sm text-gray-700">
+                        What type of website would you like to build?
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <div className="flex-1 max-w-md rounded-lg bg-blue-600 p-3 text-right">
+                      <p className="text-sm text-white">A landing page for my SaaS product</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-bold">
+                      AI
+                    </div>
+                    <div className="flex-1 rounded-lg bg-gray-100 p-3">
+                      <p className="text-sm text-gray-700">
+                        Perfect! Tell me about your target audience...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {/* Input Preview */}
+                <div className="mt-4 flex gap-2 border-t border-gray-200 pt-4">
+                  <div className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2">
+                    <p className="text-sm text-gray-400">Type your message...</p>
+                  </div>
+                  <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+                    Send
+                  </button>
                 </div>
               </div>
             </div>
