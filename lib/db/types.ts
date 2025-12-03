@@ -1,5 +1,6 @@
 // Generated types from Supabase
 // Run: npx supabase gen types typescript --project-id cfhssgueszhoracjeyou > lib/db/types.ts
+// After running schema in Supabase
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -129,7 +130,223 @@ export interface Database {
           deleted_at?: string | null;
         };
       };
-      // Add other tables as needed
+      conversations: {
+        Row: {
+          id: string;
+          site_id: string;
+          user_id: string;
+          conversation_type: "clarification" | "generation" | "refinement";
+          status: "active" | "completed" | "abandoned";
+          ai_provider: string | null;
+          model: string | null;
+          total_tokens: number;
+          total_cost: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          site_id: string;
+          user_id: string;
+          conversation_type: "clarification" | "generation" | "refinement";
+          status?: "active" | "completed" | "abandoned";
+          ai_provider?: string | null;
+          model?: string | null;
+          total_tokens?: number;
+          total_cost?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          site_id?: string;
+          user_id?: string;
+          conversation_type?: "clarification" | "generation" | "refinement";
+          status?: "active" | "completed" | "abandoned";
+          ai_provider?: string | null;
+          model?: string | null;
+          total_tokens?: number;
+          total_cost?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          role: "user" | "assistant" | "system";
+          content: string;
+          sequence_number: number;
+          tokens_used: number | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          role: "user" | "assistant" | "system";
+          content: string;
+          sequence_number: number;
+          tokens_used?: number | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          role?: "user" | "assistant" | "system";
+          content?: string;
+          sequence_number?: number;
+          tokens_used?: number | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+      };
+      site_versions: {
+        Row: {
+          id: string;
+          site_id: string;
+          version_number: number;
+          html_content: string;
+          css_content: string | null;
+          js_content: string | null;
+          component_tree: Json | null;
+          generation_type: "initial" | "refinement";
+          prompt_context: Json | null;
+          ai_provider: string | null;
+          model: string | null;
+          tokens_used: number | null;
+          generation_time_ms: number | null;
+          change_summary: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          site_id: string;
+          version_number: number;
+          html_content: string;
+          css_content?: string | null;
+          js_content?: string | null;
+          component_tree?: Json | null;
+          generation_type: "initial" | "refinement";
+          prompt_context?: Json | null;
+          ai_provider?: string | null;
+          model?: string | null;
+          tokens_used?: number | null;
+          generation_time_ms?: number | null;
+          change_summary?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          site_id?: string;
+          version_number?: number;
+          html_content?: string;
+          css_content?: string | null;
+          js_content?: string | null;
+          component_tree?: Json | null;
+          generation_type?: "initial" | "refinement";
+          prompt_context?: Json | null;
+          ai_provider?: string | null;
+          model?: string | null;
+          tokens_used?: number | null;
+          generation_time_ms?: number | null;
+          change_summary?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      documents: {
+        Row: {
+          id: string;
+          site_id: string;
+          user_id: string;
+          filename: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          extracted_text: string | null;
+          summary: string | null;
+          metadata: Json;
+          processing_status: "pending" | "processing" | "completed" | "failed";
+          processing_error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          site_id: string;
+          user_id: string;
+          filename: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          extracted_text?: string | null;
+          summary?: string | null;
+          metadata?: Json;
+          processing_status?: "pending" | "processing" | "completed" | "failed";
+          processing_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          site_id?: string;
+          user_id?: string;
+          filename?: string;
+          file_type?: string;
+          file_size?: number;
+          storage_path?: string;
+          extracted_text?: string | null;
+          summary?: string | null;
+          metadata?: Json;
+          processing_status?: "pending" | "processing" | "completed" | "failed";
+          processing_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      assets: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          user_id: string;
+          filename: string;
+          storage_path: string;
+          file_type: string | null;
+          file_size: number | null;
+          mime_type: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          user_id: string;
+          filename: string;
+          storage_path: string;
+          file_type?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          user_id?: string;
+          filename?: string;
+          storage_path?: string;
+          file_type?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
