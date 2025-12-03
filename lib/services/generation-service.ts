@@ -87,14 +87,22 @@ export async function generateWebsite(input: GenerationInput) {
 
     const generationTime = Date.now() - startTime;
 
+    // Get next version number
+    const { count } = await supabase
+      .from("site_versions")
+      .select("*", { count: "exact", head: true })
+      .eq("site_id", siteId);
+
+    const nextVersionNumber = (count || 0) + 1;
+
     // Save as version
     const { data: version, error: versionError } = await supabase
       .from("site_versions")
       .insert({
         site_id: siteId,
-        version_number: 1, // First version
+        version_number: nextVersionNumber,
         html_content: htmlContent,
-        generation_type: "initial",
+        generation_type: nextVersionNumber === 1 ? "initial" : "refinement",
         ai_provider: "openai",
         model: "gpt-4o",
         generation_time_ms: generationTime,
