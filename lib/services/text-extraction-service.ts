@@ -13,13 +13,24 @@ async function getPdfParse() {
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const parse = await getPdfParse();
+    // Try to load pdf-parse with better error handling
+    let parse;
+    try {
+      const pdfModule = await import("pdf-parse");
+      parse = pdfModule.default || pdfModule;
+    } catch (importError) {
+      console.error("Failed to import pdf-parse:", importError);
+      throw new Error("PDF library not available");
+    }
+
     const data = await parse(buffer);
     logger.info("PDF text extracted", { pages: data.numpages, textLength: data.text.length });
-    return data.text;
+    return data.text || "";
   } catch (error) {
+    console.error("PDF extraction error details:", error);
     logger.error("Failed to extract text from PDF", error);
-    throw new Error("Failed to extract text from PDF");
+    // Return empty string instead of throwing to allow upload to continue
+    return "";
   }
 }
 
@@ -35,16 +46,23 @@ export async function extractTextFromDOCX(buffer: Buffer): Promise<string> {
 }
 
 export async function extractText(buffer: Buffer, fileType: string): Promise<string> {
-  switch (fileType.toLowerCase()) {
-    case "pdf":
-    case "application/pdf":
-      return extractTextFromPDF(buffer);
+  const type = fileType.toLowerCase();
 
-    case "docx":
-    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      return extractTextFromDOCX(buffer);
-
-    default:
-      throw new Error(`Unsupported file type: ${fileType}`);
+  if (type === "pdf" || type === "application/pdf") {
+    return extractTextFromPDF(buffer);
   }
+
+  if (
+    type === "docx" ||
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return extractTextFromDOCX(buffer);
+  }
+
+  if (type === "txt" || type === "text/plain") {
+    // Plain text - just convert buffer to string
+    return buffer.toString("utf-8");
+  }
+
+  throw new Error(`Unsupported file type: ${fileType}`);
 }
