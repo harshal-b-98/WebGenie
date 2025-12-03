@@ -2,6 +2,7 @@ import * as workspaceRepository from "@/lib/repositories/workspace-repository";
 import { CreateWorkspaceInput, UpdateWorkspaceInput } from "@/lib/validation/workspace";
 import { logger } from "@/lib/utils/logger";
 import { AuthorizationError } from "@/lib/utils/errors";
+import { createClient } from "@/lib/db/server";
 
 const MAX_WORKSPACES_PER_USER = 10;
 
@@ -28,7 +29,28 @@ export async function createWorkspace(userId: string, input: CreateWorkspaceInpu
   }
 
   logger.info("Creating workspace", { userId, name: input.name });
-  return workspaceRepository.createWorkspace(userId, input.name, input.description);
+  const workspace = await workspaceRepository.createWorkspace(
+    userId,
+    input.name,
+    input.description
+  );
+
+  // Also create a site record for this workspace
+  const supabase = await createClient();
+  const workspaceId = (workspace as { id: string }).id;
+
+  await supabase.from("sites").insert({
+    id: workspaceId, // Use same ID as workspace
+    workspace_id: workspaceId,
+    user_id: userId,
+    title: input.name,
+    description: input.description || null,
+    status: "draft",
+  } as never);
+
+  logger.info("Site record created for workspace", { workspaceId });
+
+  return workspace;
 }
 
 export async function updateWorkspace(
