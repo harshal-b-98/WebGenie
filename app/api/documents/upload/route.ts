@@ -22,16 +22,21 @@ export async function POST(request: Request) {
 
     // Verify user owns the site
     const supabase = await createClient();
-    const { data: site } = await supabase
+    const { data: site, error: siteError } = await supabase
       .from("sites")
       .select("id")
       .eq("id", siteId)
       .eq("user_id", user.id)
       .single();
 
-    if (!site) {
+    if (siteError || !site) {
+      console.error("Site verification failed:", siteError, { siteId, userId: user.id });
       return NextResponse.json(
-        { error: { message: "Site not found or access denied" } },
+        {
+          error: {
+            message: `Site not found or access denied. Error: ${siteError?.message || "not found"}`,
+          },
+        },
         { status: 403 }
       );
     }
