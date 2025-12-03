@@ -1,10 +1,10 @@
-// User repository - will be enabled after Supabase schema is run
-// Uncomment this file after running lib/db/schema.sql in Supabase
+// User repository - ready after schema deployment
+// Uncomment after running lib/db/schema.sql in Supabase SQL Editor
 
 /*
 import { createClient } from "@/lib/db/server";
 import { Database } from "@/lib/db/types";
-import { DatabaseError, NotFoundError } from "@/lib/utils/errors";
+import { DatabaseError } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
 
 type UserProfile = Database["public"]["Tables"]["user_profiles"]["Row"];

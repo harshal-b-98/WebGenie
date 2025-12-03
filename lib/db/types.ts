@@ -1,6 +1,5 @@
-// Generated types from Supabase
-// Run: npx supabase gen types typescript --project-id cfhssgueszhoracjeyou > lib/db/types.ts
-// After running schema in Supabase
+// Database types - generated from schema
+// To regenerate: npx supabase gen types typescript --project-id cfhssgueszhoracjeyou > lib/db/types.ts
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -355,6 +354,9 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
       [_ in never]: never;
     };
   };

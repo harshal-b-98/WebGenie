@@ -60,14 +60,13 @@ export async function createWorkspace(userId: string, name: string, description?
 
   const { data, error } = await supabase
     .from("workspaces")
-    // @ts-expect-error - Type will work correctly after schema is run in Supabase
     .insert({
       owner_id: userId,
       name,
       slug: `${slug}-${Date.now()}`, // Add timestamp to ensure uniqueness
       description: description || null,
       settings: {},
-    })
+    } as never)
     .select()
     .single();
 
@@ -94,8 +93,7 @@ export async function updateWorkspace(
 
   const { data, error } = await supabase
     .from("workspaces")
-    // @ts-expect-error - Type will work correctly after schema is run in Supabase
-    .update(updateData)
+    .update(updateData as never)
     .eq("id", workspaceId)
     .eq("owner_id", userId)
     .select()
@@ -115,8 +113,7 @@ export async function softDeleteWorkspace(workspaceId: string, userId: string) {
 
   const { error } = await supabase
     .from("workspaces")
-    // @ts-expect-error - Type will work correctly after schema is run in Supabase
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: new Date().toISOString() } as never)
     .eq("id", workspaceId)
     .eq("owner_id", userId);
 
