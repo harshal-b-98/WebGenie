@@ -137,7 +137,18 @@ export function ChatInterface({ siteId, conversationId }: ChatInterfaceProps) {
   };
 
   const userMessageCount = messages.filter((m) => m.role === "user").length;
-  const showGenerateButton = userMessageCount >= 3;
+
+  // Show button if user answered 2+ questions OR if AI said it's ready
+  const aiSaidReady = messages.some(
+    (m) =>
+      m.role === "assistant" &&
+      (m.content.toLowerCase().includes("ready to build") ||
+        m.content.toLowerCase().includes("generate website") ||
+        m.content.toLowerCase().includes("have everything i need") ||
+        m.content.toLowerCase().includes("let me build"))
+  );
+
+  const showGenerateButton = userMessageCount >= 2 || aiSaidReady;
 
   return (
     <div className="flex h-full flex-col">
