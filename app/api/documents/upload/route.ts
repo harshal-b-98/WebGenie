@@ -97,10 +97,13 @@ export async function POST(request: Request) {
       storagePath: fileName,
     });
 
-    // Process document asynchronously (extract text, generate summary)
-    documentService.processDocument(document.id).catch((error) => {
+    // Process document SYNCHRONOUSLY so it completes before returning
+    try {
+      await documentService.processDocument(document.id);
+    } catch (error) {
       console.error("Failed to process document:", error);
-    });
+      // Continue even if processing fails
+    }
 
     return NextResponse.json({ document }, { status: 201 });
   } catch (error) {
