@@ -5,6 +5,7 @@ import { logger } from "@/lib/utils/logger";
 import { extractText } from "./text-extraction-service";
 import { generateText } from "ai";
 import { defaultChatModel } from "@/lib/ai/client";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 type Document = Database["public"]["Tables"]["documents"]["Row"];
 
@@ -44,17 +45,21 @@ export async function createDocument(
 }
 
 export async function processDocument(documentId: string): Promise<void> {
-  const supabase = await createClient();
+  // Use service role to bypass RLS policies
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   try {
     // Update status to processing
-    await supabase
+    await serviceSupabase
       .from("documents")
       .update({ processing_status: "processing" } as never)
       .eq("id", documentId);
 
     // Get document
-    const { data: doc, error: fetchError } = await supabase
+    const { data: doc, error: fetchError } = await serviceSupabase
       .from("documents")
       .select("*")
       .eq("id", documentId)
@@ -67,7 +72,7 @@ export async function processDocument(documentId: string): Promise<void> {
     const document = doc as Document;
 
     // Download file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
+    const { data: fileData, error: downloadError } = await serviceSupabase.storage
       .from("documents")
       .download(document.storage_path);
 
@@ -79,6 +84,8 @@ export async function processDocument(documentId: string): Promise<void> {
     const buffer = Buffer.from(await fileData.arrayBuffer());
     const extractedText = await extractText(buffer, document.file_type);
 
+    console.log("Text extracted, length:", extractedText.length);
+
     // Generate AI summary
     console.log("Generating AI summary for document...");
     const { text: summary } = await generateText({
@@ -88,7 +95,7 @@ export async function processDocument(documentId: string): Promise<void> {
     console.log("AI summary generated:", summary.substring(0, 100));
 
     // Update document with extracted text and summary
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceSupabase
       .from("documents")
       .update({
         extracted_text: extractedText,
@@ -112,7 +119,7 @@ export async function processDocument(documentId: string): Promise<void> {
     logger.error("Failed to process document", error, { documentId });
 
     // Update status to failed
-    await supabase
+    await serviceSupabase
       .from("documents")
       .update({
         processing_status: "failed",
