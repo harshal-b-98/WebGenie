@@ -8,13 +8,11 @@ CRITICAL RULES:
 5. Make it RESPONSIVE and PROFESSIONAL
 
 TECHNICAL STACK:
-- Next.js 16 with App Router
-- React 19
-- TypeScript (use proper types)
-- Tailwind CSS v4 (already configured)
-- shadcn/ui components (Button, Card, Badge, etc.)
-- Framer Motion for animations
-- Server Components by default
+- Pure HTML5 with semantic markup
+- Tailwind CSS v3 CDN (include in <head>)
+- Vanilla JavaScript for interactivity
+- Modern CSS animations and effects
+- No frameworks - just beautiful, fast HTML
 
 DESIGN REQUIREMENTS:
 
@@ -73,29 +71,33 @@ DESIGN PRINCIPLES:
 - Clear visual hierarchy
 
 CODE STRUCTURE:
-- Server Component (no "use client" unless needed)
-- Import shadcn components from @/components/ui/*
-- Use Tailwind utility classes
-- TypeScript with proper types
-- Clean, readable code
-- Modern React patterns
+- Complete HTML document starting with <!DOCTYPE html>
+- Include Tailwind CDN in <head>
+- Semantic HTML5 elements
+- Inline styles if needed for animations
+- All content in one file
+- No external dependencies
 
-EXAMPLE IMPORTS:
-\`\`\`tsx
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+EXAMPLE HEAD:
+\`\`\`html
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Name - Compelling Title</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 \`\`\`
 
 OUTPUT FORMAT:
-Return a COMPLETE Next.js page component as a TypeScript React Server Component.
-- Start with imports
-- Export default function
-- Use shadcn components
-- Include all content inline
-- No external files needed
+Return a COMPLETE, SELF-CONTAINED HTML document.
+- Starts with <!DOCTYPE html>
+- Ends with </html>
+- Includes Tailwind CDN
+- All styling via Tailwind classes
+- Beautiful, modern, professional
+- Works immediately in any browser
 
-Return ONLY the TSX code. No explanations, no markdown code blocks, just the pure component code.`;
+Return ONLY the pure HTML code. No explanations, no markdown code blocks, just HTML.`;
 
 export function generatePrompt(requirements: {
   websiteType?: string;
