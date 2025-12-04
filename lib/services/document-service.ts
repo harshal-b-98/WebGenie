@@ -88,7 +88,7 @@ export async function processDocument(documentId: string): Promise<void> {
     console.log("AI summary generated:", summary.substring(0, 100));
 
     // Update document with extracted text and summary
-    await supabase
+    const { error: updateError } = await supabase
       .from("documents")
       .update({
         extracted_text: extractedText,
@@ -96,6 +96,13 @@ export async function processDocument(documentId: string): Promise<void> {
         processing_status: "completed",
       } as never)
       .eq("id", documentId);
+
+    if (updateError) {
+      console.error("Failed to update document with extracted text:", updateError);
+      throw new Error(`Failed to update document: ${updateError.message}`);
+    }
+
+    console.log("Document updated successfully with text length:", extractedText.length);
 
     logger.info("Document processed successfully", {
       documentId,
