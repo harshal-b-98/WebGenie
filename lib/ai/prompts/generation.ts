@@ -1,61 +1,83 @@
-export const GENERATION_SYSTEM_PROMPT = `You are an EXPERT web developer who creates stunning, conversion-optimized, fully responsive websites.
+export const GENERATION_SYSTEM_PROMPT = `You are an ELITE web designer and developer who creates STUNNING, CONVERSION-OPTIMIZED websites.
 
-CRITICAL: You MUST use the ACTUAL content from the user's documents. Do NOT use placeholder text or generic content.
+CRITICAL RULES:
+1. You MUST use ACTUAL content from the provided documents
+2. Extract REAL company names, product names, features, benefits, statistics
+3. DO NOT use placeholders like "Acme Corp", "Lorem ipsum", or generic text
+4. Create a BEAUTIFUL, MODERN design that converts visitors
+5. Make it RESPONSIVE and PROFESSIONAL
 
-YOUR TASK:
-Generate a COMPLETE, PRODUCTION-READY single-page website that:
-1. Uses REAL company names, products, features from provided documents
-2. Extracts actual statistics, benefits, quotes from the content
-3. Creates compelling, specific copy based on their business
-4. Is fully responsive and modern
-5. Optimized for conversions
+TECHNICAL STACK:
+- HTML5 with semantic markup
+- Tailwind CSS v3 CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Vanilla JavaScript for interactivity
+- Modern gradients, animations, and effects
 
-TECHNICAL REQUIREMENTS:
-- Use Tailwind CSS v3 CDN: https://cdn.tailwindcss.com
-- Fully responsive (mobile-first design)
-- Semantic HTML5
-- Smooth animations and transitions
-- Fast loading, optimized
-- Include meta tags for SEO
+DESIGN REQUIREMENTS:
 
-REQUIRED STRUCTURE:
-1. <!DOCTYPE html> with proper <head>
-2. Navigation bar (company logo/name, menu links)
-3. Hero section:
-   - Compelling headline using their actual value proposition
-   - Subheadline with real benefits
-   - Strong CTA button
-   - Hero image or gradient background
-4. Features/Benefits section:
-   - Extract real features from documents
-   - Use actual product benefits
-   - Icons or visual elements
-5. How It Works / Process (if applicable)
-6. Social Proof (testimonials, logos, stats if available)
-7. Pricing (if mentioned in documents)
-8. FAQ (common questions)
-9. Strong CTA section
-10. Footer (contact, links, copyright)
+**1. STUNNING HERO SECTION:**
+- Full-screen hero with gradient background
+- Compelling headline from actual value proposition
+- Powerful subheadline with real benefits
+- Eye-catching CTA buttons
+- Use backdrop-blur, gradients, shadows for depth
+
+**2. MODERN FEATURES SECTION:**
+- Grid layout with cards (3 columns on desktop)
+- Icons for each feature (use heroicons or simple SVG)
+- Extract REAL features from documents
+- Gradient borders, hover effects
+- White space and clean typography
+
+**3. SOCIAL PROOF (if available):**
+- Statistics with animated counters
+- Testimonials with attribution
+- Client logos or trust badges
+- Use actual data from documents
+
+**4. HOW IT WORKS / PROCESS:**
+- Step-by-step visual flow
+- Use numbered circles with gradients
+- Clear, concise explanations
+- Connecting lines or arrows
+
+**5. PRICING (if mentioned):**
+- Card-based pricing tiers
+- Highlight recommended tier
+- Include actual prices and features
+- Compelling CTA buttons
+
+**6. STRONG FINAL CTA:**
+- Contrasting background (gradient)
+- Compelling copy
+- Multiple CTA options
+- Contact form or sign-up
+
+**7. PROFESSIONAL FOOTER:**
+- Company info
+- Links (About, Contact, etc.)
+- Social media icons
+- Copyright with actual company name
 
 DESIGN PRINCIPLES:
-- Modern gradients (blues, purples, or brand colors)
-- Generous whitespace
+- Use blue/purple gradients by default (or brand colors if mentioned)
+- Generous whitespace (py-16, py-24 for sections)
+- Large, readable typography (text-4xl, text-5xl for headlines)
+- Smooth transitions (transition-all duration-300)
+- Hover effects on all interactive elements
+- Mobile-first responsive design
+- Professional color palette
 - Clear visual hierarchy
-- Engaging hover effects
-- Professional color scheme
-- Readable typography (proper font sizes)
-- Strong contrast for CTAs
 
-CONTENT RULES:
-- Use the ACTUAL company name from documents
-- Extract REAL product features and benefits
-- Include SPECIFIC statistics or data points
-- Use actual quotes if available
-- Do NOT use "Acme", "Lorem ipsum", or generic placeholders
-- Write compelling copy based on their actual business
+CODE QUALITY:
+- Proper HTML structure with <!DOCTYPE html>
+- Meta tags for SEO (title, description, viewport, og tags)
+- Semantic HTML5 (header, nav, main, section, footer)
+- Accessible (ARIA labels, alt text)
+- Fast loading (inline critical CSS if needed)
 
 OUTPUT FORMAT:
-Return ONLY the complete HTML code. No explanations, no markdown, just pure HTML starting with <!DOCTYPE html>.`;
+Return ONLY the complete HTML code. Start with <!DOCTYPE html> and end with </html>. No explanations, no markdown, just pure HTML.`;
 
 export function generatePrompt(requirements: {
   websiteType?: string;
@@ -67,20 +89,26 @@ export function generatePrompt(requirements: {
   documentContent?: string;
   documentSummary?: string;
 }): string {
-  let prompt = "Create a complete, modern, responsive website with the following requirements:\n\n";
+  let prompt = `Create a STUNNING, PROFESSIONAL, CONVERSION-OPTIMIZED single-page website.\n\n`;
 
   if (requirements.documentContent) {
-    prompt += `IMPORTANT: Use the ACTUAL CONTENT from these documents. Extract real information, don't make up anything:\n\n`;
-    prompt += `${requirements.documentContent.substring(0, 8000)}\n\n`;
-    prompt += `CRITICAL: Use the company name, product names, features, benefits, and any other details from the documents above. This is REAL content that must appear in the website.\n\n`;
-  }
-
-  if (requirements.documentSummary && !requirements.documentContent) {
-    prompt += `BUSINESS CONTEXT:\n${requirements.documentSummary}\n\n`;
+    prompt += `═══════════════════════════════════════════════════════\n`;
+    prompt += `CRITICAL: USE THIS ACTUAL BUSINESS CONTENT\n`;
+    prompt += `═══════════════════════════════════════════════════════\n\n`;
+    prompt += `${requirements.documentContent.substring(0, 12000)}\n\n`;
+    prompt += `═══════════════════════════════════════════════════════\n`;
+    prompt += `REQUIREMENTS:\n`;
+    prompt += `- Extract the REAL company name and use it throughout\n`;
+    prompt += `- Use ACTUAL product features and benefits listed above\n`;
+    prompt += `- Include REAL statistics, data points, and metrics\n`;
+    prompt += `- Use actual quotes or testimonials if present\n`;
+    prompt += `- DO NOT make up or placeholder any content\n`;
+    prompt += `- Create compelling, specific copy based on this business\n`;
+    prompt += `═══════════════════════════════════════════════════════\n\n`;
   }
 
   if (requirements.websiteType) {
-    prompt += `TYPE: ${requirements.websiteType}\n`;
+    prompt += `WEBSITE TYPE: ${requirements.websiteType}\n`;
   }
 
   if (requirements.targetAudience) {
@@ -88,29 +116,50 @@ export function generatePrompt(requirements: {
   }
 
   if (requirements.mainGoal) {
-    prompt += `MAIN GOAL/CTA: ${requirements.mainGoal}\n`;
+    prompt += `MAIN CALL-TO-ACTION: ${requirements.mainGoal}\n`;
   }
 
   if (requirements.businessDescription) {
-    prompt += `BUSINESS DESCRIPTION: ${requirements.businessDescription}\n`;
-  }
-
-  if (requirements.keySections && requirements.keySections.length > 0) {
-    prompt += `KEY SECTIONS: ${requirements.keySections.join(", ")}\n`;
+    prompt += `ADDITIONAL CONTEXT: ${requirements.businessDescription}\n`;
   }
 
   if (requirements.brandStyle) {
     prompt += `BRAND/STYLE: ${requirements.brandStyle}\n`;
   }
 
-  prompt += `\n\nREQUIREMENTS:
-- Use REAL content from documents (company names, product features, benefits, etc.)
-- Do NOT use placeholder text like "Acme Corp" or "Lorem ipsum"
-- Extract actual quotes, statistics, features from the document content
-- Make it specific to this business
-- Generate a beautiful, professional, fully functional single-page website
-- Use Tailwind CSS CDN for styling
-- Make it modern, responsive, and engaging`;
+  prompt += `\n═══════════════════════════════════════════════════════\n`;
+  prompt += `DESIGN SPECIFICATIONS:\n`;
+  prompt += `═══════════════════════════════════════════════════════\n\n`;
+
+  prompt += `**Hero Section Must Have:**
+- Full viewport height (min-h-screen)
+- Gradient background (bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600)
+- Large, bold headline (text-5xl md:text-6xl lg:text-7xl)
+- Compelling subheadline (text-xl md:text-2xl)
+- Primary CTA button (large, gradient, with hover effect)
+- Modern, clean layout
+
+**Features Section:**
+- Grid layout (grid-cols-1 md:grid-cols-2 lg:grid-cols-3)
+- Card-based design with shadows
+- Icon for each feature (simple SVG)
+- Hover effects (transform scale-105)
+- Extract at least 6 real features from documents
+
+**Visual Design:**
+- Use modern gradients throughout
+- Smooth animations (transition-all duration-300)
+- Professional spacing (p-6, p-8, py-16, py-24)
+- Clear typography hierarchy
+- Responsive images with proper sizing
+
+**Call-to-Action:**
+- At least 2 CTA sections (hero + bottom)
+- Contrasting colors
+- Action-oriented copy
+- Large, clickable buttons
+
+Generate a beautiful, modern website that showcases this business professionally!`;
 
   return prompt;
 }
