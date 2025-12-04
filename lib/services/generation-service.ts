@@ -32,15 +32,22 @@ export async function generateWebsite(input: GenerationInput) {
 
     // Get FULL document content (not just summaries)
     const documents = await documentService.getDocumentsForSite(siteId);
+
+    console.log("Documents found for generation:", documents.length);
+    console.log("Documents with text:", documents.filter((d) => d.extracted_text).length);
+
     const fullDocumentText = documents
-      .filter((d) => d.extracted_text)
+      .filter((d) => d.extracted_text && d.extracted_text.trim().length > 0)
       .map((d) => `--- Document: ${d.filename} ---\n${d.extracted_text}`)
       .join("\n\n");
 
     const documentSummaries = documents
-      .filter((d) => d.summary)
+      .filter((d) => d.summary && d.summary.trim().length > 0)
       .map((d) => d.summary)
       .join("\n\n");
+
+    console.log("Full document text length:", fullDocumentText.length);
+    console.log("Document summaries length:", documentSummaries.length);
 
     // Get conversation messages to extract requirements
     let requirements: Record<string, unknown> = {};
