@@ -1,24 +1,44 @@
 import mammoth from "mammoth";
 import { logger } from "@/lib/utils/logger";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { writeFileSync, unlinkSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  let tempPath: string | null = null;
+
   try {
-    // Import from lib/pdf-parse.js to bypass debug mode (same as NextGenWeb)
-    const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
+    // PDFLoader needs a file path, so create a temp file
+    tempPath = join(tmpdir(), `pdf-${Date.now()}.pdf`);
+    writeFileSync(tempPath, buffer);
 
-    const data = await pdfParse(buffer);
+    // Use LangChain's PDFLoader - much more reliable
+    const loader = new PDFLoader(tempPath);
+    const docs = await loader.load();
 
-    logger.info("PDF text extracted", {
-      pages: data.numpages,
-      textLength: data.text?.length || 0,
+    // Combine all pages
+    const text = docs.map((doc) => doc.pageContent).join("\n\n");
+
+    logger.info("PDF text extracted via LangChain", {
+      pages: docs.length,
+      textLength: text.length,
     });
 
-    return data.text || "";
+    return text;
   } catch (error) {
     console.error("PDF extraction error:", error);
     logger.error("Failed to extract text from PDF", error);
-    logger.warn("PDF text extraction failed, continuing with empty text");
     return "";
+  } finally {
+    // Clean up temp file
+    if (tempPath) {
+      try {
+        unlinkSync(tempPath);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
   }
 }
 
