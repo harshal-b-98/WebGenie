@@ -37,7 +37,7 @@ export default async function SitePage({ params }: { params: Promise<{ siteId: s
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Start with AI Chat */}
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
@@ -86,6 +86,32 @@ export default async function SitePage({ params }: { params: Promise<{ siteId: s
             <CardContent>
               <Button asChild variant="outline" className="w-full">
                 <Link href={`/dashboard/sites/${siteId}/documents`}>Manage Documents</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Manage Generated Websites */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-teal-600 text-white mb-4">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <CardTitle>Manage Website</CardTitle>
+              <CardDescription>
+                View all generated versions of your website. Preview, compare, and manage your site
+                versions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link href={`/dashboard/sites/${siteId}/versions`}>View Versions</Link>
               </Button>
             </CardContent>
           </Card>

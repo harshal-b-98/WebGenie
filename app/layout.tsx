@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NextGenWeb - AI-Powered Website Builder",
-  description: "Build beautiful websites through conversation with AI",
+  title: "NextGenWeb - AI Marketing Website Builder",
+  description: "Create professional marketing websites in minutes with AI.",
 };
 
 export default function RootLayout({
@@ -25,9 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
+      >
         {children}
-        <Toaster />
       </body>
     </html>
   );

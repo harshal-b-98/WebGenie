@@ -1,0 +1,59 @@
+
+> webcreationgenie@0.1.0 lint
+> eslint
+
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/(auth)/reset-password/page.tsx
+  52:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  65:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/(dashboard)/dashboard/page.tsx
+  10:17  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  36:49  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/(marketing)/page.tsx
+  1:10  warning  'Hero' is defined but never used                                       @typescript-eslint/no-unused-vars
+  2:10  warning  'FeatureGrid' is defined but never used                                @typescript-eslint/no-unused-vars
+  3:1   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/(onboarding)/onboarding/page.tsx
+  11:12  warning  'step' is assigned a value but never used                        @typescript-eslint/no-unused-vars
+  11:18  warning  'setStep' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+  64:41  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/api/admin/create-buckets/route.ts
+  13:19  warning  'docsBucket' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  26:19  warning  'assetsBucket' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/app/dashboard/sites/[siteId]/documents/page.tsx
+  38:6   warning  React Hook useEffect has a missing dependency: 'loadDocuments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  48:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/components/DynamicContent.tsx
+  29:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  43:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  67:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/components/features/auth/login-form.tsx
+  52:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/components/features/auth/signup-form.tsx
+  58:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/components/features/documents/document-uploader.tsx
+  90:5  warning  React Hook useCallback has an unnecessary dependency: 'siteId'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/lib/mockAI.ts
+  1:26  warning  'ContentType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/lib/supabase/server.ts
+  20:30  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/middleware.ts
+  18:48  warning  'options' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshalbhatkar/Documents/Sidekick/webcreationgenie/scripts/deploy-schema.mjs
+  21:7  warning  'supabase' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 24 problems (5 errors, 19 warnings)
+

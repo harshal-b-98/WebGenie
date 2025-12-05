@@ -8,9 +8,45 @@ export async function GET(request: Request, { params }: { params: Promise<{ site
     const user = await requireUser();
     const { siteId } = await params;
 
+    // Get version ID from query params (optional)
+    const { searchParams } = new URL(request.url);
+    const versionId = searchParams.get("version");
+
     const supabase = await createClient();
 
-    // Get site with current version
+    // If specific version requested, load that version
+    if (versionId) {
+      // Verify user owns the site for this version
+      const { data: version } = await supabase
+        .from("site_versions")
+        .select("html_content, site_id")
+        .eq("id", versionId)
+        .single();
+
+      if (!version) {
+        return NextResponse.json({ htmlContent: null });
+      }
+
+      const versionData = version as { html_content?: string; site_id: string };
+
+      // Verify site ownership
+      const { data: site } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("id", versionData.site_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (!site) {
+        return NextResponse.json({ htmlContent: null }, { status: 403 });
+      }
+
+      return NextResponse.json({
+        htmlContent: versionData?.html_content || null,
+      });
+    }
+
+    // Otherwise, load current version
     const { data: site } = await supabase
       .from("sites")
       .select("current_version_id")
