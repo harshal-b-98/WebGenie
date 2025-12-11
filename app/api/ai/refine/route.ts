@@ -71,7 +71,7 @@ Generate the updated HTML now (raw HTML only, no markdown):`;
       system: GENERATION_SYSTEM_PROMPT,
       prompt: refinementPrompt,
       temperature: 0.7,
-      maxTokens: 4000,
+      // maxTokens: 4000, // Removed - not supported in current AI SDK version
       abortSignal: AbortSignal.timeout(45000), // 45s timeout
       onFinish: async ({ text: htmlContent }) => {
         // Clean up any markdown formatting (in case AI adds it despite instructions)

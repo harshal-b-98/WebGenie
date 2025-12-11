@@ -1,0 +1,371 @@
+/**
+ * Dynamic Navigation Styles
+ * Styles for the segment explorer panel, loading overlay, and navigation elements
+ */
+
+/* Explorer Panel */
+.ngw-explorer-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.ngw-explorer-panel.open {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.ngw-explorer-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.ngw-explorer-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ngw-explorer-panel.open .ngw-explorer-content {
+  transform: translateX(0);
+}
+
+.ngw-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.ngw-explorer-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ngw-explorer-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.ngw-explorer-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.ngw-explorer-close:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.ngw-explorer-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ngw-segment-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ngw-segment-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.ngw-segment-card:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.ngw-segment-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ngw-segment-icon svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.ngw-segment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ngw-segment-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ngw-segment-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.ngw-segment-arrow {
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+
+.ngw-segment-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ngw-segment-card:hover .ngw-segment-arrow {
+  color: #3b82f6;
+  transform: translateX(4px);
+}
+
+/* Loading Overlay */
+.ngw-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.ngw-loading-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ngw-loading-content {
+  text-align: center;
+  padding: 40px;
+  max-width: 320px;
+}
+
+.ngw-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: ngw-spin 1s linear infinite;
+}
+
+@keyframes ngw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ngw-loading-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ngw-loading-content p {
+  margin: 0 0 24px 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.ngw-loading-progress {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ngw-loading-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: 2px;
+  width: 0;
+  transition: width 0.5s ease;
+}
+
+/* Mobile Styles */
+@media (max-width: 640px) {
+  .ngw-explorer-content {
+    max-width: 100%;
+  }
+
+  .ngw-explorer-header {
+    padding: 16px 20px;
+  }
+
+  .ngw-explorer-cards {
+    padding: 12px;
+  }
+
+  .ngw-segment-card {
+    padding: 16px;
+  }
+
+  .ngw-segment-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ngw-segment-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .ngw-explorer-content {
+    background: #1f2937;
+  }
+
+  .ngw-explorer-header {
+    background: #111827;
+    border-bottom-color: #374151;
+  }
+
+  .ngw-explorer-header h2 {
+    color: #f9fafb;
+  }
+
+  .ngw-explorer-close {
+    color: #9ca3af;
+  }
+
+  .ngw-explorer-close:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .ngw-segment-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .ngw-segment-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  }
+
+  .ngw-segment-info h3 {
+    color: #f9fafb;
+  }
+
+  .ngw-segment-info p {
+    color: #9ca3af;
+  }
+
+  .ngw-loading-overlay {
+    background: rgba(17, 24, 39, 0.95);
+  }
+
+  .ngw-loading-content h3 {
+    color: #f9fafb;
+  }
+
+  .ngw-loading-content p {
+    color: #9ca3af;
+  }
+
+  .ngw-loading-progress {
+    background: #374151;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .ngw-explorer-panel,
+  .ngw-explorer-content,
+  .ngw-segment-card,
+  .ngw-segment-arrow,
+  .ngw-loading-overlay,
+  .ngw-loading-spinner,
+  .ngw-loading-progress-bar {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Focus Visible for keyboard navigation */
+.ngw-segment-card:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

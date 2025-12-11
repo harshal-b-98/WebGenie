@@ -25,6 +25,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ workspace }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(formatErrorResponse(error), { status: 400 });
+    const errorResponse = formatErrorResponse(error);
+    const statusCode = errorResponse.error.statusCode || 500;
+    return NextResponse.json(errorResponse, { status: statusCode });
   }
 }

@@ -12,5 +12,5 @@ export const anthropic = createAnthropic({
 
 // Default models
 export const defaultChatModel = openai("gpt-4o-mini"); // Fast and cheap for chat
-export const defaultGenerationModel = openai("gpt-4o"); // High quality for generation
-export const defaultReasoningModel = anthropic("claude-3-5-sonnet-20241022"); // For complex analysis
+export const defaultGenerationModel = openai("gpt-4o"); // GPT-4o for complex generation
+export const defaultReasoningModel = openai("gpt-4o"); // For complex analysis

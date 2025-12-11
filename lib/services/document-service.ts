@@ -6,6 +6,8 @@ import { extractText } from "./text-extraction-service";
 import { generateText } from "ai";
 import { defaultChatModel } from "@/lib/ai/client";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import * as embeddingService from "./embedding-service";
+import * as contentDiscoveryService from "./content-discovery-service";
 
 type Document = Database["public"]["Tables"]["documents"]["Row"];
 
@@ -94,6 +96,28 @@ export async function processDocument(documentId: string): Promise<void> {
     });
     console.log("AI summary generated:", summary.substring(0, 100));
 
+    // NEW: Generate and store embeddings for semantic search
+    try {
+      console.log("Generating embeddings for document...");
+      const chunks = await embeddingService.chunkDocument(
+        extractedText,
+        documentId,
+        document.site_id
+      );
+      console.log(`Document chunked into ${chunks.length} chunks`);
+
+      const embeddings = await embeddingService.generateEmbeddings(chunks);
+      console.log(`Generated ${embeddings.length} embeddings`);
+
+      await embeddingService.storeEmbeddings(document.site_id, documentId, chunks, embeddings);
+      console.log("Embeddings stored successfully");
+    } catch (embeddingError) {
+      // Log error but don't fail the whole process
+      console.error("Failed to generate embeddings:", embeddingError);
+      logger.error("Embedding generation failed", embeddingError, { documentId });
+      // Continue with document processing even if embeddings fail
+    }
+
     // Update document with extracted text and summary
     const { error: updateError } = await serviceSupabase
       .from("documents")
@@ -110,6 +134,28 @@ export async function processDocument(documentId: string): Promise<void> {
     }
 
     console.log("Document updated successfully with text length:", extractedText.length);
+
+    // NEW: Trigger content discovery analysis (automatic)
+    // This analyzes all documents for the site and discovers the optimal website structure
+    try {
+      console.log("Triggering content discovery analysis...");
+      const contentStructure = await contentDiscoveryService.analyzeContentStructure(
+        document.site_id
+      );
+      console.log("Content discovery completed:", {
+        segments: contentStructure.segments.length,
+        businessType: contentStructure.businessType,
+        confidence: contentStructure.analysisConfidence,
+      });
+    } catch (contentError) {
+      // Log error but don't fail the whole process
+      console.error("Content discovery failed:", contentError);
+      logger.error("Content discovery analysis failed", contentError, {
+        documentId,
+        siteId: document.site_id,
+      });
+      // Continue - content discovery is non-critical
+    }
 
     logger.info("Document processed successfully", {
       documentId,

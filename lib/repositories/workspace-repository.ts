@@ -25,7 +25,7 @@ export async function getWorkspacesByUserId(userId: string) {
 
   if (error) {
     logger.error("Failed to get workspaces", error, { userId });
-    throw new DatabaseError("Failed to get workspaces");
+    throw new DatabaseError("Unable to load your projects. Please refresh the page and try again.");
   }
 
   return data;
@@ -72,7 +72,21 @@ export async function createWorkspace(userId: string, name: string, description?
 
   if (error) {
     logger.error("Failed to create workspace", error, { userId, name });
-    throw new DatabaseError("Failed to create workspace");
+
+    // Provide specific error messages based on error code
+    if (error.code === "23505") {
+      throw new DatabaseError(
+        "A project with this name already exists. Please choose a different name."
+      );
+    }
+    if (error.code === "23503") {
+      throw new DatabaseError("User profile not found. Please refresh the page and try again.");
+    }
+    if (error.code === "42P17") {
+      throw new DatabaseError("Database configuration error. Please contact support.");
+    }
+
+    throw new DatabaseError("Unable to create project. Please try again.");
   }
 
   logger.info("Workspace created", { workspaceId: (data as { id: string }).id, userId });
@@ -138,7 +152,7 @@ export async function countWorkspacesByUserId(userId: string): Promise<number> {
 
   if (error) {
     logger.error("Failed to count workspaces", error, { userId });
-    throw new DatabaseError("Failed to count workspaces");
+    throw new DatabaseError("Unable to check project limit. Please try again.");
   }
 
   return count || 0;

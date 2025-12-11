@@ -18,6 +18,7 @@ interface Document {
   processing_status: "pending" | "processing" | "completed" | "failed";
   summary: string | null;
   created_at: string;
+  embedding_count?: number;
 }
 
 export default function DocumentsPage() {
@@ -43,12 +44,47 @@ export default function DocumentsPage() {
       const response = await fetch(`/api/sites/${siteId}/documents`);
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data.documents || []);
+        const docs = data.documents || [];
+
+        // Fetch embedding counts for each document
+        const docsWithCounts = await Promise.all(
+          docs.map(async (doc: Document) => {
+            try {
+              const embRes = await fetch(`/api/documents/${doc.id}/embedding-count`);
+              const embData = await embRes.json();
+              return { ...doc, embedding_count: embData.count || 0 };
+            } catch {
+              return { ...doc, embedding_count: 0 };
+            }
+          })
+        );
+
+        setDocuments(docsWithCounts);
       }
     } catch (error) {
       toast.error("Failed to load documents");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleReprocess = async (documentId: string, filename: string) => {
+    try {
+      toast.info(`Generating embeddings for ${filename}...`);
+
+      const response = await fetch(`/api/documents/${documentId}/reprocess`, {
+        method: "POST",
+      });
+
+      if (!response.ok) throw new Error("Reprocess failed");
+
+      const data = await response.json();
+      toast.success(`Generated ${data.chunkCount} embeddings for ${filename}`);
+
+      // Reload documents to show updated counts
+      await loadDocuments();
+    } catch (error) {
+      toast.error(`Failed to generate embeddings for ${filename}`);
     }
   };
 
@@ -164,15 +200,41 @@ export default function DocumentsPage() {
                           {doc.summary && (
                             <p className="mt-1 text-xs text-gray-600 line-clamp-2">{doc.summary}</p>
                           )}
+                          {/* Embedding Status */}
+                          <div className="mt-2 flex items-center gap-2">
+                            {doc.embedding_count !== undefined && doc.embedding_count > 0 ? (
+                              <span className="text-xs text-green-600 font-medium">
+                                ✓ {doc.embedding_count} embeddings
+                              </span>
+                            ) : doc.processing_status === "completed" ? (
+                              <span className="text-xs text-yellow-600 font-medium">
+                                ⚠️ No embeddings
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge
                         className={statusColors[doc.processing_status as keyof typeof statusColors]}
                       >
                         {doc.processing_status}
                       </Badge>
+
+                      {/* Generate Embeddings Button */}
+                      {doc.processing_status === "completed" &&
+                        (doc.embedding_count === undefined || doc.embedding_count === 0) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReprocess(doc.id, doc.filename)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            Generate Embeddings
+                          </Button>
+                        )}
+
                       <Button
                         variant="ghost"
                         size="sm"
