@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { WorkspaceGrid } from "@/components/features/workspace/workspace-grid";
 import { EmptyState } from "@/components/features/workspace/empty-state";
-import { CreateWorkspaceDialog } from "@/components/features/workspace/create-workspace-dialog";
+import { OnboardingWizard } from "@/components/features/onboarding/onboarding-wizard";
+import { TourTrigger, DASHBOARD_TOUR } from "@/components/features/tour";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,14 +70,21 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-gray-900">Your Projects</h1>
             <p className="mt-1 text-sm text-gray-500">Create and manage your AI-powered websites</p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)} size="lg">
-            + New Project
-          </Button>
+          <div className="flex items-center gap-3">
+            <TourTrigger tours={[DASHBOARD_TOUR]} />
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              size="lg"
+              data-tour="create-project"
+            >
+              + New Project
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
         {workspaces.length > 0 && (
-          <div className="max-w-md">
+          <div className="max-w-md" data-tour="search-input">
             <Input
               type="search"
               placeholder="Search projects..."
@@ -88,7 +96,10 @@ export default function DashboardPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            data-tour="projects-grid"
+          >
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="h-40 w-full" />
@@ -106,11 +117,13 @@ export default function DashboardPage() {
             </div>
           )
         ) : (
-          <WorkspaceGrid workspaces={filteredWorkspaces} onDelete={handleDelete} />
+          <div data-tour="projects-grid">
+            <WorkspaceGrid workspaces={filteredWorkspaces} onDelete={handleDelete} />
+          </div>
         )}
       </div>
 
-      <CreateWorkspaceDialog
+      <OnboardingWizard
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={loadWorkspaces}
