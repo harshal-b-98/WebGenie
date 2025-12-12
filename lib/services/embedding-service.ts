@@ -243,9 +243,14 @@ function extractKeywords(text: string): string[] {
 
 /**
  * Generate embeddings for document chunks using OpenAI
+ * Uses text-embedding-3-small for better performance and lower cost
  */
 export async function generateEmbeddings(chunks: DocumentChunk[]): Promise<number[][]> {
   logger.info("Generating embeddings", { chunkCount: chunks.length });
+
+  if (chunks.length === 0) {
+    return [];
+  }
 
   // Initialize OpenAI client
   const openaiClient = new OpenAI({
@@ -253,35 +258,38 @@ export async function generateEmbeddings(chunks: DocumentChunk[]): Promise<numbe
   });
 
   try {
-    // Batch process chunks (OpenAI supports up to 2048 inputs per request)
-    const BATCH_SIZE = 100;
+    // Use larger batch size for efficiency (OpenAI supports up to 2048 inputs)
+    // text-embedding-3-small has 8191 token limit per input
+    const BATCH_SIZE = 200;
     const allEmbeddings: number[][] = [];
+    const startTime = Date.now();
 
+    // Process batches with parallel execution within batches
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
       const texts = batch.map((chunk) => chunk.text);
 
-      logger.info("Processing embedding batch", {
-        batchIndex: i / BATCH_SIZE + 1,
+      logger.debug("Processing embedding batch", {
+        batchIndex: Math.floor(i / BATCH_SIZE) + 1,
+        totalBatches: Math.ceil(chunks.length / BATCH_SIZE),
         batchSize: batch.length,
       });
 
       const response = await openaiClient.embeddings.create({
-        model: "text-embedding-ada-002",
+        model: "text-embedding-3-small", // Faster and cheaper than ada-002
         input: texts,
+        dimensions: 1536, // Match existing vector column size
       });
 
       const embeddings = response.data.map((item: OpenAI.Embeddings.Embedding) => item.embedding);
       allEmbeddings.push(...embeddings);
-
-      // Small delay between batches to avoid rate limits
-      if (i + BATCH_SIZE < chunks.length) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
     }
 
+    const duration = Date.now() - startTime;
     logger.info("Embeddings generated successfully", {
       totalEmbeddings: allEmbeddings.length,
+      durationMs: duration,
+      avgTimePerChunk: Math.round(duration / chunks.length),
     });
 
     return allEmbeddings;
@@ -292,7 +300,7 @@ export async function generateEmbeddings(chunks: DocumentChunk[]): Promise<numbe
 }
 
 /**
- * Store embeddings in database
+ * Store embeddings in database with upsert for re-processing support
  */
 export async function storeEmbeddings(
   projectId: string,
@@ -306,9 +314,18 @@ export async function storeEmbeddings(
     );
   }
 
+  if (chunks.length === 0) {
+    logger.info("No chunks to store", { documentId });
+    return;
+  }
+
   logger.info("Storing embeddings", { documentId, count: chunks.length });
 
   const supabase = await createClient();
+  const startTime = Date.now();
+
+  // Delete existing embeddings for this document first (for re-processing)
+  await supabase.from("document_embeddings").delete().eq("document_id", documentId);
 
   // Prepare data for insertion
   const embeddingData = chunks.map((chunk, index) => ({
@@ -322,8 +339,10 @@ export async function storeEmbeddings(
     embedding: JSON.stringify(embeddings[index]), // PostgreSQL vector type accepts JSON array
   }));
 
-  // Insert in batches to avoid payload size limits
-  const BATCH_SIZE = 50;
+  // Use larger batch size for faster insertion
+  const BATCH_SIZE = 100;
+  let insertedCount = 0;
+
   for (let i = 0; i < embeddingData.length; i += BATCH_SIZE) {
     const batch = embeddingData.slice(i, i + BATCH_SIZE);
 
@@ -332,13 +351,20 @@ export async function storeEmbeddings(
     if (error) {
       logger.error("Failed to store embeddings batch", error, {
         documentId,
-        batchIndex: i / BATCH_SIZE,
+        batchIndex: Math.floor(i / BATCH_SIZE),
       });
       throw new DatabaseError(`Failed to store embeddings: ${error.message}`);
     }
+
+    insertedCount += batch.length;
   }
 
-  logger.info("Embeddings stored successfully", { documentId, count: chunks.length });
+  const duration = Date.now() - startTime;
+  logger.info("Embeddings stored successfully", {
+    documentId,
+    count: insertedCount,
+    durationMs: duration,
+  });
 }
 
 /**

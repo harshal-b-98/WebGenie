@@ -9,9 +9,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { generateDynamicPage, type GeneratePageInput } from "@/lib/services/dynamic-page-service";
-import { detectPersona, type PersonaSignals } from "@/lib/ai/prompts/personas";
+import { detectPersona } from "@/lib/ai/prompts/personas";
+import { type SegmentType } from "@/lib/ai/prompts/pages";
 import { createClient } from "@/lib/db/server";
 import { logger } from "@/lib/utils/logger";
+import { generatePageRequestSchema, formatZodErrors } from "@/lib/validation";
+import { ZodError } from "zod";
+import { memoryCache, CacheKeys } from "@/lib/cache";
 
 // CORS headers for widget requests
 const corsHeaders = {
@@ -26,64 +30,60 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-
-    const { siteId, pageType, segment, topic, sessionId, behaviorSignals } = body as {
-      siteId: string;
-      pageType: "segment" | "detail";
-      segment?: "features" | "solutions" | "platform" | "faq";
-      topic?: string;
-      sessionId?: string;
-      behaviorSignals?: PersonaSignals;
-    };
-
-    // Validate required fields
-    if (!siteId) {
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "siteId is required" },
+        { error: "Invalid JSON in request body" },
         { status: 400, headers: corsHeaders }
       );
     }
 
-    if (!pageType || !["segment", "detail"].includes(pageType)) {
-      return NextResponse.json(
-        { error: "pageType must be 'segment' or 'detail'" },
-        { status: 400, headers: corsHeaders }
-      );
+    // Validate with Zod schema
+    let validatedData;
+    try {
+      validatedData = generatePageRequestSchema.parse(body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        logger.warn("Generate page validation failed", { issues: error.issues });
+        return NextResponse.json(formatZodErrors(error), { status: 400, headers: corsHeaders });
+      }
+      throw error;
     }
 
-    if (pageType === "segment" && !segment) {
-      return NextResponse.json(
-        { error: "segment is required for segment pages" },
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    const { siteId, pageType, segment, topic, sessionId, behaviorSignals } = validatedData;
 
-    if (pageType === "detail" && (!segment || !topic)) {
-      return NextResponse.json(
-        { error: "segment and topic are required for detail pages" },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    // Check if site exists and has dynamic pages enabled
-    const supabase = await createClient();
-    const { data: siteRow } = await supabase
-      .from("sites")
-      .select("id, dynamic_pages_enabled, persona_detection_enabled")
-      .eq("id", siteId)
-      .single();
-
-    if (!siteRow) {
-      return NextResponse.json({ error: "Site not found" }, { status: 404, headers: corsHeaders });
-    }
-
-    // Type cast for TypeScript
-    const site = siteRow as {
+    // Check if site exists and has dynamic pages enabled (with caching)
+    type SiteConfig = {
       id: string;
       dynamic_pages_enabled?: boolean;
       persona_detection_enabled?: boolean;
     };
+
+    const siteConfigKey = `${CacheKeys.site(siteId)}:config`;
+    let site = memoryCache.sites.get(siteConfigKey) as SiteConfig | undefined;
+
+    if (!site) {
+      const supabase = await createClient();
+      const { data: siteRow } = await supabase
+        .from("sites")
+        .select("id, dynamic_pages_enabled, persona_detection_enabled")
+        .eq("id", siteId)
+        .single();
+
+      if (!siteRow) {
+        return NextResponse.json(
+          { error: "Site not found" },
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      site = siteRow as SiteConfig;
+      memoryCache.sites.set(siteConfigKey, site);
+      logger.debug("Cached site config", { siteId });
+    }
 
     // Detect persona from behavior signals if enabled
     let detectedPersona: "developer" | "executive" | "buyer" | "end_user" | "general" = "general";
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const input: GeneratePageInput = {
       siteId,
       pageType,
-      segment,
+      segment: segment as SegmentType | undefined,
       topic,
       sessionId,
       persona: detectedPersona,

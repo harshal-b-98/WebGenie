@@ -6,15 +6,16 @@ import * as conversationService from "@/lib/services/conversation-service";
 import * as documentService from "@/lib/services/document-service";
 import { generateContextPrompt } from "@/lib/ai/prompts/clarification";
 import { formatErrorResponse } from "@/lib/utils/errors";
+import { chatRequestSchema, validateBody } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
-    const { message, conversationId, siteId } = await request.json();
 
-    if (!message || !siteId) {
-      return NextResponse.json({ error: { message: "Missing required fields" } }, { status: 400 });
-    }
+    // Validate request body
+    const validation = await validateBody(request, chatRequestSchema);
+    if (validation.error) return validation.error;
+    const { message, conversationId, siteId } = validation.data;
 
     // Get or create conversation
     let conversation;

@@ -4,15 +4,16 @@ import { requireUser } from "@/lib/auth/server";
 import { defaultGenerationModel } from "@/lib/ai/client";
 import { createClient } from "@/lib/db/server";
 import { GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts/generation";
+import { refineRequestSchema, validateBody } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
-    const { message, siteId, currentVersionId } = await request.json();
 
-    if (!message || !siteId || !currentVersionId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
+    // Validate request body
+    const validation = await validateBody(request, refineRequestSchema);
+    if (validation.error) return validation.error;
+    const { message, siteId, currentVersionId } = validation.data;
 
     const supabase = await createClient();
 

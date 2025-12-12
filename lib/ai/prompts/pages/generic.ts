@@ -61,11 +61,17 @@ REQUIRED SECTIONS:
    - Quick links with data-segment attributes
    - Copyright
 
-CRITICAL DATA ATTRIBUTES:
+CRITICAL DATA ATTRIBUTES (MANDATORY FOR ALL CLICKABLE ELEMENTS):
 - Navigation: data-segment="[segment-slug]"
 - Back to landing: data-action="back-to-landing"
 - CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
-- Item cards: data-item-id="[item-slug]" if clickable
+- Topic/Item cards (opens detail page): data-topic="[item-slug]" data-parent-segment="[current-segment-slug]"
+
+NEVER USE PLAIN HREF LINKS:
+- WRONG: <a href="#">Link</a>
+- WRONG: <a href="javascript:void(0)">Link</a>
+- RIGHT: <a href="#" data-segment="slug">Link</a>
+- RIGHT: <button data-topic="slug" data-parent-segment="current">Item</button>
 
 ICON USAGE (Feather Icons):
 - Use appropriate icons for the segment type
@@ -132,15 +138,26 @@ export function generateGenericPagePrompt(requirements: GenericPageRequirements)
   }
 
   prompt += `
+
+--- CRITICAL NAVIGATION REQUIREMENTS ---
+MANDATORY: ALL clickable elements MUST have proper data attributes. NEVER use plain href="#" links.
+
+CORRECT PATTERNS:
+1. Segment links: <a href="#" data-segment="segment-slug">Segment Name</a>
+2. Topic cards: <div data-topic="item-slug" data-parent-segment="${requirements.segmentSlug}" class="cursor-pointer">Item</div>
+3. Home/Logo: <a href="#" data-action="back-to-landing">Home</a>
+4. CTA: <button data-action="cta-primary" data-cta-type="demo">Get Demo</button>
+
 REQUIREMENTS:
 1. Adapt the page layout to match what "${requirements.segmentName}" content typically contains
 2. Extract and display ALL relevant content from the documents for this segment
-3. Include breadcrumb navigation: Home > ${requirements.segmentName}
-4. Add navigation links to other segments
-5. Make cards clickable with data-item-id if they represent individual items
+3. Include breadcrumb navigation: Home > ${requirements.segmentName} (Home clickable with data-action="back-to-landing")
+4. Add navigation links to other segments with data-segment attributes
+5. Make cards clickable with data-topic and data-parent-segment="${requirements.segmentSlug}" attributes
 6. Use Feather icons appropriately for this content type
 7. NEVER use placeholder content, "?", or Lorem ipsum
 8. Include an "Explore More" section with related segment links
+9. If no topics to link to, include CTA: <button data-action="cta-primary" data-cta-type="contact">Contact Us</button>
 
 Generate the complete HTML now.`;
 

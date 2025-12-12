@@ -120,33 +120,64 @@ export interface DynamicSegmentRequirements extends BaseSegmentRequirements {
  */
 function generateCrossNavigationPrompt(
   relatedSegments?: Array<{ name: string; slug: string; description: string }>,
-  availableDetailPages?: string[]
+  availableDetailPages?: string[],
+  currentSegment?: string
 ): string {
-  let prompt = "\n\n--- CROSS-NAVIGATION REQUIREMENTS (Phase 4) ---\n";
+  let prompt = "\n\n--- CRITICAL NAVIGATION REQUIREMENTS ---\n";
+
+  prompt += `
+MANDATORY: ALL clickable elements MUST have proper data attributes. NEVER use plain href="#" links.
+
+CORRECT DATA ATTRIBUTE PATTERNS:
+1. Segment navigation: <a href="#" data-segment="segment-slug">Segment Name</a>
+2. Topic/Item detail: <button data-topic="topic-slug" data-parent-segment="${currentSegment || "general"}">Topic Name</button>
+3. Back to home: <a href="#" data-action="back-to-landing">Home</a>
+4. CTA buttons: <button data-action="cta-primary" data-cta-type="demo">Schedule Demo</button>
+
+WRONG (causes navigation to break):
+- <a href="#">Link</a>  ← NEVER DO THIS
+- <a href="#section">Link</a>  ← Only for same-page anchors
+
+FOR CARDS/ITEMS that should open detail pages:
+<div data-topic="item-slug" data-parent-segment="${currentSegment || "general"}" class="cursor-pointer ...">
+  <h3>Item Title</h3>
+  <p>Description</p>
+</div>
+`;
 
   if (relatedSegments && relatedSegments.length > 0) {
-    prompt += '\nRELATED SEGMENTS FOR "EXPLORE MORE" SECTION:\n';
+    prompt += '\n\nRELATED SEGMENTS FOR "EXPLORE MORE" SECTION:\n';
     relatedSegments.forEach((seg) => {
-      prompt += `- ${seg.name} (data-segment="${seg.slug}"): ${seg.description}\n`;
+      prompt += `- <a href="#" data-segment="${seg.slug}" class="...">${seg.name}</a> - ${seg.description}\n`;
     });
-    prompt += '\nInclude an "Explore More" or "Related Topics" section with these links.\n';
+    prompt +=
+      "\nYou MUST include an 'Explore More' or 'Related Topics' section with these clickable links.\n";
   }
 
   if (availableDetailPages && availableDetailPages.length > 0) {
-    prompt += "\nAVAILABLE DETAIL PAGES (only link to these):\n";
-    availableDetailPages.slice(0, 20).forEach((page) => {
-      prompt += `- ${page}\n`;
+    prompt += "\nAVAILABLE TOPICS (create detail links for these):\n";
+    availableDetailPages.slice(0, 15).forEach((page) => {
+      const parts = page.split("/");
+      const topicSlug = parts[parts.length - 1];
+      const parentSeg = parts.length > 1 ? parts[0] : currentSegment || "general";
+      prompt += `- <button data-topic="${topicSlug}" data-parent-segment="${parentSeg}">${formatSlugToTitle(topicSlug)}</button>\n`;
     });
-    prompt +=
-      '\nIMPORTANT: Only create "Learn More" or detail links for items that exist in this list.\n';
-    prompt += "Do NOT create buttons/links for non-existent pages.\n";
   } else {
-    prompt +=
-      '\nNOTE: No detail pages are available. Do NOT include "Learn More" buttons for items.\n';
-    prompt += "Instead, show all information inline or use expandable sections.\n";
+    prompt += "\nNo specific topic pages available. For 'Learn More' actions, use CTA form:\n";
+    prompt += '<button data-action="cta-primary" data-cta-type="contact">Learn More</button>\n';
   }
 
   return prompt;
+}
+
+/**
+ * Convert slug to readable title
+ */
+function formatSlugToTitle(slug: string): string {
+  return slug
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 /**
@@ -164,10 +195,11 @@ export function generateDynamicSegmentPrompt(
     personaEmphasis: requirements.personaEmphasis,
   };
 
-  // Generate cross-navigation context
+  // Generate cross-navigation context with current segment for proper linking
   const crossNavPrompt = generateCrossNavigationPrompt(
     requirements.relatedSegments,
-    requirements.availableDetailPages
+    requirements.availableDetailPages,
+    requirements.segmentSlug
   );
 
   // Use specific prompt generators for known types

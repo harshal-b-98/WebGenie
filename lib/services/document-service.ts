@@ -86,37 +86,55 @@ export async function processDocument(documentId: string): Promise<void> {
     const buffer = Buffer.from(await fileData.arrayBuffer());
     const extractedText = await extractText(buffer, document.file_type);
 
-    console.log("Text extracted, length:", extractedText.length);
+    logger.info("Text extracted", { documentId, textLength: extractedText.length });
 
-    // Generate AI summary
-    console.log("Generating AI summary for document...");
-    const { text: summary } = await generateText({
-      model: defaultChatModel,
-      prompt: `Summarize the following document in 2-3 sentences, focusing on key business information, target audience, and main value propositions:\n\n${extractedText.substring(0, 4000)}`,
-    });
-    console.log("AI summary generated:", summary.substring(0, 100));
+    // Run summary generation and embedding generation in parallel for better performance
+    const processingStartTime = Date.now();
 
-    // NEW: Generate and store embeddings for semantic search
-    try {
-      console.log("Generating embeddings for document...");
-      const chunks = await embeddingService.chunkDocument(
-        extractedText,
-        documentId,
-        document.site_id
-      );
-      console.log(`Document chunked into ${chunks.length} chunks`);
+    const [summaryResult, embeddingResult] = await Promise.allSettled([
+      // Task 1: Generate AI summary
+      generateText({
+        model: defaultChatModel,
+        prompt: `Summarize the following document in 2-3 sentences, focusing on key business information, target audience, and main value propositions:\n\n${extractedText.substring(0, 4000)}`,
+      }),
 
-      const embeddings = await embeddingService.generateEmbeddings(chunks);
-      console.log(`Generated ${embeddings.length} embeddings`);
+      // Task 2: Generate and store embeddings (runs in parallel)
+      (async () => {
+        const chunks = await embeddingService.chunkDocument(
+          extractedText,
+          documentId,
+          document.site_id
+        );
+        logger.debug("Document chunked", { documentId, chunkCount: chunks.length });
 
-      await embeddingService.storeEmbeddings(document.site_id, documentId, chunks, embeddings);
-      console.log("Embeddings stored successfully");
-    } catch (embeddingError) {
-      // Log error but don't fail the whole process
-      console.error("Failed to generate embeddings:", embeddingError);
-      logger.error("Embedding generation failed", embeddingError, { documentId });
-      // Continue with document processing even if embeddings fail
+        const embeddings = await embeddingService.generateEmbeddings(chunks);
+        await embeddingService.storeEmbeddings(document.site_id, documentId, chunks, embeddings);
+
+        return { chunkCount: chunks.length, embeddingCount: embeddings.length };
+      })(),
+    ]);
+
+    // Extract summary (required)
+    let summary = "Unable to generate summary.";
+    if (summaryResult.status === "fulfilled") {
+      summary = summaryResult.value.text;
+      logger.debug("Summary generated", { documentId, summaryLength: summary.length });
+    } else {
+      logger.error("Summary generation failed", summaryResult.reason, { documentId });
     }
+
+    // Log embedding result (non-critical)
+    if (embeddingResult.status === "fulfilled") {
+      logger.info("Embeddings processed", {
+        documentId,
+        ...embeddingResult.value,
+      });
+    } else {
+      logger.error("Embedding generation failed", embeddingResult.reason, { documentId });
+    }
+
+    const parallelDuration = Date.now() - processingStartTime;
+    logger.info("Parallel processing completed", { documentId, durationMs: parallelDuration });
 
     // Update document with extracted text and summary
     const { error: updateError } = await serviceSupabase
@@ -129,37 +147,36 @@ export async function processDocument(documentId: string): Promise<void> {
       .eq("id", documentId);
 
     if (updateError) {
-      console.error("Failed to update document with extracted text:", updateError);
+      logger.error("Failed to update document", updateError, { documentId });
       throw new Error(`Failed to update document: ${updateError.message}`);
     }
 
-    console.log("Document updated successfully with text length:", extractedText.length);
-
-    // NEW: Trigger content discovery analysis (automatic)
-    // This analyzes all documents for the site and discovers the optimal website structure
-    try {
-      console.log("Triggering content discovery analysis...");
-      const contentStructure = await contentDiscoveryService.analyzeContentStructure(
-        document.site_id
-      );
-      console.log("Content discovery completed:", {
-        segments: contentStructure.segments.length,
-        businessType: contentStructure.businessType,
-        confidence: contentStructure.analysisConfidence,
-      });
-    } catch (contentError) {
-      // Log error but don't fail the whole process
-      console.error("Content discovery failed:", contentError);
-      logger.error("Content discovery analysis failed", contentError, {
-        documentId,
-        siteId: document.site_id,
-      });
-      // Continue - content discovery is non-critical
-    }
+    // Trigger content discovery analysis in background (non-blocking)
+    // Use setImmediate to not block the response
+    setImmediate(async () => {
+      try {
+        logger.debug("Starting content discovery analysis", { siteId: document.site_id });
+        const contentStructure = await contentDiscoveryService.analyzeContentStructure(
+          document.site_id
+        );
+        logger.info("Content discovery completed", {
+          siteId: document.site_id,
+          segments: contentStructure.segments.length,
+          businessType: contentStructure.businessType,
+          confidence: contentStructure.analysisConfidence,
+        });
+      } catch (contentError) {
+        logger.error("Content discovery analysis failed", contentError, {
+          documentId,
+          siteId: document.site_id,
+        });
+      }
+    });
 
     logger.info("Document processed successfully", {
       documentId,
       textLength: extractedText.length,
+      summaryLength: summary.length,
     });
   } catch (error) {
     logger.error("Failed to process document", error, { documentId });

@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/server";
 import { createClient } from "@/lib/db/server";
 import { formatErrorResponse } from "@/lib/utils/errors";
+import { siteParamsSchema, validateParams } from "@/lib/validation";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ siteId: string }> }) {
   try {
     const user = await requireUser();
-    const { siteId } = await params;
+    const rawParams = await params;
+
+    // Validate route parameters
+    const validation = validateParams(rawParams, siteParamsSchema);
+    if (validation.error) return validation.error;
+    const { siteId } = validation.data;
 
     const supabase = await createClient();
 

@@ -140,7 +140,21 @@
           return;
         }
 
-        // Item detail clicks (AI-discovered items)
+        // Topic detail clicks (new unified approach)
+        const topicElement = e.target.closest("[data-topic]");
+        if (topicElement) {
+          e.preventDefault();
+          const topic = topicElement.dataset.topic;
+          const parentSegment =
+            topicElement.dataset.parentSegment ||
+            this.currentPage.split("/")[0] ||
+            this.currentPage;
+          console.log("[DynamicNav] Navigating to topic:", parentSegment, topic);
+          this.navigateToTopicWithStreaming(parentSegment, topic);
+          return;
+        }
+
+        // Item detail clicks (AI-discovered items) - legacy support
         const itemCard = e.target.closest("[data-item-id]");
         if (itemCard) {
           e.preventDefault();
@@ -148,7 +162,7 @@
           // Find parent segment from the page context
           const currentSegment = this.currentPage.split("/")[0] || this.currentPage;
           console.log("[DynamicNav] Navigating to item detail:", currentSegment, itemId);
-          this.navigateToDetail(currentSegment, itemId);
+          this.navigateToTopicWithStreaming(currentSegment, itemId);
           return;
         }
 
@@ -768,6 +782,160 @@
 
       // Always return valid for non-empty content
       return { isValid: true, warnings };
+    }
+
+    /**
+     * Navigate to topic with streaming (used for all topic/detail navigation)
+     * This provides progressive loading feedback to users
+     */
+    async navigateToTopicWithStreaming(parentSegment, topic) {
+      if (this.streamingInProgress || this.isLoading) return;
+      this.streamingInProgress = true;
+
+      const pageSlug = `${parentSegment}/${topic}`;
+      behaviorTracker.trackPageVisit(pageSlug);
+      behaviorTracker.trackClick(`topic-${topic}`);
+
+      // Check cache first
+      const cacheKey = `topic_${parentSegment}_${topic}`;
+      if (this.pageCache[cacheKey]) {
+        const validation = this.validatePageHtml(this.pageCache[cacheKey], "detail");
+        if (validation.isValid) {
+          this.displayPage(this.pageCache[cacheKey], pageSlug);
+          this.streamingInProgress = false;
+          return;
+        }
+        delete this.pageCache[cacheKey];
+      }
+
+      // Show skeleton UI for streaming
+      this.showSkeleton();
+
+      // Set up timeout (60 seconds)
+      const STREAMING_TIMEOUT = 60000;
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Generation timed out. Please try again."));
+        }, STREAMING_TIMEOUT);
+      });
+
+      try {
+        const response = await Promise.race([
+          fetch(`${config.apiEndpoint}/generate-page-stream`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              siteId: config.siteId,
+              versionId: config.versionId,
+              pageType: "detail",
+              segment: parentSegment,
+              topic: topic,
+              sessionId: this.sessionId,
+              context: {
+                currentPage: this.currentPage,
+                clickedTopic: topic,
+                parentSegment: parentSegment,
+              },
+              behaviorSignals: config.personaDetectionEnabled ? behaviorTracker.getSignals() : null,
+            }),
+          }),
+          timeoutPromise,
+        ]);
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        clearTimeout(timeoutId);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullHtml =
+          '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script></head><body>';
+        const sectionHtml = {};
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split("\n\n");
+          buffer = events.pop() || "";
+
+          for (const eventStr of events) {
+            if (!eventStr.trim()) continue;
+
+            const lines = eventStr.split("\n");
+            let eventType = "";
+            let eventData = "";
+
+            for (const line of lines) {
+              if (line.startsWith("event: ")) eventType = line.slice(7);
+              else if (line.startsWith("data: ")) eventData = line.slice(6);
+            }
+
+            if (!eventType || !eventData) continue;
+
+            try {
+              const data = JSON.parse(eventData);
+
+              switch (eventType) {
+                case "wrapper":
+                  fullHtml = data.head + data.bodyOpen;
+                  break;
+                case "section-chunk":
+                  const skeletonEl = document.querySelector(`[data-skeleton="${data.id}"]`);
+                  if (skeletonEl) {
+                    if (!skeletonEl.dataset.streaming) {
+                      skeletonEl.dataset.streaming = "true";
+                      skeletonEl.innerHTML = "";
+                      skeletonEl.style.background = "transparent";
+                    }
+                    skeletonEl.insertAdjacentHTML("beforeend", data.chunk);
+                  }
+                  break;
+                case "section-complete":
+                  sectionHtml[data.id] = data.html;
+                  this.revealSection(data.id, data.html);
+                  break;
+                case "complete":
+                  this.hideStreamingIndicator();
+                  const sections = ["header", "content", "footer"];
+                  let assembledHtml = fullHtml;
+                  for (const sec of sections) assembledHtml += sectionHtml[sec] || "";
+                  assembledHtml += "</body></html>";
+
+                  this.pageCache[cacheKey] = assembledHtml;
+                  this.currentPage = pageSlug;
+                  const baseUrl = window.location.href.split("#")[0];
+                  history.pushState(
+                    { page: pageSlug, siteId: config.siteId, versionId: config.versionId },
+                    "",
+                    `${baseUrl}#${pageSlug}`
+                  );
+                  console.log("[DynamicNav] Topic page streaming complete:", pageSlug);
+                  break;
+                case "error":
+                  console.error("[DynamicNav] Stream error:", data.message);
+                  this.hideStreamingIndicator();
+                  break;
+              }
+            } catch (parseError) {
+              console.warn("[DynamicNav] Failed to parse event:", parseError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("[DynamicNav] Topic streaming failed:", error);
+        if (error.message.includes("timed out")) {
+          this.showErrorUI("Page generation timed out. Please try again.");
+        } else {
+          // Fallback to non-streaming
+          this.navigateToDetail(parentSegment, topic);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        this.streamingInProgress = false;
+      }
     }
 
     async navigateToDetail(segment, topicId) {

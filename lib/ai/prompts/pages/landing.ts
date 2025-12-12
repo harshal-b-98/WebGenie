@@ -232,6 +232,14 @@ export interface LandingPageRequirements {
   websiteDescription?: string;
   // AI-discovered content structure
   contentStructure?: ContentStructure | null;
+  // Social media links from settings
+  socialMedia?: {
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+  };
 }
 
 /**
@@ -446,6 +454,32 @@ DISCOVERED SEGMENTS:
 3. SEGMENT CARDS: Cards for About and Contact with data-segment attributes
 4. CTA: "Contact Us" button
 5. FOOTER: Quick links with data-segment attributes`;
+  }
+
+  // Add social media links if provided
+  if (requirements.socialMedia) {
+    const socialLinks = Object.entries(requirements.socialMedia)
+      .filter(([, url]) => url && url.trim().length > 0)
+      .map(([platform, url]) => `   - ${platform}: ${url}`)
+      .join("\n");
+
+    if (socialLinks) {
+      prompt += `\n\n========================================
+SOCIAL MEDIA LINKS (Include in Footer)
+========================================
+${socialLinks}
+
+FOOTER SOCIAL ICONS (Required):
+For each social media link above, add a clickable icon in the footer:
+- LinkedIn: <a href="[url]" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition"><i data-feather="linkedin" class="w-5 h-5"></i></a>
+- Twitter/X: <a href="[url]" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition"><i data-feather="twitter" class="w-5 h-5"></i></a>
+- Facebook: <a href="[url]" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition"><i data-feather="facebook" class="w-5 h-5"></i></a>
+- Instagram: <a href="[url]" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition"><i data-feather="instagram" class="w-5 h-5"></i></a>
+- YouTube: <a href="[url]" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition"><i data-feather="youtube" class="w-5 h-5"></i></a>
+
+Place social icons in a row in the footer: <div class="flex gap-4">...</div>
+========================================`;
+    }
   }
 
   prompt += `\n\nGenerate the complete HTML now.`;

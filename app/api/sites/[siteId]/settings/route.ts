@@ -3,11 +3,23 @@ import { requireUser } from "@/lib/auth/server";
 import { createClient } from "@/lib/db/server";
 import { formatErrorResponse } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
+import {
+  siteParamsSchema,
+  updateSiteSettingsSchema,
+  validateParams,
+  validateBody,
+} from "@/lib/validation";
+import { memoryCache, CacheKeys } from "@/lib/cache";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ siteId: string }> }) {
   try {
     const user = await requireUser();
-    const { siteId } = await params;
+    const rawParams = await params;
+
+    // Validate route parameters
+    const validation = validateParams(rawParams, siteParamsSchema);
+    if (validation.error) return validation.error;
+    const { siteId } = validation.data;
 
     const supabase = await createClient();
 
@@ -35,8 +47,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sit
 export async function PATCH(request: Request, { params }: { params: Promise<{ siteId: string }> }) {
   try {
     const user = await requireUser();
-    const { siteId } = await params;
-    const body = await request.json();
+    const rawParams = await params;
+
+    // Validate route parameters
+    const paramsValidation = validateParams(rawParams, siteParamsSchema);
+    if (paramsValidation.error) return paramsValidation.error;
+    const { siteId } = paramsValidation.data;
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, updateSiteSettingsSchema);
+    if (bodyValidation.error) return bodyValidation.error;
+    const body = bodyValidation.data;
 
     const supabase = await createClient();
 
@@ -90,12 +111,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ si
       updateData.description = body.description;
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: { message: "No valid fields to update" } },
-        { status: 400 }
-      );
-    }
+    // Note: Schema validation already ensures at least one field is provided
 
     // Update site
     const { data: updatedSite, error: updateError } = await supabase
@@ -111,6 +127,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ si
       logger.error("Failed to update site settings", updateError);
       throw updateError;
     }
+
+    // Invalidate site cache entries
+    memoryCache.sites.deleteByPrefix(CacheKeys.site(siteId));
+    logger.debug("Invalidated site cache", { siteId });
 
     logger.info("Site settings updated", { siteId });
 

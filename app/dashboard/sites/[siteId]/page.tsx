@@ -1,9 +1,11 @@
 import { requireUser } from "@/lib/auth/server";
+import { createClient } from "@/lib/db/server";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PublishButton } from "./publish-button";
 
 export default async function SitePage({ params }: { params: Promise<{ siteId: string }> }) {
   const user = await requireUser();
@@ -12,6 +14,35 @@ export default async function SitePage({ params }: { params: Promise<{ siteId: s
   if (!user) {
     redirect("/login");
   }
+
+  // Fetch site data for the publish button
+  const supabase = await createClient();
+  const { data: site } = await supabase
+    .from("sites")
+    .select(
+      `
+      id,
+      title,
+      current_version_id,
+      production_url,
+      last_deployed_at,
+      site_versions!sites_current_version_id_fkey (
+        version_number
+      )
+    `
+    )
+    .eq("id", siteId)
+    .eq("user_id", user.id)
+    .single();
+
+  const siteData = site as {
+    id: string;
+    title: string;
+    current_version_id: string | null;
+    production_url: string | null;
+    last_deployed_at: string | null;
+    site_versions: { version_number: number } | null;
+  } | null;
 
   return (
     <DashboardLayout>
@@ -170,6 +201,37 @@ export default async function SitePage({ params }: { params: Promise<{ siteId: s
               <Button asChild variant="outline" className="w-full">
                 <Link href={`/dashboard/sites/${siteId}/settings`}>Configure Settings</Link>
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Publish */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white mb-4">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <CardTitle>Publish Website</CardTitle>
+              <CardDescription>
+                Deploy your website to the internet with one click. Make it live for the world to
+                see.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PublishButton
+                siteId={siteId}
+                siteTitle={siteData?.title || "My Website"}
+                hasGeneratedContent={!!siteData?.current_version_id}
+                currentVersionNumber={siteData?.site_versions?.version_number}
+                productionUrl={siteData?.production_url}
+                lastDeployedAt={siteData?.last_deployed_at}
+              />
             </CardContent>
           </Card>
         </div>

@@ -287,6 +287,16 @@ export async function generateWebsite(input: GenerationInput) {
         mainGoal: requirements.mainGoal as string | undefined,
         websiteDescription: requirements.websiteDescription as string | undefined,
         contentStructure: contentStructure,
+        // Pass social media links from settings
+        socialMedia: requirements.socialMedia as
+          | {
+              linkedin?: string;
+              twitter?: string;
+              facebook?: string;
+              instagram?: string;
+              youtube?: string;
+            }
+          | undefined,
       });
     } else {
       // Use full content-heavy prompt (legacy mode)

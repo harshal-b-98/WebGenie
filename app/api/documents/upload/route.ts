@@ -3,21 +3,40 @@ import { requireUser } from "@/lib/auth/server";
 import { createClient } from "@/lib/db/server";
 import * as documentService from "@/lib/services/document-service";
 import { formatErrorResponse } from "@/lib/utils/errors";
+import {
+  documentUploadSchema,
+  validateFormData,
+  MAX_FILE_SIZE,
+  ALLOWED_EXTENSIONS,
+} from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
-    const formData = await request.formData();
 
-    const file = formData.get("file") as File;
-    const siteId = formData.get("siteId") as string;
+    // Validate form data including file
+    const validation = await validateFormData(request, documentUploadSchema, ["file"]);
+    if (validation.error) return validation.error;
+
+    const { siteId } = validation.data;
+    const file = validation.files.get("file");
 
     if (!file) {
-      return NextResponse.json({ error: { message: "No file provided" } }, { status: 400 });
-    }
-
-    if (!siteId) {
-      return NextResponse.json({ error: { message: "No siteId provided" } }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: {
+            message: "No file provided",
+            code: "VALIDATION_ERROR",
+            details: [
+              {
+                field: "file",
+                message: `Allowed file types: ${ALLOWED_EXTENSIONS.join(", ")}. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+              },
+            ],
+          },
+        },
+        { status: 400 }
+      );
     }
 
     // Verify user owns the site

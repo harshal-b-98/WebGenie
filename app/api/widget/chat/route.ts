@@ -8,46 +8,99 @@ import { defaultChatModel } from "@/lib/ai/client";
 import { createClient } from "@/lib/db/server";
 import * as semanticSearchService from "@/lib/services/semantic-search-service";
 import { logger } from "@/lib/utils/logger";
+import { widgetChatRequestSchema, formatZodErrors } from "@/lib/validation";
+import { ZodError } from "zod";
+import { memoryCache, CacheKeys, hashString } from "@/lib/cache";
+
+// CORS headers for widget requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
 export async function POST(request: Request) {
   try {
-    const { projectId, message, conversationHistory } = await request.json();
-
-    if (!projectId || !message) {
+    // Parse and validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: { message: "projectId and message are required" } },
-        { status: 400 }
+        { error: { message: "Invalid JSON in request body" } },
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    logger.info("Widget chat request", { projectId, message: message.substring(0, 50) });
-
-    // Verify project exists and get site info
-    const supabase = await createClient();
-    const { data: site, error: siteError } = await supabase
-      .from("sites")
-      .select("id, title, description")
-      .eq("id", projectId)
-      .single();
-
-    if (siteError || !site) {
-      logger.error("Site not found for widget chat", { projectId });
-      return NextResponse.json({ error: { message: "Project not found" } }, { status: 404 });
+    // Validate with Zod schema
+    let validatedData;
+    try {
+      validatedData = widgetChatRequestSchema.parse(body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        logger.warn("Widget chat validation failed", { issues: error.issues });
+        return NextResponse.json(formatZodErrors(error), { status: 400, headers: corsHeaders });
+      }
+      throw error;
     }
 
-    const siteName = (site as { title: string }).title;
+    const { projectId, message, conversationHistory } = validatedData;
 
-    // Perform semantic search to find relevant content
-    logger.info("Performing semantic search", { projectId, query: message });
+    logger.info("Widget chat request", { projectId, message: message.substring(0, 50) });
 
-    const relevantChunks = await semanticSearchService.semanticSearch(projectId, message, {
-      limit: 10,
-      threshold: 0.7,
-    });
+    // Get site info (with caching)
+    const siteKey = CacheKeys.site(projectId);
+    let site = memoryCache.sites.get(siteKey) as
+      | { id: string; title: string; description: string }
+      | undefined;
+
+    if (!site) {
+      const supabase = await createClient();
+      const { data: siteData, error: siteError } = await supabase
+        .from("sites")
+        .select("id, title, description")
+        .eq("id", projectId)
+        .single();
+
+      if (siteError || !siteData) {
+        logger.error("Site not found for widget chat", { projectId });
+        return NextResponse.json({ error: { message: "Project not found" } }, { status: 404 });
+      }
+
+      site = siteData as { id: string; title: string; description: string };
+      memoryCache.sites.set(siteKey, site);
+      logger.debug("Cached site data", { projectId });
+    }
+
+    const siteName = site.title;
+
+    // Perform semantic search (with result caching for identical queries)
+    const queryHash = hashString(message.toLowerCase().trim());
+    const searchCacheKey = CacheKeys.embeddingSearch(projectId, queryHash);
+
+    let relevantChunks = memoryCache.embeddings.get(searchCacheKey) as
+      | Awaited<ReturnType<typeof semanticSearchService.semanticSearch>>
+      | undefined;
+
+    if (!relevantChunks) {
+      logger.info("Performing semantic search", { projectId, query: message });
+
+      relevantChunks = await semanticSearchService.semanticSearch(projectId, message, {
+        limit: 10,
+        threshold: 0.7,
+      });
+
+      // Cache search results for 5 minutes
+      memoryCache.embeddings.set(searchCacheKey, relevantChunks);
+      logger.debug("Cached semantic search results", { projectId, queryHash });
+    } else {
+      logger.debug("Using cached semantic search results", { projectId, queryHash });
+    }
 
     logger.info("Semantic search complete", {
       projectId,
       resultsFound: relevantChunks.length,
+      cached: !!memoryCache.embeddings.has(searchCacheKey),
     });
 
     // Build context from search results

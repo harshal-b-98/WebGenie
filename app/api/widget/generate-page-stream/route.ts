@@ -31,9 +31,15 @@ interface StreamPageRequest {
   versionId?: string;
   pageType: "segment" | "detail";
   segment: string;
-  itemSlug?: string;
+  topic?: string; // For detail pages
+  itemSlug?: string; // Legacy support
   sessionId?: string;
   behaviorSignals?: PersonaSignals;
+  context?: {
+    currentPage?: string;
+    clickedTopic?: string;
+    parentSegment?: string;
+  };
 }
 
 /**
@@ -72,23 +78,48 @@ function validateSectionHtml(sectionId: string, html: string): SectionValidation
 }
 
 /**
+ * Convert slug to readable name
+ */
+function formatSlugToName(slug: string): string {
+  return slug
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
+ * Context for section generation
+ */
+interface SectionContext {
+  companyName: string;
+  segmentName: string;
+  segmentSlug: string;
+  segmentDescription: string;
+  items: Array<{ name: string; slug: string; description: string; hasDetailPage: boolean }>;
+  brandColors: string;
+  logoUrl: string | null;
+  allSegments: Array<{ name: string; slug: string }>;
+  primaryCTA: { text: string; action: string };
+  personaEmphasis: string;
+  documentContent: string;
+  // For detail pages
+  pageType: "segment" | "detail";
+  topicName?: string;
+  topicSlug?: string;
+  parentSegment?: string;
+  navigationContext?: {
+    currentPage?: string;
+    clickedTopic?: string;
+  };
+}
+
+/**
  * Generate section-specific prompts for streaming
  * OPTIMIZED: 3 sections instead of 5 for faster generation and less tokens
  */
 function generateSectionPrompt(
   section: string,
-  context: {
-    companyName: string;
-    segmentName: string;
-    segmentDescription: string;
-    items: Array<{ name: string; slug: string; description: string; hasDetailPage: boolean }>;
-    brandColors: string;
-    logoUrl: string | null;
-    allSegments: Array<{ name: string; slug: string }>;
-    primaryCTA: { text: string; action: string };
-    personaEmphasis: string;
-    documentContent: string;
-  }
+  context: SectionContext
 ): { system: string; prompt: string } {
   const baseSystem = `Generate HTML using Tailwind CSS. Output raw HTML only - no markdown.
 
@@ -118,6 +149,16 @@ Include <script src="https://unpkg.com/feather-icons"></script> in head and call
     .map((s) => `${abbreviate(s.name)} (data-segment="${s.slug}")`)
     .join(", ");
 
+  // Determine page title based on type
+  const pageTitle =
+    context.pageType === "detail" && context.topicName ? context.topicName : context.segmentName;
+
+  // Build breadcrumb based on page type
+  const breadcrumb =
+    context.pageType === "detail" && context.parentSegment
+      ? `Home > ${formatSlugToName(context.parentSegment)} > ${pageTitle}`
+      : `Home > ${pageTitle}`;
+
   switch (section) {
     // COMBINED: navbar + hero
     case "header":
@@ -129,12 +170,25 @@ CRITICAL RULES:
 - NO placeholder text EVER - use ONLY real content from the provided page description and context
 - NO invented facts, data, names, or Lorem ipsum
 - Extract the headline, subtitle, and benefits directly from the page description below
+- PAGE TITLE MUST BE EXACTLY: "${pageTitle}" (DO NOT change or rephrase this title)
 
 Company: ${context.companyName}
 Logo: ${context.logoUrl || "Text logo"}
 Nav: ${navItems}
-Current Page: ${context.segmentName}
+Current Page: ${pageTitle}
+Page Type: ${context.pageType === "detail" ? "Detail/Topic Page" : "Segment Page"}
 CTA: "${context.primaryCTA.text}"
+
+${
+  context.pageType === "detail"
+    ? `
+DETAIL PAGE CONTEXT:
+- User clicked on: "${context.topicName || context.topicSlug}"
+- Parent segment: ${context.parentSegment || "general"}
+- This is a DEEP DIVE page - provide detailed, specific content about this exact topic
+`
+    : ""
+}
 
 PAGE DESCRIPTION (USE THIS FOR ALL CONTENT):
 ${context.segmentDescription}
@@ -156,7 +210,7 @@ STRUCTURE:
    - Centered content with flex items-center justify-center
 
    HERO CONTENT:
-   a) Breadcrumb: <a data-action="back-to-landing" class="cursor-pointer hover:underline">Home</a> > ${context.segmentName} (text-gray-400 text-sm mb-4)
+   a) Breadcrumb: ${breadcrumb} - make "Home" clickable with data-action="back-to-landing"${context.pageType === "detail" && context.parentSegment ? ` and parent segment "${formatSlugToName(context.parentSegment)}" clickable with data-segment="${context.parentSegment}"` : ""} (text-gray-400 text-sm mb-4)
    b) Icon badge: Use Feather icon in gradient container:
       <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 mx-auto">
         <i data-feather="[icon]" class="w-8 h-8 text-white"></i>
@@ -206,26 +260,81 @@ Output <header data-section="header"> containing nav and hero section.`,
       };
 
     case "content":
+      // Different content prompts for segment vs detail pages
+      if (context.pageType === "detail") {
+        // Detail page: deep dive content about specific topic
+        const relatedTopics = context.items
+          .filter((item) => item.slug !== context.topicSlug)
+          .slice(0, 4)
+          .map(
+            (item) =>
+              `- ${item.name} (data-topic="${item.slug}" data-parent-segment="${context.parentSegment || context.segmentSlug}")`
+          )
+          .join("\n");
+
+        return {
+          system: baseSystem,
+          prompt: `Generate DETAILED content section for "${context.topicName || context.topicSlug}".
+
+CRITICAL: This is a DETAIL/DEEP-DIVE page about "${context.topicName || context.topicSlug}".
+The user clicked on this specific topic - generate comprehensive, in-depth content about THIS topic.
+
+TOPIC: ${context.topicName || formatSlugToName(context.topicSlug || "")}
+Parent Segment: ${context.parentSegment || context.segmentSlug}
+
+PAGE DESCRIPTION:
+${context.segmentDescription}
+
+DOCUMENT CONTENT (extract real details):
+${context.documentContent.substring(0, 4000)}
+
+${context.personaEmphasis}
+
+STRUCTURE FOR DETAIL PAGE:
+1. Overview section: 2-3 paragraphs explaining this topic in depth
+2. Key Benefits/Features: 3-5 specific benefits with icons
+3. How It Works: Step-by-step or process explanation if applicable
+4. Use Cases: 2-3 real-world applications
+5. Related Topics section with clickable links:
+${relatedTopics || "  - Show links back to parent segment"}
+
+NAVIGATION RULES:
+- Related topics use: data-topic="slug" data-parent-segment="${context.parentSegment || context.segmentSlug}"
+- Back to segment use: data-segment="${context.parentSegment || context.segmentSlug}"
+- If no more related topics, show CTA: data-action="cta-primary" data-cta-type="demo"
+
+Output <section data-section="content">.`,
+        };
+      }
+
+      // Segment page: grid of clickable cards
       const itemsList = context.items
         .slice(0, 6) // Limit to 6 items max
         .map(
           (item) =>
-            `- ${item.name}: ${item.description.substring(0, 100)} (data-item-id="${item.slug}")`
+            `- ${item.name}: ${item.description.substring(0, 100)} (data-topic="${item.slug}" data-parent-segment="${context.segmentSlug}")`
         )
         .join("\n");
 
       return {
         system: baseSystem,
-        prompt: `Generate main content section.
+        prompt: `Generate main content section for "${pageTitle}".
 
-${context.segmentName} - Items:
+PAGE TITLE (use exactly): ${pageTitle}
+
+${pageTitle} - Clickable Items (each opens a detail page):
 ${itemsList}
 
 Reference: ${context.documentContent.substring(0, 3000)}
 
 ${context.personaEmphasis}
 
-Structure: Light bg, grid of cards (icon + title + description), each card with data-item-id, hover effects.
+NAVIGATION RULES FOR CARDS:
+- Each card MUST have: data-topic="[item-slug]" data-parent-segment="${context.segmentSlug}"
+- This makes cards clickable to show detail pages
+- Example: <div class="card cursor-pointer" data-topic="feature-name" data-parent-segment="${context.segmentSlug}">...</div>
+
+Structure: Light bg, grid of cards (icon + title + description), each card with data-topic and data-parent-segment attributes, hover effects, cursor-pointer.
 
 Output <section data-section="content">.`,
       };
@@ -239,10 +348,28 @@ Output <section data-section="content">.`,
 Company: ${context.companyName}
 CTA: "${context.primaryCTA.text}"
 Nav: ${navItems}
+Page Type: ${context.pageType === "detail" ? "Detail Page" : "Segment Page"}
+
+${
+  context.pageType === "detail"
+    ? `
+DETAIL PAGE FOOTER:
+- Include "Back to ${formatSlugToName(context.parentSegment || context.segmentSlug)}" link with data-segment="${context.parentSegment || context.segmentSlug}"
+- CTA should encourage exploring more or getting in touch
+`
+    : ""
+}
 
 Structure:
-1. CTA band: gradient bg, headline, 2 buttons (primary + secondary)
+1. CTA band: gradient bg, headline, 2 buttons
+   - Primary: data-action="cta-primary" data-cta-type="demo"
+   - Secondary: data-action="cta-primary" data-cta-type="contact"
 2. Footer: dark bg, logo (data-action="back-to-landing"), quick links with data-segment, copyright
+
+NAVIGATION ATTRIBUTES (REQUIRED):
+- Logo/Home: data-action="back-to-landing"
+- Segment links: data-segment="segment-slug"
+- CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
 
 Output <footer data-section="footer"> containing CTA section and footer.`,
       };
@@ -289,7 +416,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as StreamPageRequest;
-    const { siteId, versionId, pageType, segment, itemSlug, sessionId, behaviorSignals } = body;
+    const {
+      siteId,
+      versionId,
+      pageType,
+      segment,
+      topic, // For detail pages
+      itemSlug, // Legacy support
+      sessionId,
+      behaviorSignals,
+      context: requestContext, // Navigation context
+    } = body;
+
+    // Use topic or itemSlug for detail pages
+    const topicSlug = topic || itemSlug;
 
     // Validate required fields
     if (!siteId || !segment) {
@@ -299,7 +439,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    logger.info("Starting streaming page generation", { siteId, pageType, segment, itemSlug });
+    // For detail pages, topic is required
+    if (pageType === "detail" && !topicSlug) {
+      return new Response(JSON.stringify({ error: "topic is required for detail pages" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    logger.info("Starting streaming page generation", {
+      siteId,
+      pageType,
+      segment,
+      topic: topicSlug,
+      context: requestContext,
+    });
 
     // Get site and content structure using service client (widget routes are unauthenticated)
     const serviceSupabase = createServiceClient(
@@ -395,11 +549,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // For detail pages, find the specific topic info
+    let topicInfo: { name: string; slug: string; description: string } | undefined;
+    if (pageType === "detail" && topicSlug) {
+      // Look for topic in segment items
+      topicInfo = segmentData.items.find((item: { slug: string }) => item.slug === topicSlug);
+
+      // If not found, create from slug
+      if (!topicInfo) {
+        topicInfo = {
+          name: formatSlugToName(topicSlug),
+          slug: topicSlug,
+          description: `Detailed information about ${formatSlugToName(topicSlug)}`,
+        };
+      }
+    }
+
+    // Determine page slug for caching/navigation
+    const pageSlug = pageType === "detail" && topicSlug ? `${segment}/${topicSlug}` : segment;
+
     // Prepare context for section generation
-    const context = {
+    const context: SectionContext = {
       companyName: site.title || "Company",
       segmentName: segmentData.name,
-      segmentDescription: segmentData.description,
+      segmentSlug: segment,
+      segmentDescription:
+        pageType === "detail" && topicInfo ? topicInfo.description : segmentData.description,
       items: segmentData.items.map(
         (item: { name: string; slug: string; description: string; hasDetailPage: boolean }) => ({
           name: item.name,
@@ -417,6 +592,12 @@ export async function POST(request: NextRequest) {
       primaryCTA: contentStructure.primaryCTA,
       personaEmphasis,
       documentContent,
+      // Detail page specific
+      pageType: pageType || "segment",
+      topicName: topicInfo?.name,
+      topicSlug: topicSlug,
+      parentSegment: pageType === "detail" ? segment : undefined,
+      navigationContext: requestContext,
     };
 
     // Create streaming response
@@ -430,7 +611,7 @@ export async function POST(request: NextRequest) {
         try {
           // Send initial skeleton structure - OPTIMIZED: 3 sections instead of 5
           const sections = ["header", "content", "footer"];
-          sendEvent("skeleton", { sections, pageSlug: segment });
+          sendEvent("skeleton", { sections, pageSlug, pageType: context.pageType });
 
           // Generate document wrapper
           const wrapper = generateDocumentWrapper(context.companyName);
@@ -512,7 +693,8 @@ export async function POST(request: NextRequest) {
 
           // Send completion event with validation status
           sendEvent("complete", {
-            pageSlug: segment,
+            pageSlug,
+            pageType: context.pageType,
             cached: false,
             sectionsGenerated: Object.keys(sectionResults).length,
             validationStatus: {
@@ -524,7 +706,8 @@ export async function POST(request: NextRequest) {
 
           logger.info("Parallel generation complete", {
             siteId,
-            segment,
+            pageSlug,
+            pageType: context.pageType,
             sectionsGenerated: Object.keys(sectionResults).length,
             successCount,
             failedSections,

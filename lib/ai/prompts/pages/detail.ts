@@ -48,22 +48,32 @@ REQUIRED SECTIONS:
    - Example implementations
 
 6. RELATED TOPICS
-   - Links to related features/solutions
-   - "You might also like" section
+   - Links to related features/solutions with proper data attributes
+   - "You might also like" section with clickable cards
+   - Each card MUST have: data-topic="slug" data-parent-segment="parent-slug"
 
 7. CTA SECTION
-   - Primary action: "Try This Feature" / "Learn More"
-   - Secondary: "Back to [Segment]"
+   - Primary action with: data-action="cta-primary" data-cta-type="demo"
+   - Secondary: Back button with data-segment="parent-slug"
 
 8. FOOTER
    - Minimal footer matching other pages
+   - Logo with data-action="back-to-landing"
+
+CRITICAL NAVIGATION RULES:
+- NEVER use plain href="#" links - they cause navigation to break
+- Home/Logo: data-action="back-to-landing"
+- Segment links: data-segment="segment-slug"
+- Topic links: data-topic="topic-slug" data-parent-segment="parent-slug"
+- CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
+- All clickable items need cursor-pointer class
 
 IMPORTANT:
 - Adapt content depth based on detected persona
 - Include technical details for developers
 - Include business value for executives
 - Keep focused on the specific topic
-- Link to related topics for exploration
+- Link to related topics for exploration with proper data attributes
 
 Return ONLY the complete HTML document.`;
 
@@ -134,15 +144,37 @@ export function generateDetailPagePrompt(requirements: DetailPageRequirements): 
     });
   }
 
-  prompt += `\nREQUIREMENTS:
+  prompt += `\n--- CRITICAL NAVIGATION REQUIREMENTS ---
+
+MANDATORY: ALL clickable elements MUST have proper data attributes. NEVER use plain href="#" links.
+
+CORRECT DATA ATTRIBUTE PATTERNS:
+1. Home/Logo: <a href="#" data-action="back-to-landing">Home</a>
+2. Segment navigation: <a href="#" data-segment="${requirements.parentSegment}">Back to ${parentLabel}</a>
+3. Related topic links: <button data-topic="topic-slug" data-parent-segment="${requirements.parentSegment}">Topic Name</button>
+4. CTA buttons: <button data-action="cta-primary" data-cta-type="demo">Schedule Demo</button>
+
+WRONG (causes navigation to break):
+- <a href="#">Link</a>  ← NEVER DO THIS
+- <a href="#section">Link</a>  ← Only for same-page anchors
+- <a href="javascript:void(0)">Link</a>  ← NEVER DO THIS
+
+FOR RELATED TOPICS CARDS (MUST BE CLICKABLE):
+<div data-topic="topic-slug" data-parent-segment="${requirements.parentSegment}" class="cursor-pointer hover:shadow-lg transition-shadow rounded-lg p-6 bg-white">
+  <h3>Related Topic Name</h3>
+  <p>Brief description</p>
+</div>
+
+REQUIREMENTS:
 1. Focus ONLY on "${requirements.topicSlug}" topic
 2. Provide comprehensive information about this specific ${requirements.detailType}
 3. Include breadcrumb: Home > ${parentLabel} > ${requirements.topicName || requirements.topicSlug}
-4. Add links to related topics from the same segment
+4. Add links to related topics from the same segment (use data-topic attributes!)
 5. Include both technical details and business value
 6. Include an "Explore More" section with links to related segments
 7. Use data-segment="slug" attributes for segment navigation links
 8. Use data-action="back-to-landing" for Home/logo links
+9. If no related topics available, show a CTA: <button data-action="cta-primary" data-cta-type="contact">Get in Touch</button>
 
 Generate the complete HTML now.`;
 

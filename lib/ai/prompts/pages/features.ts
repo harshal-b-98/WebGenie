@@ -40,7 +40,7 @@ REQUIRED SECTIONS:
 3. FEATURE GRID
    - 6-12 feature cards in responsive grid
    - Each card MUST have these attributes:
-     * data-feature-id="[feature-slug]" (e.g., data-feature-id="ai-analytics")
+     * data-topic="[feature-slug]" data-parent-segment="features" (e.g., data-topic="ai-analytics")
      * class="cursor-pointer" for pointer cursor
      * hover:shadow-lg hover:scale-105 transition for interactivity
    - Card content:
@@ -52,7 +52,7 @@ REQUIRED SECTIONS:
 
 4. FEATURE HIGHLIGHTS
    - 2-3 key features expanded with more detail
-   - Each highlight card also has data-feature-id attribute
+   - Each highlight card also has data-topic and data-parent-segment attributes
    - Alternating layout
    - Bullet points for benefits
 
@@ -71,10 +71,17 @@ REQUIRED SECTIONS:
    - Quick links with data-segment attributes
    - Copyright
 
-CRITICAL DATA ATTRIBUTES:
-- All clickable feature cards: data-feature-id="[slug]"
-- Navigation to other segments: data-segment="[segment-name]"
+CRITICAL DATA ATTRIBUTES (MANDATORY FOR ALL CLICKABLE ELEMENTS):
+- Feature cards: data-topic="[feature-slug]" data-parent-segment="features"
+- Navigation to other segments: data-segment="[segment-slug]"
 - Back to landing page: data-action="back-to-landing"
+- CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
+
+NEVER USE PLAIN HREF LINKS:
+- WRONG: <a href="#">Link</a>
+- WRONG: <a href="javascript:void(0)">Link</a>
+- RIGHT: <a href="#" data-segment="solutions">View Solutions</a>
+- RIGHT: <div data-topic="ai-analytics" data-parent-segment="features" class="cursor-pointer">Feature Card</div>
 
 Return ONLY the complete HTML document.`;
 
@@ -110,11 +117,21 @@ export function generateFeaturesPagePrompt(requirements: FeaturesPageRequirement
     prompt += `\n${requirements.personaEmphasis}\n`;
   }
 
-  prompt += `\nREQUIREMENTS:
+  prompt += `\n
+--- CRITICAL NAVIGATION REQUIREMENTS ---
+MANDATORY: ALL clickable elements MUST have proper data attributes. NEVER use plain href="#" links.
+
+CORRECT PATTERNS:
+- Feature cards: data-topic="feature-slug" data-parent-segment="features" class="cursor-pointer"
+- Segment links: data-segment="solutions"
+- Home/Logo: data-action="back-to-landing"
+- CTA buttons: data-action="cta-primary" data-cta-type="demo"
+
+REQUIREMENTS:
 1. Extract and display ALL features from the documents
-2. Each feature card must have data-feature-id="[slug]" for detail navigation
-3. Include breadcrumb navigation: Home > Features
-4. Add navigation links to other segments (Solutions, Platform, FAQ)
+2. Each feature card MUST have data-topic="[slug]" data-parent-segment="features" for detail navigation
+3. Include breadcrumb navigation: Home > Features (Home clickable with data-action="back-to-landing")
+4. Add navigation links to other segments (Solutions, Platform, FAQ) with data-segment attributes
 5. Use consistent styling with dark header, light content sections
 
 Generate the complete HTML now.`;
