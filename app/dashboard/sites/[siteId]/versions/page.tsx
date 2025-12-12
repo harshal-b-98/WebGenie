@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { GitCompare } from "lucide-react";
 
 interface SiteVersion {
   id: string;
@@ -60,25 +61,35 @@ export default async function VersionsPage({ params }: { params: Promise<{ siteI
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <Link
-            href={`/dashboard/sites/${siteId}`}
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Site
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{typedSite.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage all generated versions of your website
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <Link
+              href={`/dashboard/sites/${siteId}`}
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+            >
+              <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back to Site
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">{typedSite.title}</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage all generated versions of your website
+            </p>
+          </div>
+          {typedVersions.length >= 2 && (
+            <Button asChild>
+              <Link href={`/dashboard/sites/${siteId}/versions/compare`}>
+                <GitCompare className="w-4 h-4 mr-2" />
+                Compare Versions
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* No versions message */}
@@ -148,6 +159,16 @@ export default async function VersionsPage({ params }: { params: Promise<{ siteI
                           Preview
                         </Link>
                       </Button>
+                      {typedVersions.length >= 2 && (
+                        <Button asChild variant="outline" size="sm">
+                          <Link
+                            href={`/dashboard/sites/${siteId}/versions/compare?right=${version.id}`}
+                          >
+                            <GitCompare className="w-3 h-3 mr-1" />
+                            Compare
+                          </Link>
+                        </Button>
+                      )}
                       {!isCurrentVersion && (
                         <form
                           action={`/api/sites/${siteId}/versions/${version.id}/set-current`}

@@ -158,3 +158,79 @@
     transform: translateY(0);
   }
 }
+
+/* Section complete glow effect */
+.section-complete {
+  animation: section-complete-glow 0.6s ease-out forwards;
+}
+
+@keyframes section-complete-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(34, 197, 94, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* Generating section pulse */
+.section-generating {
+  animation: generating-pulse 2s ease-in-out infinite;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+@keyframes generating-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px 0 rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.4);
+    border-color: rgba(99, 102, 241, 0.6);
+  }
+}
+
+/* Progress bar glow */
+.progress-bar-glow {
+  box-shadow: 0 0 10px 2px rgba(99, 102, 241, 0.5);
+}
+
+/* Staggered animation delays */
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+
+/* Success checkmark animation */
+.success-check {
+  animation: success-bounce 0.5s ease-out forwards;
+}
+
+@keyframes success-bounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
