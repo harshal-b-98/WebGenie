@@ -27,10 +27,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh session if expired - handle errors gracefully
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (error) {
+    // If token refresh fails (e.g., invalid refresh token), treat as no user
+    console.error("[Middleware] Auth error:", error);
+    user = null;
+  }
 
   // Protected routes
   const protectedPaths = ["/dashboard"];

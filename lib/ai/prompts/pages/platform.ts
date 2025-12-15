@@ -17,73 +17,86 @@ It should provide technical details for developers and technical evaluators.
 OUTPUT REQUIREMENTS:
 - Complete HTML5 document
 - Tailwind CSS v3 via CDN
-- Google Fonts: Roboto
-- Vanilla JavaScript only
+- Feather Icons ONLY: <script src="https://unpkg.com/feather-icons"></script>
+- Call feather.replace() at end of body
+- Google Fonts: Inter
 - NO placeholder content - use ONLY real technical details from documents
 
-REQUIRED SECTIONS:
+================================================================================
+ICON RULES (STRICTLY ENFORCED - NO EXCEPTIONS)
+================================================================================
+
+USE FEATHER ICONS ONLY:
+- Syntax: <i data-feather="icon-name" class="w-6 h-6"></i>
+- Call feather.replace() before </body>
+
+ICON CONTAINERS:
+<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+  <i data-feather="icon-name" class="w-6 h-6 text-white"></i>
+</div>
+
+GOOD PLATFORM ICONS: cpu, layers, server, database, code, shield, lock, refresh-cw, cloud, git-branch
+
+NEVER USE: <img> tags, placeholders, "?", emoji, external URLs, gray boxes
+
+================================================================================
+REQUIRED SECTIONS
+================================================================================
 
 1. NAVIGATION BAR
-   - Logo on left (clickable, data-action="back-to-landing")
-   - Navigation links: Home (data-action="back-to-landing"), Features (data-segment="features"), Solutions (data-segment="solutions"), FAQ (data-segment="faq")
-   - Current page "Platform" highlighted
-   - "Get Started" button on right
-   - Sticky on scroll
+   - Fixed: fixed top-0 left-0 right-0 z-50
+   - Background: bg-white/95 backdrop-blur-md shadow-sm
+   - Height: h-16
+   - Structure: Logo LEFT, nav links CENTER-LEFT, CTA RIGHT
+   - Navigation LEFT-ALIGNED
 
-2. PAGE HEADER
-   - Dark gradient background
-   - Breadcrumb: Home > Platform (Home is clickable with data-action="back-to-landing")
-   - "Platform" or "Under the Hood" as main heading (H1)
-   - Tagline about technical excellence
-   - White/light text
+2. PAGE HEADER WITH BREADCRUMB
+   - Dark gradient: from-slate-900 via-gray-900 to-slate-800
+   - Padding: py-16 md:py-24
+
+   EXACT BREADCRUMB HTML (copy this pattern):
+   <nav class="bg-gray-50 border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+       <ol class="flex items-center space-x-2 text-sm">
+         <li>
+           <a href="#" data-action="back-to-landing" class="text-gray-500 hover:text-indigo-600 transition-colors">Home</a>
+         </li>
+         <li><i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i></li>
+         <li class="text-gray-900 font-medium">Platform</li>
+       </ol>
+     </div>
+   </nav>
+
+   - H1: text-4xl md:text-5xl font-bold text-white
 
 3. ARCHITECTURE OVERVIEW
-   - Visual representation (simplified diagram in HTML/CSS)
-   - Key components explained
-   - How parts work together
+   - Use HTML/CSS for diagrams (divs, borders, Feather icons)
+   - NO images or placeholders
 
 4. TECHNICAL CAPABILITIES
-   - Grid of technical features
-   - Performance metrics if available
-   - Scalability information
-   - Each capability clickable if detail exists: data-capability-id="[slug]"
+   - Cards with consistent styling:
+     * bg-white rounded-2xl shadow-lg p-6 md:p-8
+     * Icon container (w-12 h-12 rounded-xl gradient)
+     * Title: text-xl font-semibold
+     * Description: text-gray-600
+   - Each card: data-topic="[slug]" data-parent-segment="platform" class="cursor-pointer"
 
 5. INTEGRATIONS
-   - Available integrations
-   - API capabilities
-   - SDK information
-   - Code snippets if appropriate (basic examples)
+   - Use Feather icons (link, zap, layers)
+   - NO partner logos or external images
 
 6. SECURITY & COMPLIANCE
-   - Security features
-   - Compliance certifications (only if mentioned in documents)
-   - Data handling practices
+   - Use shield, lock, check-circle icons
 
-7. DEVELOPER RESOURCES
-   - Links to documentation (placeholder)
-   - API reference (placeholder)
-   - Getting started guide summary
+7. CTA SECTION
+   - Primary: data-action="cta-primary" data-cta-type="demo"
+   - Secondary: data-action="back-to-landing"
 
-8. EXPLORE OTHER SECTIONS
-   - Section with links to other pages:
-     * "View Features" button (data-segment="features")
-     * "View Solutions" button (data-segment="solutions")
-     * "Frequently Asked Questions" button (data-segment="faq")
+8. FOOTER (consistent)
+   - Logo with data-action="back-to-landing"
+   - Quick links with data-segment
 
-9. CTA SECTION
-   - "Get Started" primary button
-   - "Back to Home" secondary button (data-action="back-to-landing")
-
-10. FOOTER
-   - Logo (data-action="back-to-landing")
-   - Quick links with data-segment attributes
-   - Copyright
-
-CRITICAL DATA ATTRIBUTES:
-- All clickable capability cards: data-capability-id="[slug]"
-- Navigation to other segments: data-segment="[segment-name]"
-- Back to landing page: data-action="back-to-landing"
-- This page targets TECHNICAL audiences
+CRITICAL: All capability cards must have data-topic and data-parent-segment="platform" attributes.
 
 Return ONLY the complete HTML document.`;
 

@@ -79,14 +79,30 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
       - Secondary CTA MUST have: data-action="cta-secondary" data-cta-type="[demo|signup|contact|learn-more]"
         Style: bg-white/10 backdrop-blur text-white border border-white/20 px-8 py-4 rounded-full
         Example: <button data-action="cta-secondary" data-cta-type="learn-more" class="bg-white/10...">Learn More</button>
-   e) FEATURE HIGHLIGHTS ROW (below CTAs):
-      - mt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-4xl mx-auto
+   e) FEATURE HIGHLIGHTS ROW (below CTAs) - MUST BE CENTERED:
+      - Container: mt-16 flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto w-full
       - Each highlight: flex items-center gap-3 text-gray-300
       - Use Feather icons: <i data-feather="check-circle" class="w-5 h-5"></i>
       - CRITICAL: Extract 3-4 ACTUAL key benefits from the provided documents
       - DO NOT use generic examples - find REAL differentiators from the business content
       - Look for: unique features, statistics, guarantees, awards, certifications mentioned in documents
       - Appropriate Feather icons: check-circle, star, shield, zap, award, trending-up, clock, users
+
+      EXACT HTML STRUCTURE FOR BENEFITS (copy this pattern):
+      <div class="mt-16 flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto w-full">
+        <span class="flex items-center gap-3 text-gray-300">
+          <i data-feather="check-circle" class="w-5 h-5"></i>
+          <span>Benefit 1</span>
+        </span>
+        <span class="flex items-center gap-3 text-gray-300">
+          <i data-feather="star" class="w-5 h-5"></i>
+          <span>Benefit 2</span>
+        </span>
+        <span class="flex items-center gap-3 text-gray-300">
+          <i data-feather="zap" class="w-5 h-5"></i>
+          <span>Benefit 3</span>
+        </span>
+      </div>
 
    HERO VISUAL ENHANCEMENTS:
    - Add floating/animated elements using CSS: subtle floating dots, gradient orbs

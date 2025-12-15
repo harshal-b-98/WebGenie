@@ -89,6 +89,11 @@
       this.explorerOpen = false;
       this.streamingInProgress = false;
 
+      // Navigation stack for deterministic breadcrumb navigation
+      // Each entry: { slug: 'segment-slug', name: 'Segment Name', type: 'segment'|'topic' }
+      this.navigationStack = [];
+      this.companyName = ""; // Will be extracted from landing page
+
       this.init();
     }
 
@@ -122,10 +127,71 @@
       // Only save if not already saved and we're on landing page
       // Include versionId in key to support version-specific navigation
       const cacheKey = "ngw_landing_html_" + config.siteId + "_" + config.versionId;
+
+      // Extract company name from landing page for navigation
+      const logoElement =
+        document.querySelector('[data-action="back-to-landing"]') ||
+        document.querySelector("header a:first-child") ||
+        document.querySelector("nav a:first-child");
+      if (logoElement && !this.companyName) {
+        this.companyName =
+          logoElement.textContent?.trim() || logoElement.getAttribute("alt") || "Home";
+      }
       if (!sessionStorage.getItem(cacheKey)) {
         sessionStorage.setItem(cacheKey, document.documentElement.outerHTML);
         console.log("[DynamicNav] Landing page saved for version:", config.versionId);
       }
+
+      // Fix hero section alignment issues after page load
+      this.fixHeroAlignment();
+    }
+
+    /**
+     * Fix hero section benefit items alignment
+     * This corrects any AI-generated layout issues where benefit items are not centered
+     */
+    fixHeroAlignment() {
+      // Find the hero section (dark gradient background)
+      const heroSection = document.querySelector(
+        'section[class*="from-slate"], section[class*="from-gray"], section[class*="bg-gradient"]'
+      );
+      if (!heroSection) return;
+
+      // Find all flex containers with text-gray-300 (benefit items)
+      const benefitContainers = heroSection.querySelectorAll(".text-gray-300");
+
+      // Find the parent container of benefit items (the row containing multiple benefits)
+      benefitContainers.forEach((el) => {
+        const parent = el.parentElement;
+        if (parent && parent.children.length > 1) {
+          // This is likely the container holding multiple benefit items
+          // Check if it's a flex container
+          const computedStyle = window.getComputedStyle(parent);
+          if (computedStyle.display === "flex") {
+            // Center the items
+            parent.style.justifyContent = "center";
+            parent.style.width = "100%";
+            parent.style.flexWrap = "wrap";
+            parent.style.gap = "2rem";
+            console.log("[DynamicNav] Fixed hero benefit alignment");
+          }
+        }
+      });
+
+      // Also try to find by structure: div containing multiple spans with icons
+      const allDivs = heroSection.querySelectorAll("div");
+      allDivs.forEach((div) => {
+        const spans = div.querySelectorAll(":scope > span.flex.items-center");
+        if (spans.length >= 2) {
+          // This div contains multiple benefit items
+          div.style.display = "flex";
+          div.style.justifyContent = "center";
+          div.style.width = "100%";
+          div.style.flexWrap = "wrap";
+          div.style.gap = "2rem";
+          console.log("[DynamicNav] Fixed hero benefit container alignment");
+        }
+      });
     }
 
     setupEventListeners() {
@@ -150,7 +216,7 @@
             this.currentPage.split("/")[0] ||
             this.currentPage;
           console.log("[DynamicNav] Navigating to topic:", parentSegment, topic);
-          this.navigateToTopicWithStreaming(parentSegment, topic);
+          this.navigateToTopicFallback(parentSegment, topic);
           return;
         }
 
@@ -162,7 +228,7 @@
           // Find parent segment from the page context
           const currentSegment = this.currentPage.split("/")[0] || this.currentPage;
           console.log("[DynamicNav] Navigating to item detail:", currentSegment, itemId);
-          this.navigateToTopicWithStreaming(currentSegment, itemId);
+          this.navigateToTopicFallback(currentSegment, itemId);
           return;
         }
 
@@ -312,6 +378,23 @@
         console.log("[DynamicNav] Injected Tailwind CSS");
       }
 
+      // Ensure Feather icons are loaded
+      if (!document.querySelector('script[src*="feather-icons"]')) {
+        const featherScript = document.createElement("script");
+        featherScript.src = "https://unpkg.com/feather-icons";
+        document.head.appendChild(featherScript);
+        console.log("[DynamicNav] Injected Feather Icons");
+      }
+
+      // Ensure dynamic nav styles are loaded
+      if (!document.querySelector('link[href*="dynamic-nav/styles.css"]')) {
+        const styleLink = document.createElement("link");
+        styleLink.rel = "stylesheet";
+        styleLink.href = `${config.apiEndpoint.replace("/api/widget", "")}/dynamic-nav/styles.css`;
+        document.head.appendChild(styleLink);
+        console.log("[DynamicNav] Injected navigation styles");
+      }
+
       // Add required styles to head if not present
       if (!document.getElementById("ngw-skeleton-styles")) {
         const styleEl = document.createElement("style");
@@ -332,6 +415,45 @@
           }
           .section-reveal { animation: fade-in 0.5s ease-out forwards; }
           .ngw-skeleton-container { min-height: 100vh; background: #f9fafb; }
+
+          /* Progressive rendering styles */
+          .section-streaming {
+            min-height: 200px;
+            position: relative;
+            overflow: hidden;
+          }
+          .section-streaming::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, #f9fafb);
+            pointer-events: none;
+          }
+
+          /* Hover effects for navigable elements */
+          [data-segment], [data-topic], [data-item-id], [data-action] {
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+          }
+          [data-segment]:hover, [data-topic]:hover, [data-item-id]:hover {
+            opacity: 0.85;
+            transform: translateY(-2px);
+          }
+          [data-action]:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+          }
+
+          /* Card hover effects */
+          [data-topic], [data-item-id] {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          }
+          [data-topic]:hover, [data-item-id]:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+          }
         `;
         document.head.appendChild(styleEl);
       }
@@ -407,10 +529,38 @@
           </div>
         </div>
 
-        <!-- Streaming Indicator -->
-        <div id="streaming-indicator" class="fixed bottom-6 right-6 bg-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-3 z-50">
-          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span class="text-sm text-gray-600">Generating content...</span>
+        <!-- Streaming Indicator with Progress -->
+        <div id="streaming-indicator" class="fixed bottom-6 right-6 bg-white rounded-xl shadow-2xl px-5 py-4 z-50 min-w-[280px]" style="border: 1px solid #e5e7eb;">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="relative">
+              <div class="w-8 h-8 border-3 border-indigo-200 rounded-full"></div>
+              <div class="absolute inset-0 w-8 h-8 border-3 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <div>
+              <div class="font-semibold text-gray-900 text-sm">Generating Page</div>
+              <div id="streaming-status" class="text-xs text-gray-500">Preparing sections...</div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2" data-progress="header">
+              <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+              </div>
+              <span class="text-xs text-gray-600">Header & Navigation</span>
+            </div>
+            <div class="flex items-center gap-2" data-progress="content">
+              <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+              </div>
+              <span class="text-xs text-gray-600">Main Content</span>
+            </div>
+            <div class="flex items-center gap-2" data-progress="footer">
+              <div class="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+              </div>
+              <span class="text-xs text-gray-600">Footer & CTA</span>
+            </div>
+          </div>
         </div>
       `;
 
@@ -440,11 +590,11 @@
 
         if (newSection) {
           newSection.classList.add("section-reveal");
-          // If skeleton was streaming, we're replacing partial content with complete
-          if (skeleton.dataset.streaming) {
-            console.log(`[DynamicNav] Replacing streamed content for ${sectionId}`);
-          }
+          console.log(`[DynamicNav] Revealing section: ${sectionId}`);
           skeleton.replaceWith(newSection);
+
+          // Initialize Feather icons in the new section
+          this.initializeFeatherIcons();
         }
       } else {
         // Fallback: section might already exist, try to find and replace by data-section
@@ -456,7 +606,61 @@
           if (newSection) {
             newSection.classList.add("section-reveal");
             existingSection.replaceWith(newSection);
+
+            // Initialize Feather icons in the new section
+            this.initializeFeatherIcons();
           }
+        }
+      }
+    }
+
+    /**
+     * Initialize Feather icons - called after content is added to DOM
+     */
+    initializeFeatherIcons() {
+      // Wait a tick for DOM to settle, then initialize Feather icons
+      setTimeout(() => {
+        if (typeof feather !== "undefined") {
+          feather.replace();
+          console.log("[DynamicNav] Feather icons initialized");
+        }
+      }, 50);
+    }
+
+    /**
+     * Update streaming progress indicator
+     */
+    updateStreamingProgress(sectionId, status) {
+      const progressEl = document.querySelector(`[data-progress="${sectionId}"]`);
+      if (!progressEl) return;
+
+      const circle = progressEl.querySelector(".w-4");
+      const text = progressEl.querySelector("span");
+
+      if (status === "generating") {
+        // Show spinning animation
+        circle.innerHTML = `<div class="w-4 h-4 border-2 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>`;
+        text.classList.remove("text-gray-600");
+        text.classList.add("text-indigo-600", "font-medium");
+      } else if (status === "complete") {
+        // Show checkmark
+        circle.innerHTML = `
+          <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+          </svg>
+        `;
+        text.classList.remove("text-gray-600", "text-indigo-600");
+        text.classList.add("text-green-600", "font-medium");
+      }
+
+      // Update status text
+      const statusEl = document.getElementById("streaming-status");
+      if (statusEl) {
+        const sectionNames = { header: "Header", content: "Content", footer: "Footer" };
+        if (status === "generating") {
+          statusEl.textContent = `Generating ${sectionNames[sectionId] || sectionId}...`;
+        } else if (status === "complete") {
+          statusEl.textContent = `${sectionNames[sectionId] || sectionId} ready!`;
         }
       }
     }
@@ -467,8 +671,18 @@
     hideStreamingIndicator() {
       const indicator = document.getElementById("streaming-indicator");
       if (indicator) {
-        indicator.style.opacity = "0";
-        setTimeout(() => indicator.remove(), 300);
+        // Show completion state briefly
+        const statusEl = document.getElementById("streaming-status");
+        if (statusEl) {
+          statusEl.textContent = "Page ready!";
+        }
+        // Fade out
+        setTimeout(() => {
+          indicator.style.transition = "opacity 0.3s, transform 0.3s";
+          indicator.style.opacity = "0";
+          indicator.style.transform = "translateY(10px)";
+          setTimeout(() => indicator.remove(), 300);
+        }, 500);
       }
     }
 
@@ -601,26 +815,33 @@
                   fullHtml = data.head + data.bodyOpen;
                   break;
 
+                case "section-start":
+                  // Section is starting to generate - update progress indicator
+                  this.updateStreamingProgress(data.id, "generating");
+                  break;
+
                 case "section-chunk":
-                  // Progressive display: show content as it streams
-                  const skeletonEl = document.querySelector(`[data-skeleton="${data.id}"]`);
-                  if (skeletonEl) {
-                    // First chunk: clear skeleton and start showing content
-                    if (!skeletonEl.dataset.streaming) {
-                      skeletonEl.dataset.streaming = "true";
-                      skeletonEl.innerHTML = "";
-                      skeletonEl.style.background = "transparent";
-                      skeletonEl.style.minHeight = "auto";
-                    }
-                    // Append chunk - shows content character by character
-                    skeletonEl.insertAdjacentHTML("beforeend", data.chunk);
+                  // Buffer chunks silently - DON'T show raw HTML during streaming
+                  // The skeleton remains visible until section-complete fires
+                  // This prevents users from seeing raw HTML code during generation
+                  if (!sectionHtml[data.id]) {
+                    sectionHtml[data.id] = "";
+                    // Update progress when first chunk arrives
+                    this.updateStreamingProgress(data.id, "generating");
                   }
+                  sectionHtml[data.id] += data.chunk;
                   break;
 
                 case "section-complete":
-                  // Final reveal - replace with complete section
+                  // Update progress to complete
+                  this.updateStreamingProgress(data.id, "complete");
+                  // Final reveal - replace skeleton with complete section
                   sectionHtml[data.id] = data.html;
                   this.revealSection(data.id, data.html);
+                  // Initialize Feather icons if present
+                  if (typeof feather !== "undefined") {
+                    setTimeout(() => feather.replace(), 100);
+                  }
                   break;
 
                 case "section-error":
@@ -660,7 +881,12 @@
                   this.currentPage = segment;
                   const baseUrl = window.location.href.split("#")[0];
                   history.pushState(
-                    { page: segment, siteId: config.siteId, versionId: config.versionId },
+                    {
+                      page: segment,
+                      siteId: config.siteId,
+                      versionId: config.versionId,
+                      navigationStack: [...this.navigationStack],
+                    },
                     "",
                     `${baseUrl}#${segment}`
                   );
@@ -701,6 +927,10 @@
     async navigateToSegment(segment) {
       if (this.isLoading || this.streamingInProgress) return;
 
+      // Update navigation stack - reset to just this segment
+      const segmentName = this.slugToName(segment);
+      this.navigationStack = [{ slug: segment, name: segmentName, type: "segment" }];
+
       behaviorTracker.trackPageVisit(segment);
       behaviorTracker.trackClick(`segment-${segment}`);
 
@@ -711,12 +941,9 @@
         return;
       }
 
-      // Use streaming if enabled
-      if (config.useStreaming) {
-        await this.navigateToSegmentStreaming(segment);
-      } else {
-        await this.navigateToSegmentFallback(segment);
-      }
+      // Use non-streaming for segment pages (has better content generation)
+      // Use streaming for detail/topic pages (shows progressive reveal)
+      await this.navigateToSegmentFallback(segment);
     }
 
     /**
@@ -754,6 +981,83 @@
         this.displayPage(data.html, segment);
       } catch (error) {
         console.error("[DynamicNav] Failed to generate segment page:", error);
+        this.hideLoading();
+        alert("Failed to load page. Please try again.");
+      }
+    }
+
+    /**
+     * Non-streaming topic/detail page navigation (unified with segment pages)
+     * Uses the same loading experience as segment pages for consistency
+     */
+    async navigateToTopicFallback(parentSegment, topic) {
+      if (this.isLoading) return;
+
+      // Update navigation stack - ensure parent segment is there, then add topic
+      const segmentName = this.slugToName(parentSegment);
+      const topicName = this.slugToName(topic);
+
+      // If stack is empty or first item doesn't match parent, reset to parent
+      if (this.navigationStack.length === 0 || this.navigationStack[0].slug !== parentSegment) {
+        this.navigationStack = [{ slug: parentSegment, name: segmentName, type: "segment" }];
+      }
+
+      // Add topic if not already the last item
+      const lastItem = this.navigationStack[this.navigationStack.length - 1];
+      if (!lastItem || lastItem.slug !== topic) {
+        // Remove any existing topics (keep only the segment)
+        this.navigationStack = this.navigationStack.filter((item) => item.type === "segment");
+        this.navigationStack.push({ slug: topic, name: topicName, type: "topic" });
+      }
+
+      const pageSlug = `${parentSegment}/${topic}`;
+      behaviorTracker.trackPageVisit(pageSlug);
+      behaviorTracker.trackClick(`topic-${topic}`);
+
+      // Check cache first
+      const cacheKey = `topic_${parentSegment}_${topic}`;
+      if (this.pageCache[cacheKey]) {
+        const validation = this.validatePageHtml(this.pageCache[cacheKey], "detail");
+        if (validation.isValid) {
+          this.displayPage(this.pageCache[cacheKey], pageSlug);
+          return;
+        }
+        delete this.pageCache[cacheKey];
+      }
+
+      // Show loading overlay (same as segment pages for consistency)
+      this.showLoading();
+
+      try {
+        const response = await fetch(`${config.apiEndpoint}/generate-page`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            siteId: config.siteId,
+            versionId: config.versionId,
+            pageType: "detail",
+            segment: parentSegment,
+            topic: topic,
+            sessionId: this.sessionId,
+            behaviorSignals: config.personaDetectionEnabled ? behaviorTracker.getSignals() : null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Cache the result
+        this.pageCache[cacheKey] = data.html;
+
+        console.log("[DynamicNav] Topic page generated:", pageSlug);
+        this.displayPage(data.html, pageSlug);
+      } catch (error) {
+        console.error("[DynamicNav] Failed to generate topic page:", error);
         this.hideLoading();
         alert("Failed to load page. Please try again.");
       }
@@ -882,20 +1186,26 @@
                 case "wrapper":
                   fullHtml = data.head + data.bodyOpen;
                   break;
+                case "section-start":
+                  this.updateStreamingProgress(data.id, "generating");
+                  break;
                 case "section-chunk":
-                  const skeletonEl = document.querySelector(`[data-skeleton="${data.id}"]`);
-                  if (skeletonEl) {
-                    if (!skeletonEl.dataset.streaming) {
-                      skeletonEl.dataset.streaming = "true";
-                      skeletonEl.innerHTML = "";
-                      skeletonEl.style.background = "transparent";
-                    }
-                    skeletonEl.insertAdjacentHTML("beforeend", data.chunk);
+                  // Buffer chunks silently - DON'T show raw HTML during streaming
+                  // The skeleton remains visible until section-complete fires
+                  if (!sectionHtml[data.id]) {
+                    sectionHtml[data.id] = "";
+                    this.updateStreamingProgress(data.id, "generating");
                   }
+                  sectionHtml[data.id] += data.chunk;
                   break;
                 case "section-complete":
+                  this.updateStreamingProgress(data.id, "complete");
                   sectionHtml[data.id] = data.html;
                   this.revealSection(data.id, data.html);
+                  // Initialize Feather icons if present
+                  if (typeof feather !== "undefined") {
+                    setTimeout(() => feather.replace(), 100);
+                  }
                   break;
                 case "complete":
                   this.hideStreamingIndicator();
@@ -908,7 +1218,12 @@
                   this.currentPage = pageSlug;
                   const baseUrl = window.location.href.split("#")[0];
                   history.pushState(
-                    { page: pageSlug, siteId: config.siteId, versionId: config.versionId },
+                    {
+                      page: pageSlug,
+                      siteId: config.siteId,
+                      versionId: config.versionId,
+                      navigationStack: [...this.navigationStack],
+                    },
                     "",
                     `${baseUrl}#${pageSlug}`
                   );
@@ -957,6 +1272,11 @@
         }
       }
 
+      // Use non-streaming for consistent experience with segment pages
+      await this.navigateToTopicFallback(segment, topicId);
+      return;
+
+      // Legacy non-streaming code (kept for reference but not used)
       this.showLoading();
 
       try {
@@ -1000,6 +1320,9 @@
     }
 
     navigateToLanding() {
+      // Clear navigation stack when going to landing
+      this.navigationStack = [];
+
       // Restore original landing page (version-specific)
       const cacheKey = "ngw_landing_html_" + config.siteId + "_" + config.versionId;
       const originalHTML = sessionStorage.getItem(cacheKey);
@@ -1008,7 +1331,7 @@
           "[DynamicNav] Restoring landing page from cache for version:",
           config.versionId
         );
-        this.replaceContent(originalHTML);
+        this.replaceContent(originalHTML, true); // skipNavInjection=true for landing
         this.currentPage = "landing";
 
         // Use replaceState to avoid breaking iframe back navigation
@@ -1293,7 +1616,12 @@
       // Update history within iframe context - use hash for segment pages
       const baseUrl = window.location.href.split("#")[0];
       history.pushState(
-        { page: pageSlug, siteId: config.siteId, versionId: config.versionId },
+        {
+          page: pageSlug,
+          siteId: config.siteId,
+          versionId: config.versionId,
+          navigationStack: [...this.navigationStack],
+        },
         "",
         `${baseUrl}#${pageSlug}`
       );
@@ -1307,7 +1635,60 @@
       console.log("[DynamicNav] Page displayed:", pageSlug);
     }
 
-    replaceContent(html) {
+    /**
+     * Convert slug to human-readable name
+     * e.g., "intelligent-enterprise" -> "Intelligent Enterprise"
+     */
+    slugToName(slug) {
+      return slug
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+
+    /**
+     * Build breadcrumb HTML from navigation stack
+     */
+    buildBreadcrumb() {
+      if (this.navigationStack.length === 0) return "";
+
+      const items = this.navigationStack.map((item, i) => {
+        const isLast = i === this.navigationStack.length - 1;
+        if (isLast) {
+          return `<li class="ngw-breadcrumb-current">${item.name}</li>`;
+        }
+        return `<li><a href="#" data-segment="${item.slug}" class="ngw-breadcrumb-link">${item.name}</a></li>`;
+      });
+
+      return `
+        <nav class="ngw-breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="#" data-action="back-to-landing" class="ngw-breadcrumb-link">Home</a></li>
+            <li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>
+            ${items.join('<li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>')}
+          </ol>
+        </nav>
+      `;
+    }
+
+    /**
+     * Create deterministic navigation bar (injected after AI-generated content)
+     */
+    createNavigationBar() {
+      const nav = document.createElement("div");
+      nav.id = "ngw-injected-nav";
+      nav.className = "ngw-fixed-nav";
+      nav.innerHTML = `
+        <div class="ngw-nav-container">
+          <a href="#" data-action="back-to-landing" class="ngw-nav-logo">${this.companyName || "Home"}</a>
+          ${this.buildBreadcrumb()}
+          <button data-action="cta-primary" data-cta-type="demo" class="ngw-nav-cta">Get Started</button>
+        </div>
+      `;
+      return nav;
+    }
+
+    replaceContent(html, skipNavInjection = false) {
       // Parse the new HTML
       const parser = new DOMParser();
       const newDoc = parser.parseFromString(html, "text/html");
@@ -1332,6 +1713,21 @@
         }
       });
 
+      // Ensure dynamic nav styles are loaded
+      if (!document.querySelector('link[href*="dynamic-nav/styles.css"]')) {
+        const styleLink = document.createElement("link");
+        styleLink.rel = "stylesheet";
+        styleLink.href = `${config.apiEndpoint.replace("/api/widget", "")}/dynamic-nav/styles.css`;
+        document.head.appendChild(styleLink);
+      }
+
+      // Ensure Feather icons are loaded
+      if (!document.querySelector('script[src*="feather-icons"]')) {
+        const featherScript = document.createElement("script");
+        featherScript.src = "https://unpkg.com/feather-icons";
+        document.head.appendChild(featherScript);
+      }
+
       // Replace body content without destroying event listeners on document
       document.body.innerHTML = newDoc.body.innerHTML;
 
@@ -1339,6 +1735,33 @@
       Array.from(newDoc.body.attributes).forEach((attr) => {
         document.body.setAttribute(attr.name, attr.value);
       });
+
+      // Inject deterministic navigation bar (unless skipped for landing page)
+      if (!skipNavInjection && this.navigationStack.length > 0) {
+        // Remove any existing AI-generated top nav to avoid duplication
+        const existingNavs = document.querySelectorAll("nav:first-of-type, header > nav");
+        existingNavs.forEach((nav) => {
+          // Only remove if it looks like a main navigation (not breadcrumb or footer nav)
+          if (
+            nav.querySelector("[data-segment]") ||
+            nav.querySelector('[data-action="back-to-landing"]')
+          ) {
+            nav.remove();
+          }
+        });
+
+        // Inject our deterministic navigation
+        const navBar = this.createNavigationBar();
+        document.body.insertBefore(navBar, document.body.firstChild);
+
+        // Add class to body for fixed nav padding (defined in styles.css)
+        document.body.classList.add("ngw-has-fixed-nav");
+
+        console.log("[DynamicNav] Injected deterministic navigation bar");
+      }
+
+      // Initialize Feather icons after content is replaced
+      this.initializeFeatherIcons();
 
       console.log("[DynamicNav] Content replaced without destroying listeners");
     }
@@ -1348,8 +1771,18 @@
 
       if (event.state && event.state.siteId === config.siteId) {
         if (event.state.page === "landing") {
+          // Clear navigation stack for landing
+          this.navigationStack = [];
           this.navigateToLanding();
         } else {
+          // Restore navigation stack from history state if available
+          if (event.state.navigationStack) {
+            this.navigationStack = event.state.navigationStack;
+          } else {
+            // Rebuild navigation stack from page path
+            this.rebuildNavigationStack(event.state.page);
+          }
+
           // Check if we have this page cached
           const cacheKey = event.state.page.includes("/")
             ? `detail_${event.state.page.replace("/", "_")}`
@@ -1374,7 +1807,27 @@
         }
       } else if (!event.state) {
         // No state - likely at initial page, restore landing
+        this.navigationStack = [];
         this.navigateToLanding();
+      }
+    }
+
+    /**
+     * Rebuild navigation stack from a page path (for popstate events without saved stack)
+     */
+    rebuildNavigationStack(pagePath) {
+      if (pagePath.includes("/")) {
+        // Detail page: segment/topic
+        const [segment, topic] = pagePath.split("/");
+        this.navigationStack = [
+          { slug: segment, name: this.slugToName(segment), type: "segment" },
+          { slug: topic, name: this.slugToName(topic), type: "topic" },
+        ];
+      } else {
+        // Segment page
+        this.navigationStack = [
+          { slug: pagePath, name: this.slugToName(pagePath), type: "segment" },
+        ];
       }
     }
   }

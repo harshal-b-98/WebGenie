@@ -78,10 +78,12 @@ function injectChatWidget(
 /**
  * Inject dynamic navigation scripts into generated HTML
  * Enables progressive page generation and segment exploration
+ * Exported for use in refine route
  */
-function injectDynamicNav(
+export function injectDynamicNav(
   html: string,
   siteId: string,
+  versionId: string,
   companyName: string,
   personaDetectionEnabled: boolean
 ): string {
@@ -93,6 +95,7 @@ function injectDynamicNav(
   <script>
     window.NEXTGENWEB_NAV_CONFIG = {
       siteId: '${siteId}',
+      versionId: '${versionId}',
       apiEndpoint: '${appUrl}/api/widget',
       personaDetectionEnabled: ${personaDetectionEnabled},
       companyName: '${companyName.replace(/'/g, "\\'")}'
@@ -387,8 +390,14 @@ export async function generateWebsite(input: GenerationInput) {
     // Inject dynamic navigation if enabled
     if (dynamicPagesEnabled) {
       const companyName = (site as { title?: string }).title || "Company";
-      enhancedHtml = injectDynamicNav(enhancedHtml, siteId, companyName, personaDetectionEnabled);
-      logger.info("Dynamic navigation injected", { siteId, personaDetectionEnabled });
+      enhancedHtml = injectDynamicNav(
+        enhancedHtml,
+        siteId,
+        versionId,
+        companyName,
+        personaDetectionEnabled
+      );
+      logger.info("Dynamic navigation injected", { siteId, versionId, personaDetectionEnabled });
     }
 
     // Update version with widget-enhanced HTML

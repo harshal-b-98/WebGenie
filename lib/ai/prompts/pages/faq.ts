@@ -16,69 +16,78 @@ It should answer common questions extracted from the business documents.
 OUTPUT REQUIREMENTS:
 - Complete HTML5 document
 - Tailwind CSS v3 via CDN
-- Google Fonts: Roboto
+- Feather Icons ONLY: <script src="https://unpkg.com/feather-icons"></script>
+- Call feather.replace() at end of body
+- Google Fonts: Inter
 - Vanilla JavaScript for accordion functionality
 - NO placeholder content - use ONLY real Q&A from documents
 
-REQUIRED SECTIONS:
+================================================================================
+ICON RULES (STRICTLY ENFORCED - NO EXCEPTIONS)
+================================================================================
+
+USE FEATHER ICONS ONLY:
+- Syntax: <i data-feather="icon-name" class="w-5 h-5"></i>
+- Call feather.replace() before </body>
+
+FAQ ICONS: chevron-down (for accordion), help-circle, message-circle, mail
+NEVER USE: <img> tags, placeholders, "?", emoji, external URLs
+
+================================================================================
+REQUIRED SECTIONS
+================================================================================
 
 1. NAVIGATION BAR
-   - Logo on left (clickable, data-action="back-to-landing")
-   - Navigation links: Home (data-action="back-to-landing"), Features (data-segment="features"), Solutions (data-segment="solutions"), Platform (data-segment="platform")
-   - Current page "FAQ" highlighted
-   - "Get Started" button on right
-   - Sticky on scroll
+   - Fixed: fixed top-0 left-0 right-0 z-50
+   - Background: bg-white/95 backdrop-blur-md shadow-sm
+   - Height: h-16
+   - Structure: Logo LEFT, nav links CENTER-LEFT, CTA RIGHT
+   - Navigation LEFT-ALIGNED
 
-2. PAGE HEADER
-   - Dark gradient background
-   - Breadcrumb: Home > FAQ (Home is clickable with data-action="back-to-landing")
-   - "Frequently Asked Questions" as main heading (H1)
-   - Subheading: "Find answers to common questions"
-   - White/light text
+2. PAGE HEADER WITH BREADCRUMB
+   - Dark gradient: from-slate-900 via-gray-900 to-slate-800
+   - Padding: py-16 md:py-24
+
+   EXACT BREADCRUMB HTML (copy this pattern):
+   <nav class="bg-gray-50 border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+       <ol class="flex items-center space-x-2 text-sm">
+         <li>
+           <a href="#" data-action="back-to-landing" class="text-gray-500 hover:text-indigo-600 transition-colors">Home</a>
+         </li>
+         <li><i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i></li>
+         <li class="text-gray-900 font-medium">FAQ</li>
+       </ol>
+     </div>
+   </nav>
+
+   - H1: text-4xl md:text-5xl font-bold text-white
+   - Subheading: text-xl text-gray-300
 
 3. FAQ CATEGORIES (if enough questions)
-   - Group by topic: General, Pricing, Technical, Getting Started, etc.
-   - Category tabs or anchor links
+   - Group by topic
+   - Category tabs/links
 
 4. FAQ ACCORDION
    - Questions as clickable headers
-   - Answers expand/collapse on click
-   - Smooth animation transitions
-   - Plus/minus or chevron icons
-   - Multiple can be open simultaneously
+   - Use Feather chevron-down icon (rotates on open)
+   - Smooth animation
+   - bg-white rounded-xl shadow-lg for each item
 
 5. EXPLORE OTHER SECTIONS
-   - Section with links to other pages:
-     * "View Features" button (data-segment="features")
-     * "View Solutions" button (data-segment="solutions")
-     * "Platform Overview" button (data-segment="platform")
+   - Links with data-segment attributes
 
 6. STILL HAVE QUESTIONS?
-   - CTA section at bottom
-   - "Contact Us" button
-   - "Back to Home" button (data-action="back-to-landing")
+   - CTA: data-action="cta-primary" data-cta-type="contact"
+   - Secondary: data-action="back-to-landing"
 
-7. FOOTER
-   - Logo (data-action="back-to-landing")
-   - Quick links with data-segment attributes
-   - Copyright
+7. FOOTER (consistent)
+   - Logo with data-action="back-to-landing"
+   - Quick links with data-segment
 
-CRITICAL DATA ATTRIBUTES:
-- Navigation to other segments: data-segment="[segment-name]"
-- Back to landing page: data-action="back-to-landing"
+JAVASCRIPT: Include accordion with Feather icon rotation.
 
-JAVASCRIPT REQUIREMENTS:
-Include this accordion functionality:
-- Click question to toggle answer visibility
-- Smooth height animation
-- Icon rotation on open/close
-- Accessible: keyboard navigable, ARIA attributes
-
-IMPORTANT:
-- Extract REAL questions and answers from documents
-- If no explicit Q&A exists, generate common questions based on content
-- Keep answers concise but complete
-- Include "Learn More" links where relevant
+CRITICAL: Extract REAL Q&A from documents. Generate relevant questions if none explicit.
 
 Return ONLY the complete HTML document.`;
 

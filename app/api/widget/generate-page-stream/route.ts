@@ -312,29 +312,55 @@ Output <section data-section="content">.`,
         .slice(0, 6) // Limit to 6 items max
         .map(
           (item) =>
-            `- ${item.name}: ${item.description.substring(0, 100)} (data-topic="${item.slug}" data-parent-segment="${context.segmentSlug}")`
+            `- ${item.name}: ${item.description.substring(0, 150)} (data-topic="${item.slug}" data-parent-segment="${context.segmentSlug}")`
         )
         .join("\n");
 
       return {
         system: baseSystem,
-        prompt: `Generate main content section for "${pageTitle}".
+        prompt: `Generate a COMPLETE, visually impressive content section for "${pageTitle}".
 
-PAGE TITLE (use exactly): ${pageTitle}
+CRITICAL: Generate REAL content with substance - no placeholder or generic text.
 
-${pageTitle} - Clickable Items (each opens a detail page):
+PAGE: ${pageTitle}
+SEGMENT DESCRIPTION: ${context.segmentDescription}
+
+ITEMS TO DISPLAY AS CARDS (each opens a detail page when clicked):
 ${itemsList}
 
-Reference: ${context.documentContent.substring(0, 3000)}
+DOCUMENT CONTENT FOR REFERENCE (extract real info):
+${context.documentContent.substring(0, 4000)}
 
 ${context.personaEmphasis}
 
-NAVIGATION RULES FOR CARDS:
-- Each card MUST have: data-topic="[item-slug]" data-parent-segment="${context.segmentSlug}"
-- This makes cards clickable to show detail pages
-- Example: <div class="card cursor-pointer" data-topic="feature-name" data-parent-segment="${context.segmentSlug}">...</div>
+STRUCTURE REQUIREMENTS:
+1. INTRO SECTION:
+   - Brief compelling introduction (2-3 sentences) about ${pageTitle}
+   - Use text from the document content above
 
-Structure: Light bg, grid of cards (icon + title + description), each card with data-topic and data-parent-segment attributes, hover effects, cursor-pointer.
+2. FEATURE CARDS GRID (grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6):
+   - Each card MUST have: data-topic="[item-slug]" data-parent-segment="${context.segmentSlug}"
+   - Card structure:
+     <div class="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group" data-topic="[slug]" data-parent-segment="${context.segmentSlug}">
+       <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4">
+         <i data-feather="[icon]" class="w-6 h-6 text-white"></i>
+       </div>
+       <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">[Title]</h3>
+       <p class="text-gray-600 mb-4">[Real description from content]</p>
+       <span class="text-indigo-600 font-medium flex items-center gap-1">
+         Learn more <i data-feather="arrow-right" class="w-4 h-4"></i>
+       </span>
+     </div>
+
+3. STATS/HIGHLIGHTS (optional but recommended):
+   - 3-4 key statistics or highlights in a row
+   - Use real numbers if available in document content
+
+DESIGN:
+- Section background: bg-gray-50 or bg-white
+- Max width container: max-w-7xl mx-auto px-4 py-16
+- Cards with generous padding and shadow-sm, hover:shadow-xl
+- Use Feather icons: <i data-feather="icon-name" class="w-6 h-6"></i>
 
 Output <section data-section="content">.`,
       };
@@ -395,18 +421,43 @@ function generateDocumentWrapper(companyName: string): {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${companyName}</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Roboto', sans-serif; }
+    body { font-family: 'Inter', sans-serif; }
     .skeleton-pulse { animation: pulse 1.5s ease-in-out infinite; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; }
     @keyframes pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .fade-in { animation: fadeIn 0.5s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Hover effects for navigable elements */
+    [data-segment], [data-topic], [data-item-id], [data-action] {
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    [data-segment]:hover, [data-topic]:hover, [data-item-id]:hover {
+      opacity: 0.85;
+    }
+    [data-action]:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+    /* Card hover effects */
+    [data-topic]:hover, [data-item-id]:hover {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+      transform: translateY(-4px);
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">`,
     bodyOpen: "",
-    bodyClose: `</body>
+    bodyClose: `<script>
+  // Initialize Feather icons
+  if (typeof feather !== 'undefined') {
+    feather.replace();
+  }
+</script>
+</body>
 </html>`,
   };
 }

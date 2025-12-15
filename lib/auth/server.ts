@@ -3,19 +3,28 @@ import { AuthenticationError } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
 
 export async function getUser() {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error) {
-    logger.error("Failed to get user", error);
-    throw new AuthenticationError("Failed to authenticate user");
+    if (error) {
+      logger.error("Failed to get user", error);
+      throw new AuthenticationError("Failed to authenticate user");
+    }
+
+    return user;
+  } catch (error) {
+    // Handle both Supabase thrown errors and our AuthenticationError
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
+    logger.error("Unexpected auth error", error);
+    throw new AuthenticationError("Authentication failed");
   }
-
-  return user;
 }
 
 export async function requireUser() {

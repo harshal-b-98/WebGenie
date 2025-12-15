@@ -8,7 +8,56 @@ interface PreviewFrameProps {
 }
 
 /**
- * Process HTML content to ensure Tailwind CDN is present
+ * CSS fix for hero section benefit items centering
+ * This ensures AI-generated benefit rows are properly centered
+ */
+const heroCenteringCSS = `
+<style id="ngw-hero-fix">
+  /* Fix hero benefit items centering */
+  section[class*="from-slate"] .flex.items-center.gap-3,
+  section[class*="from-gray"] .flex.items-center.gap-3,
+  section[class*="bg-gradient"] .flex.items-center.gap-3 {
+    /* Individual benefit items - no change needed */
+  }
+
+  /* Target the parent container of benefit items */
+  section[class*="from-slate"] > div > div:last-child,
+  section[class*="from-gray"] > div > div:last-child,
+  section[class*="bg-gradient"] > div > div:last-child {
+    display: flex !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 2rem !important;
+    width: 100% !important;
+  }
+
+  /* Target mt-16 containers (common pattern for benefit rows) */
+  section div[class*="mt-16"],
+  section div[class*="mt-12"],
+  section div[class*="mt-8"] {
+    display: flex !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 2rem !important;
+    width: 100% !important;
+  }
+
+  /* Target any div with multiple text-gray-300 children in hero sections */
+  section[class*="from-slate"] div,
+  section[class*="from-gray"] div,
+  section[class*="bg-gradient"] div {
+    /* Use has selector for browsers that support it */
+  }
+
+  /* Fallback: Target divs that contain spans with feather icons */
+  section .text-gray-300 {
+    /* Ensure items are inline-flex for proper alignment */
+  }
+</style>
+`;
+
+/**
+ * Process HTML content to ensure Tailwind CDN is present and apply fixes
  */
 function processHtmlContent(htmlContent: string): string {
   if (!htmlContent) return "";
@@ -25,6 +74,15 @@ function processHtmlContent(htmlContent: string): string {
       content = content.replace(/<html[^>]*>/, `$&\n<head>${tailwindScript}</head>`);
     } else {
       content = `<!DOCTYPE html><html><head>${tailwindScript}</head><body>${content}</body></html>`;
+    }
+  }
+
+  // Inject hero centering CSS fix
+  if (!content.includes("ngw-hero-fix")) {
+    if (content.includes("</head>")) {
+      content = content.replace("</head>", `${heroCenteringCSS}\n</head>`);
+    } else if (content.includes("<head>")) {
+      content = content.replace("<head>", `<head>\n${heroCenteringCSS}`);
     }
   }
 

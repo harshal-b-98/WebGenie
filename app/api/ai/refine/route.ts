@@ -1,10 +1,12 @@
-import { streamText } from "ai";
+import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/server";
 import { defaultGenerationModel } from "@/lib/ai/client";
 import { createClient } from "@/lib/db/server";
 import { GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts/generation";
 import { refineRequestSchema, validateBody } from "@/lib/validation";
+import { injectDynamicNav } from "@/lib/services/generation-service";
+import { AuthenticationError } from "@/lib/utils/errors";
 
 export async function POST(request: Request) {
   try {
@@ -30,10 +32,10 @@ export async function POST(request: Request) {
 
     const versionData = version as { html_content: string; site_id: string };
 
-    // Verify site ownership
+    // Verify site ownership and get site details
     const { data: site } = await supabase
       .from("sites")
-      .select("id, user_id")
+      .select("id, user_id, title")
       .eq("id", versionData.site_id)
       .eq("user_id", user.id)
       .single();
@@ -41,6 +43,8 @@ export async function POST(request: Request) {
     if (!site) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
+
+    const siteData = site as { id: string; user_id: string; title: string };
 
     const currentHTML = versionData.html_content;
 
@@ -66,65 +70,118 @@ CRITICAL INSTRUCTIONS:
 
 Generate the updated HTML now (raw HTML only, no markdown):`;
 
-    // Stream AI response with SSE
-    const result = streamText({
+    // Generate HTML silently (not streamed to client)
+    const result = await generateText({
       model: defaultGenerationModel,
       system: GENERATION_SYSTEM_PROMPT,
       prompt: refinementPrompt,
       temperature: 0.7,
-      // maxTokens: 4000, // Removed - not supported in current AI SDK version
-      abortSignal: AbortSignal.timeout(45000), // 45s timeout
-      onFinish: async ({ text: htmlContent }) => {
-        // Clean up any markdown formatting (in case AI adds it despite instructions)
-        let cleanedHTML = htmlContent.trim();
+      abortSignal: AbortSignal.timeout(60000), // 60s timeout
+    });
 
-        // Remove markdown code blocks if present
-        if (cleanedHTML.startsWith("```html")) {
-          cleanedHTML = cleanedHTML.replace(/^```html\n?/, "").replace(/\n?```$/, "");
-        } else if (cleanedHTML.startsWith("```")) {
-          cleanedHTML = cleanedHTML.replace(/^```\n?/, "").replace(/\n?```$/, "");
+    const htmlContent = result.text;
+
+    // Clean up any markdown formatting (in case AI adds it despite instructions)
+    let cleanedHTML = htmlContent.trim();
+
+    // Remove markdown code blocks if present
+    if (cleanedHTML.startsWith("```html")) {
+      cleanedHTML = cleanedHTML.replace(/^```html\n?/, "").replace(/\n?```$/, "");
+    } else if (cleanedHTML.startsWith("```")) {
+      cleanedHTML = cleanedHTML.replace(/^```\n?/, "").replace(/\n?```$/, "");
+    }
+
+    cleanedHTML = cleanedHTML.trim();
+
+    // Save as new version first (to get the version ID for dynamic nav injection)
+    const { count } = await supabase
+      .from("site_versions")
+      .select("*", { count: "exact", head: true })
+      .eq("site_id", siteId);
+
+    const nextVersionNumber = (count || 0) + 1;
+
+    const { data: newVersion, error: insertError } = await supabase
+      .from("site_versions")
+      .insert({
+        site_id: siteId,
+        version_number: nextVersionNumber,
+        html_content: cleanedHTML, // Save without dynamic nav first
+        generation_type: "refinement",
+        ai_provider: "openai",
+        model: "gpt-4o",
+        created_by: user.id,
+        prompt_context: {
+          refinementRequest: message,
+          previousVersionId: currentVersionId,
+        },
+        change_summary: message.substring(0, 500),
+      } as never)
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("Failed to save version:", insertError);
+      return NextResponse.json({ error: "Failed to save changes" }, { status: 500 });
+    }
+
+    const newVersionId = (newVersion as { id: string }).id;
+
+    // NOW inject dynamic navigation scripts with the new version ID
+    // This ensures the refined version caches landing page under the correct version key
+    const enhancedHTML = injectDynamicNav(
+      cleanedHTML,
+      siteId,
+      newVersionId,
+      siteData.title || "Company",
+      true // personaDetectionEnabled
+    );
+
+    // Update the version with enhanced HTML
+    await supabase
+      .from("site_versions")
+      .update({ html_content: enhancedHTML } as never)
+      .eq("id", newVersionId);
+
+    // Return a friendly text response (NOT the HTML!)
+    const responseMessage = `I've applied your requested changes: "${message.substring(0, 100)}${message.length > 100 ? "..." : ""}"
+
+The preview on the right has been updated with a new version. You can:
+• Review the changes in the preview
+• Click "Apply Changes" to make this your current version
+• Continue describing more changes you'd like to make
+
+What else would you like to adjust?`;
+
+    // Stream the text response for a nice UX
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Send the response in small chunks for a typing effect
+        const words = responseMessage.split(" ");
+        for (let i = 0; i < words.length; i++) {
+          const chunk = (i === 0 ? "" : " ") + words[i];
+          controller.enqueue(encoder.encode(chunk));
+          await new Promise((resolve) => setTimeout(resolve, 30)); // Small delay for typing effect
         }
-
-        cleanedHTML = cleanedHTML.trim();
-
-        // Save as new version (same pattern as generation-service.ts)
-        const { count } = await supabase
-          .from("site_versions")
-          .select("*", { count: "exact", head: true })
-          .eq("site_id", siteId);
-
-        const nextVersionNumber = (count || 0) + 1;
-
-        const { data: newVersion } = await supabase
-          .from("site_versions")
-          .insert({
-            site_id: siteId,
-            version_number: nextVersionNumber,
-            html_content: cleanedHTML,
-            generation_type: "refinement", // Key: marks as refinement!
-            ai_provider: "openai",
-            model: "gpt-4o",
-            created_by: user.id,
-            prompt_context: {
-              refinementRequest: message,
-              previousVersionId: currentVersionId,
-            },
-            change_summary: message.substring(0, 500),
-          } as never)
-          .select()
-          .single();
-
-        // Version saved successfully
-        if (newVersion) {
-          console.log("New version created:", (newVersion as { id: string }).id);
-        }
+        controller.close();
       },
     });
 
-    // Return streaming response (AI SDK handles SSE automatically!)
-    return result.toTextStreamResponse();
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-New-Version-Id": newVersionId,
+      },
+    });
   } catch (error) {
     console.error("Refinement error:", error);
+
+    // Return 401 for authentication errors
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     return NextResponse.json({ error: "Failed to refine website" }, { status: 500 });
   }
 }

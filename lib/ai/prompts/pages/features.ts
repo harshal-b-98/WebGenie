@@ -17,71 +17,110 @@ It should comprehensively showcase all features extracted from the business docu
 OUTPUT REQUIREMENTS:
 - Complete HTML5 document
 - Tailwind CSS v3 via CDN
-- Google Fonts: Roboto
-- Vanilla JavaScript only
+- Feather Icons ONLY: <script src="https://unpkg.com/feather-icons"></script>
+- Call feather.replace() at end of body
+- Google Fonts: Inter
 - NO placeholder content - use ONLY real features from documents
 
-REQUIRED SECTIONS:
+================================================================================
+ICON RULES (STRICTLY ENFORCED - NO EXCEPTIONS)
+================================================================================
+
+USE FEATHER ICONS ONLY:
+- CDN: <script src="https://unpkg.com/feather-icons"></script>
+- Syntax: <i data-feather="icon-name" class="w-6 h-6"></i>
+- ALWAYS call feather.replace() before </body>
+
+ICON CONTAINERS (for feature cards):
+<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+  <i data-feather="icon-name" class="w-6 h-6 text-white"></i>
+</div>
+
+GOOD FEATURE ICONS: zap, cpu, shield, target, layers, refresh-cw, bar-chart-2, lock, users, globe, code, database
+
+NEVER USE:
+- <img> tags for icons
+- Image placeholders
+- "?" or broken icons
+- Emoji as icons
+- External image URLs
+- SVG paths inline
+
+================================================================================
+REQUIRED SECTIONS
+================================================================================
 
 1. NAVIGATION BAR
-   - Logo on left (clickable, data-action="back-to-landing")
-   - Navigation links: Home (data-action="back-to-landing"), Solutions (data-segment="solutions"), Platform (data-segment="platform"), FAQ (data-segment="faq")
-   - Current page "Features" highlighted
-   - "Get Started" button on right
-   - Sticky on scroll
+   - Fixed position: fixed top-0 left-0 right-0 z-50
+   - Background: bg-white/95 backdrop-blur-md shadow-sm
+   - Height: h-16 (64px)
+   - Structure (LEFT TO RIGHT):
+     * Logo on LEFT (clickable, data-action="back-to-landing")
+     * Navigation links in CENTER-LEFT: Home, Solutions, Platform, FAQ with data-segment attributes
+     * "Get Started" CTA on RIGHT with data-action="cta-primary" data-cta-type="demo"
+   - Navigation LEFT-ALIGNED, not centered
 
-2. PAGE HEADER
-   - Dark gradient background
-   - Breadcrumb: Home > Features (Home is clickable with data-action="back-to-landing")
-   - "Features" as main heading (H1)
-   - Brief intro paragraph about what makes these features special
-   - White/light text on dark background
+2. PAGE HEADER WITH BREADCRUMB
+   - Dark gradient background (from-slate-900 via-gray-900 to-slate-800)
+   - Padding: py-16 md:py-24
+
+   EXACT BREADCRUMB HTML (copy this pattern):
+   <nav class="bg-gray-50 border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+       <ol class="flex items-center space-x-2 text-sm">
+         <li>
+           <a href="#" data-action="back-to-landing" class="text-gray-500 hover:text-indigo-600 transition-colors">Home</a>
+         </li>
+         <li><i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i></li>
+         <li class="text-gray-900 font-medium">Features</li>
+       </ol>
+     </div>
+   </nav>
+
+   - "Features" as main heading (H1): text-4xl md:text-5xl font-bold text-white
+   - Brief intro paragraph: text-xl text-gray-300
 
 3. FEATURE GRID
    - 6-12 feature cards in responsive grid
-   - Each card MUST have these attributes:
-     * data-topic="[feature-slug]" data-parent-segment="features" (e.g., data-topic="ai-analytics")
-     * class="cursor-pointer" for pointer cursor
-     * hover:shadow-lg hover:scale-105 transition for interactivity
-   - Card content:
-     * Icon (SVG)
-     * Feature title (bold)
-     * Description (100 words max)
-     * "Learn More →" text
+   - Each card MUST have:
+     * data-topic="[feature-slug]" data-parent-segment="features"
+     * class="cursor-pointer"
+     * hover:shadow-xl hover:-translate-y-1 transition-all
+   - Card styling (CONSISTENT):
+     * bg-white rounded-2xl shadow-lg p-6 md:p-8
+     * Icon container at top (w-12 h-12 rounded-xl with gradient)
+     * Title: text-xl font-semibold text-gray-900
+     * Description: text-gray-600
    - Grid: 1 col mobile, 2 cols tablet, 3 cols desktop
 
 4. FEATURE HIGHLIGHTS
-   - 2-3 key features expanded with more detail
-   - Each highlight card also has data-topic and data-parent-segment attributes
-   - Alternating layout
-   - Bullet points for benefits
+   - 2-3 key features with more detail
+   - Each has data-topic and data-parent-segment attributes
+   - Use Feather icons for bullet points (check-circle)
 
 5. EXPLORE OTHER SECTIONS
-   - Section with links to other pages:
-     * "View Solutions" button (data-segment="solutions")
-     * "Platform Overview" button (data-segment="platform")
-     * "Frequently Asked Questions" button (data-segment="faq")
+   - Links to other segments with data-segment attributes
+   - Use Feather icons (arrow-right)
 
 6. CTA SECTION
-   - "Get Started" primary button
-   - "Back to Home" secondary button (data-action="back-to-landing")
+   - Primary: data-action="cta-primary" data-cta-type="demo"
+   - Secondary: data-action="back-to-landing"
 
-7. FOOTER
-   - Logo (data-action="back-to-landing")
+7. FOOTER (consistent with other pages)
+   - Logo with data-action="back-to-landing"
    - Quick links with data-segment attributes
    - Copyright
 
-CRITICAL DATA ATTRIBUTES (MANDATORY FOR ALL CLICKABLE ELEMENTS):
-- Feature cards: data-topic="[feature-slug]" data-parent-segment="features"
-- Navigation to other segments: data-segment="[segment-slug]"
-- Back to landing page: data-action="back-to-landing"
-- CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
+================================================================================
+CRITICAL DATA ATTRIBUTES
+================================================================================
 
-NEVER USE PLAIN HREF LINKS:
-- WRONG: <a href="#">Link</a>
-- WRONG: <a href="javascript:void(0)">Link</a>
-- RIGHT: <a href="#" data-segment="solutions">View Solutions</a>
-- RIGHT: <div data-topic="ai-analytics" data-parent-segment="features" class="cursor-pointer">Feature Card</div>
+- Feature cards: data-topic="[feature-slug]" data-parent-segment="features" class="cursor-pointer"
+- Navigation: data-segment="[segment-slug]"
+- Home/Logo: data-action="back-to-landing"
+- CTA: data-action="cta-primary" data-cta-type="demo|contact|signup"
+
+NEVER USE PLAIN HREF LINKS - always use data attributes.
 
 Return ONLY the complete HTML document.`;
 

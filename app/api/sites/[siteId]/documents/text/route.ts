@@ -3,9 +3,14 @@ import { requireUser } from "@/lib/auth/server";
 import { createClient } from "@/lib/db/server";
 import { formatErrorResponse } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
-import * as embeddingService from "@/lib/services/embedding-service";
-import * as contentDiscoveryService from "@/lib/services/content-discovery-service";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import * as embeddingService from "@/lib/services/embedding-service";
+
+interface DocumentRecord {
+  id: string;
+  filename: string;
+  file_size: number;
+}
 
 /**
  * POST /api/sites/[siteId]/documents/text
@@ -43,8 +48,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
       throw uploadError;
     }
 
-    // Create document record
-    const { data: document, error: insertError } = await supabase
+    // Create document record with type assertion
+    const { data, error: insertError } = await supabase
       .from("documents")
       .insert({
         site_id: siteId,
@@ -54,8 +59,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         file_size: content.length,
         storage_path: storagePath,
         processing_status: "processing",
-      } as never)
-      .select()
+        extracted_text: content,
+      } as unknown as Record<string, unknown>)
+      .select("id, filename, file_size")
       .single();
 
     if (insertError) {
@@ -63,10 +69,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
       throw insertError;
     }
 
-    // Process the document (extract content, create embeddings)
-    await processTextDocument(document.id, content, siteId);
+    const document = data as unknown as DocumentRecord;
 
-    logger.info("Text document created and processed", {
+    // Process embeddings in background (don't await to avoid timeout)
+    processEmbeddingsAsync(document.id, content, siteId).catch((err) => {
+      logger.error("Background embedding processing failed", err, { documentId: document.id });
+    });
+
+    logger.info("Text document created", {
       documentId: document.id,
       siteId,
       contentLength: content.length,
@@ -87,9 +97,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
 }
 
 /**
- * Process text document: extract content, classify, create embeddings
+ * Process embeddings asynchronously
  */
-async function processTextDocument(
+async function processEmbeddingsAsync(
   documentId: string,
   content: string,
   siteId: string
@@ -100,33 +110,14 @@ async function processTextDocument(
   );
 
   try {
-    // Update document with extracted text
-    await serviceSupabase
-      .from("documents")
-      .update({
-        extracted_text: content,
-        processing_status: "processing",
-      } as never)
-      .eq("id", documentId);
-
-    // Classify content
-    const classifiedContent = await contentDiscoveryService.classifyContent(content);
-
-    // Update document with classification
-    await serviceSupabase
-      .from("documents")
-      .update({
-        classification_data: classifiedContent,
-      } as never)
-      .eq("id", documentId);
+    // Chunk the document
+    const chunks = await embeddingService.chunkDocument(documentId, siteId, content);
 
     // Generate embeddings
-    await embeddingService.processDocumentEmbeddings(
-      documentId,
-      siteId,
-      content,
-      classifiedContent
-    );
+    const embeddings = await embeddingService.generateEmbeddings(chunks);
+
+    // Store embeddings
+    await embeddingService.storeEmbeddings(siteId, documentId, chunks, embeddings);
 
     // Mark as completed
     await serviceSupabase
@@ -134,12 +125,12 @@ async function processTextDocument(
       .update({
         processing_status: "completed",
         processed_at: new Date().toISOString(),
-      } as never)
+      })
       .eq("id", documentId);
 
-    logger.info("Text document processing completed", { documentId });
+    logger.info("Text document embedding processing completed", { documentId });
   } catch (error) {
-    logger.error("Text document processing failed", error, { documentId });
+    logger.error("Text document embedding processing failed", error, { documentId });
 
     // Mark as failed
     await serviceSupabase
@@ -147,9 +138,7 @@ async function processTextDocument(
       .update({
         processing_status: "failed",
         processing_error: error instanceof Error ? error.message : "Unknown error",
-      } as never)
+      })
       .eq("id", documentId);
-
-    throw error;
   }
 }

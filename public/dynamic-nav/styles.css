@@ -369,3 +369,479 @@
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+/* =================================
+   DYNAMIC PAGE NAVIGATION ELEMENTS
+   Hover effects for all clickable elements
+   ================================= */
+
+/* Navigation links (segment navigation) */
+[data-segment] {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-segment]:hover {
+  color: #4f46e5 !important;
+  opacity: 0.9;
+}
+
+/* Topic/Item cards - clickable content cards */
+[data-topic],
+[data-item-id],
+[data-feature-id],
+[data-solution-id],
+[data-capability-id] {
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-topic]:hover,
+[data-item-id]:hover,
+[data-feature-id]:hover,
+[data-solution-id]:hover,
+[data-capability-id]:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* CTA buttons and action elements */
+[data-action] {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-action]:hover {
+  transform: scale(1.03) !important;
+  opacity: 0.95;
+}
+
+[data-action="back-to-landing"]:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Card inner hover effects - for elements inside cards */
+[data-topic] *,
+[data-item-id] * {
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+[data-topic]:hover h3,
+[data-topic]:hover h4,
+[data-item-id]:hover h3,
+[data-item-id]:hover h4 {
+  color: #4f46e5 !important;
+}
+
+/* Arrow icons inside cards */
+[data-topic]:hover svg,
+[data-item-id]:hover svg,
+[data-topic]:hover i[data-feather="arrow-right"],
+[data-item-id]:hover i[data-feather="arrow-right"] {
+  transform: translateX(4px) !important;
+}
+
+/* Icon containers inside cards */
+[data-topic]:hover .w-12,
+[data-topic]:hover .w-14,
+[data-item-id]:hover .w-12,
+[data-item-id]:hover .w-14 {
+  transform: scale(1.05) !important;
+}
+
+/* Clickable indicator styling */
+[data-topic]::after,
+[data-item-id]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+[data-topic]:hover::after,
+[data-item-id]:hover::after {
+  transform: scaleX(1);
+}
+
+/* Ensure position relative for the ::after pseudo-element */
+[data-topic],
+[data-item-id] {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add visual feedback on active/pressed state */
+[data-segment]:active,
+[data-topic]:active,
+[data-item-id]:active,
+[data-action]:active {
+  transform: scale(0.98) !important;
+}
+
+/* Ripple effect container */
+[data-topic]::before,
+[data-item-id]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.4s ease,
+    height 0.4s ease;
+  z-index: 0;
+}
+
+[data-topic]:hover::before,
+[data-item-id]:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+/* Ensure card content stays above ripple */
+[data-topic] > *,
+[data-item-id] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* =================================
+   DETERMINISTIC NAVIGATION BAR
+   Injected by nav-controller.js for consistent navigation
+   ================================= */
+
+/* Fixed Navigation Container */
+.ngw-fixed-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+/* Navigation Inner Container */
+.ngw-nav-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Logo/Company Name */
+.ngw-nav-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ngw-nav-logo:hover {
+  color: #4f46e5;
+}
+
+/* Breadcrumb Navigation */
+.ngw-breadcrumb {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ngw-breadcrumb ol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.ngw-breadcrumb li {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Breadcrumb Links */
+.ngw-breadcrumb-link {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.ngw-breadcrumb-link:hover {
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.08);
+}
+
+/* Current Page (non-clickable) */
+.ngw-breadcrumb-current {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  padding: 4px 8px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Breadcrumb Separator */
+.ngw-breadcrumb-separator {
+  display: flex;
+  align-items: center;
+  color: #9ca3af;
+}
+
+.ngw-breadcrumb-separator svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* CTA Button */
+.ngw-nav-cta {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.ngw-nav-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.ngw-nav-cta:active {
+  transform: translateY(0);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .ngw-nav-container {
+    padding: 0 16px;
+    height: 56px;
+    gap: 12px;
+  }
+
+  .ngw-nav-logo {
+    font-size: 1rem;
+  }
+
+  .ngw-breadcrumb {
+    display: none; /* Hide breadcrumb on mobile, rely on back button */
+  }
+
+  .ngw-nav-cta {
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ngw-nav-cta {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Dark Mode Support for Injected Nav */
+@media (prefers-color-scheme: dark) {
+  .ngw-fixed-nav {
+    background: rgba(17, 24, 39, 0.97);
+    border-bottom-color: rgba(55, 65, 81, 0.8);
+  }
+
+  .ngw-nav-logo {
+    color: #f9fafb;
+  }
+
+  .ngw-nav-logo:hover {
+    color: #818cf8;
+  }
+
+  .ngw-breadcrumb-link {
+    color: #9ca3af;
+  }
+
+  .ngw-breadcrumb-link:hover {
+    color: #818cf8;
+    background: rgba(129, 140, 248, 0.1);
+  }
+
+  .ngw-breadcrumb-current {
+    color: #f9fafb;
+  }
+
+  .ngw-breadcrumb-separator {
+    color: #6b7280;
+  }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .ngw-nav-logo,
+  .ngw-breadcrumb-link,
+  .ngw-nav-cta {
+    transition: none;
+  }
+}
+
+/* Focus Styles for Keyboard Navigation */
+.ngw-nav-logo:focus-visible,
+.ngw-breadcrumb-link:focus-visible,
+.ngw-nav-cta:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Body padding when injected nav is present */
+body.ngw-has-fixed-nav {
+  padding-top: 64px;
+}
+
+@media (max-width: 768px) {
+  body.ngw-has-fixed-nav {
+    padding-top: 56px;
+  }
+}
+
+/* =================================
+   LANDING PAGE HERO SECTION FIXES
+   Ensures consistent alignment for AI-generated content
+   ================================= */
+
+/* Center the benefits/features row in hero sections */
+section .flex.items-center.gap-3,
+section .flex.items-center.gap-4,
+section .flex.items-center.gap-6,
+.hero-benefits,
+[class*="hero"] .flex.items-center {
+  justify-content: center !important;
+}
+
+/* Ensure benefit items container is centered */
+section > div > div.flex.items-center:has([data-feather]) {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Fix for the specific layout pattern with icons + text */
+.flex.items-center.gap-3.text-gray-300,
+.flex.items-center.gap-4.text-gray-300,
+.flex.items-center.space-x-2.text-gray-300,
+.flex.items-center.space-x-3.text-gray-300 {
+  justify-content: center !important;
+}
+
+/* Ensure the parent container of benefit items is full-width and centered */
+section .flex.flex-wrap.justify-center,
+section .flex.flex-wrap {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Target spans with check-circle icons (common benefit pattern) */
+span.flex.items-center.gap-2:has(i[data-feather="check-circle"]),
+span.flex.items-center.gap-2:has(i[data-feather="check"]),
+span.flex.items-center.gap-2:has(i[data-feather="star"]),
+span.flex.items-center.gap-2:has(i[data-feather="zap"]) {
+  display: inline-flex !important;
+}
+
+/* =================================
+   HERO BENEFITS/FEATURES ROW CENTERING
+   More aggressive targeting for AI-generated benefit rows
+   ================================= */
+
+/* Target any flex container with icons inside dark hero sections */
+section[class*="bg-gradient"] .flex.items-center,
+section[class*="from-slate"] .flex.items-center,
+section[class*="from-gray"] .flex.items-center {
+  /* If this is a parent container with multiple children, center them */
+}
+
+/* Parent container of benefit items - ensure it's full width and centered */
+section[class*="bg-gradient"] > div > div:has(.flex.items-center.gap-3),
+section[class*="from-slate"] > div > div:has(.flex.items-center.gap-3),
+section[class*="from-gray"] > div > div:has(.flex.items-center.gap-3) {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  flex-wrap: wrap !important;
+}
+
+/* Target text-gray-300 containers (common in dark hero sections) */
+.text-gray-300.flex,
+div.flex.text-gray-300 {
+  justify-content: center !important;
+}
+
+/* Target mt-16 or similar margin-top containers (common CTA benefit rows) */
+div[class*="mt-16"].flex,
+div[class*="mt-12"].flex,
+div[class*="mt-8"].flex {
+  justify-content: center !important;
+}
+
+/* Target any container with multiple spans containing icons */
+div:has(> span.flex.items-center),
+div:has(> div.flex.items-center.gap-3) {
+  display: flex !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 1.5rem !important;
+}
+
+/* Specific targeting for Feather icons SVG after replace */
+div:has(> span svg.feather),
+div:has(> div svg.feather) {
+  justify-content: center !important;
+}
+
+/* Ultimate fallback: target containers below CTA buttons in hero sections */
+section .flex.gap-4 ~ div.flex,
+section .flex.gap-6 ~ div.flex {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Force center on any container that has text-gray-300 children */
+div:has(> .text-gray-300) {
+  justify-content: center !important;
+}

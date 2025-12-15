@@ -63,10 +63,23 @@ export const generatePageRequestSchema = z
   .object({
     siteId: projectIdSchema,
     pageType: pageTypeSchema,
-    segment: z.string().max(100).optional(),
-    topic: z.string().max(200).optional(),
-    sessionId: sessionIdSchema,
-    behaviorSignals: behaviorSignalsSchema.optional(),
+    segment: z
+      .string()
+      .max(100)
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    topic: z
+      .string()
+      .max(200)
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
+    sessionId: sessionIdSchema.nullable().transform((v) => v ?? undefined),
+    behaviorSignals: behaviorSignalsSchema
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
   })
   .refine(
     (data) => {

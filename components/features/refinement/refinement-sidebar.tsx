@@ -84,10 +84,23 @@ export function RefinementSidebar({
     setIsGenerating(true);
     setPendingVersionId(null);
 
+    // Add a "generating" message
+    const generatingMessageId = `generating-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: generatingMessageId,
+        role: "assistant" as const,
+        content: "🔄 Generating your changes... This may take a moment.",
+        timestamp: new Date(),
+      },
+    ]);
+
     try {
       const response = await fetch("/api/ai/refine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Ensure cookies are sent
         body: JSON.stringify({
           message: content,
           siteId,
@@ -96,14 +109,23 @@ export function RefinementSidebar({
       });
 
       if (!response.ok) {
+        if (response.status === 403 || response.status === 401) {
+          throw new Error("AUTH_ERROR");
+        }
         throw new Error("Refinement failed");
       }
 
-      // Read streaming response (same pattern as ChatInterface!)
+      // Get the new version ID from response header
+      const newVersionId = response.headers.get("X-New-Version-Id");
+
+      // Read streaming text response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let aiResponse = "";
       const streamingMessageId = `streaming-${Date.now()}`;
+
+      // Remove the generating message
+      setMessages((prev) => prev.filter((m) => m.id !== generatingMessageId));
 
       if (reader) {
         while (true) {
@@ -147,25 +169,34 @@ export function RefinementSidebar({
         ];
       });
 
-      // Show apply button (in real implementation, we'd get version ID from response)
-      // For now, we'll fetch the latest version after generation
-      setPendingVersionId("latest");
+      // Set the pending version ID for apply button
+      setPendingVersionId(newVersionId || "latest");
       toast.success("Changes generated! Review and apply when ready.");
     } catch (error) {
-      toast.error("Failed to generate changes. Please try again.");
+      const isAuthError = error instanceof Error && error.message === "AUTH_ERROR";
+
+      if (isAuthError) {
+        toast.error("Session expired. Please refresh the page.");
+      } else {
+        toast.error("Failed to generate changes. Please try again.");
+      }
       console.error("Refinement error:", error);
 
-      // Add error message
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: "assistant",
-          content:
-            "I encountered an error generating those changes. Could you try rephrasing your request or being more specific?",
-          timestamp: new Date(),
-        },
-      ]);
+      // Remove generating message and add error message
+      setMessages((prev) => {
+        const withoutGenerating = prev.filter((m) => m.id !== generatingMessageId);
+        return [
+          ...withoutGenerating,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: isAuthError
+              ? "Your session has expired. Please refresh the page and try again."
+              : "I encountered an error generating those changes. Could you try rephrasing your request or being more specific?",
+            timestamp: new Date(),
+          },
+        ];
+      });
     } finally {
       setIsGenerating(false);
     }
