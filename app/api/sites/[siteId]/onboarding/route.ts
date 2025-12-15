@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         target_audience: targetAudience,
         main_goal: mainGoal,
         requirements: onboardingData,
-      } as unknown as Record<string, unknown>)
+      } as never)
       .eq("id", siteId);
 
     if (error) {

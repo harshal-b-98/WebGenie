@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         storage_path: storagePath,
         processing_status: "processing",
         extracted_text: content,
-      } as unknown as Record<string, unknown>)
+      } as never)
       .select("id, filename, file_size")
       .single();
 

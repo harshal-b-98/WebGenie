@@ -180,25 +180,171 @@ GRADIENTS:
 - CTA backgrounds: from-brand-600 to-brand-700
 
 --------------------------------------------------------------------------------
-7. RESPONSIVE DESIGN
+7. RESPONSIVE DESIGN (CRITICAL - MOBILE-FIRST)
 --------------------------------------------------------------------------------
 
-BREAKPOINTS:
-- Mobile: < 640px
-- Tablet: 640px - 1024px
-- Desktop: > 1024px
+TAILWIND BREAKPOINTS:
+- sm: 640px (small tablets, large phones landscape)
+- md: 768px (tablets)
+- lg: 1024px (small laptops, tablets landscape)
+- xl: 1280px (desktops)
+- 2xl: 1536px (large desktops)
 
-MOBILE REQUIREMENTS:
-- Hamburger menu for navigation
-- Stack columns vertically
-- Full-width buttons
-- Larger touch targets (min 44px)
-- Reduce font sizes by one step
+MOBILE-FIRST APPROACH (MANDATORY):
+Write base styles for mobile first, then add breakpoint modifiers:
+- BAD: text-xl sm:text-lg (starts desktop, shrinks for mobile)
+- GOOD: text-lg sm:text-xl (starts mobile, grows for desktop)
 
-TABLET REQUIREMENTS:
-- 2-column layouts
-- Partial navigation visible
-- Balanced spacing
+================================================================================
+MOBILE DESIGN (< 640px) - BASE STYLES
+================================================================================
+
+MOBILE NAVIGATION (REQUIRED):
+- Hide desktop nav links: class="hidden md:flex"
+- Show hamburger button: class="md:hidden"
+- Full-screen mobile menu overlay when open
+- Example hamburger button:
+  <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Menu">
+    <i data-feather="menu" class="w-6 h-6"></i>
+  </button>
+- Example mobile menu:
+  <div id="mobile-menu" class="fixed inset-0 bg-white z-50 transform translate-x-full transition-transform md:hidden">
+    <div class="flex justify-between items-center p-4 border-b">
+      <span class="font-semibold">Menu</span>
+      <button id="mobile-menu-close" class="p-2"><i data-feather="x" class="w-6 h-6"></i></button>
+    </div>
+    <nav class="p-4 space-y-4">
+      <!-- Nav links with data-segment attributes, full width, py-3 for touch -->
+    </nav>
+  </div>
+
+MOBILE TYPOGRAPHY:
+- H1 hero: text-3xl (30px base, scales up)
+- H2 sections: text-2xl (24px base)
+- H3 cards: text-lg (18px base)
+- Body: text-base (16px - never smaller on mobile)
+- Line height: leading-relaxed for readability
+
+MOBILE LAYOUTS:
+- Single column: grid-cols-1 (always)
+- Full width containers: w-full px-4
+- Stack everything vertically
+- Section padding: py-12 px-4
+
+MOBILE BUTTONS & TOUCH TARGETS:
+- Minimum touch target: 44px x 44px
+- Full-width CTAs: w-full py-4
+- Adequate spacing between buttons: gap-4 or space-y-4
+- Example: <button class="w-full py-4 px-6 text-base font-semibold rounded-xl">
+
+MOBILE CARDS:
+- Full width: w-full
+- Larger padding: p-6
+- Stack vertically with gap: space-y-4 or gap-4
+- Touch-friendly spacing
+
+MOBILE IMAGES:
+- Full width: w-full
+- Maintain aspect ratio: aspect-video or aspect-square
+- Lazy loading: loading="lazy"
+
+================================================================================
+TABLET DESIGN (640px - 1024px) - sm: and md: prefixes
+================================================================================
+
+TABLET NAVIGATION:
+- Can show condensed nav: sm:flex with fewer items
+- Or keep hamburger until md: breakpoint
+- Recommended: hamburger until md:768px
+
+TABLET LAYOUTS:
+- 2-column grids: grid-cols-1 sm:grid-cols-2
+- Side-by-side hero layout option
+- Section padding: sm:py-16 sm:px-6
+
+TABLET TYPOGRAPHY:
+- H1 hero: sm:text-4xl md:text-5xl
+- H2 sections: sm:text-3xl
+- Maintain readability
+
+TABLET CARDS:
+- 2 per row: grid-cols-1 sm:grid-cols-2
+- Equal heights: items-stretch
+- Padding: sm:p-6
+
+================================================================================
+DESKTOP DESIGN (1024px+) - lg: and xl: prefixes
+================================================================================
+
+DESKTOP NAVIGATION:
+- Full horizontal nav: lg:flex
+- All nav items visible
+- Sticky header with backdrop blur
+
+DESKTOP LAYOUTS:
+- 3-4 column grids: lg:grid-cols-3 xl:grid-cols-4
+- Max container width: max-w-7xl mx-auto
+- Generous padding: lg:py-24 lg:px-8
+
+DESKTOP TYPOGRAPHY:
+- H1 hero: lg:text-6xl xl:text-7xl
+- H2 sections: lg:text-4xl
+- Line length limits: max-w-prose for body text
+
+================================================================================
+RESPONSIVE PATTERNS (COPY THESE)
+================================================================================
+
+RESPONSIVE GRID (3 columns):
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+
+RESPONSIVE SECTION:
+<section class="py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+
+RESPONSIVE HERO:
+<section class="min-h-screen flex items-center py-20 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto text-center">
+    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">
+
+RESPONSIVE CARD:
+<div class="bg-white rounded-xl p-5 sm:p-6 lg:p-8 shadow-lg">
+
+RESPONSIVE BUTTON GROUP:
+<div class="flex flex-col sm:flex-row gap-4 sm:justify-center">
+  <button class="w-full sm:w-auto px-6 py-4 sm:py-3">
+
+RESPONSIVE TEXT:
+<p class="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+
+RESPONSIVE FOOTER:
+<footer class="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
+
+================================================================================
+MOBILE MENU JAVASCRIPT (REQUIRED)
+================================================================================
+
+Include this JavaScript for mobile menu toggle:
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+const mobileMenuClose = document.getElementById('mobile-menu-close');
+
+if (mobileMenuBtn && mobileMenu) {
+  mobileMenuBtn.addEventListener('click', () => {
+    mobileMenu.classList.remove('translate-x-full');
+  });
+  mobileMenuClose?.addEventListener('click', () => {
+    mobileMenu.classList.add('translate-x-full');
+  });
+  // Close on nav link click
+  mobileMenu.querySelectorAll('a, button[data-segment]').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.add('translate-x-full');
+    });
+  });
+}
 
 --------------------------------------------------------------------------------
 8. ACCESSIBILITY
@@ -253,12 +399,18 @@ END OF GUIDELINES
  */
 export const UI_GUIDELINES_SHORT = `
 MANDATORY UI RULES:
-1. NAV: Max 20 chars per link, max 5 items, abbreviate long names
+1. NAV: Max 20 chars per link, hamburger menu on mobile (md:hidden), desktop nav hidden sm
 2. ICONS: Use Feather icons only, min w-5 h-5, high contrast, no emojis
-3. BUTTONS: data-action + data-cta-type required, max 3 words
+3. BUTTONS: data-action + data-cta-type required, full-width on mobile (w-full sm:w-auto)
 4. HOME NAV: Logo must have data-action="back-to-landing"
 5. NO PLACEHOLDERS: Real content only, no "?", no Lorem ipsum
-6. SIZING: Icons visible (w-5+), text readable, proper spacing
+6. RESPONSIVE (CRITICAL):
+   - Mobile-first: base styles for mobile, add sm:/md:/lg: for larger
+   - Typography: text-3xl sm:text-4xl md:text-5xl lg:text-6xl for headings
+   - Grids: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+   - Buttons: flex-col sm:flex-row, w-full sm:w-auto
+   - Touch targets: min py-4 px-6 on mobile, 44px minimum
+   - Section padding: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
 `;
 
 /**

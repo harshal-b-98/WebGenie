@@ -48,58 +48,76 @@ You MUST use the exact segment SLUGS provided but can ABBREVIATE display names.
 
 REQUIRED SECTIONS (IN THIS ORDER ONLY):
 
-1. NAVBAR (Sticky, Professional)
+1. NAVBAR (Sticky, Professional, FULLY RESPONSIVE)
    - Logo on the left - MUST have data-action="back-to-landing" (clickable to go home)
    - If using company name as logo, wrap in <a data-action="back-to-landing" class="cursor-pointer">
+
+   DESKTOP NAV (hidden on mobile):
    - Navigation links for EACH DISCOVERED SEGMENT with hover underline effect
-   - NAV TEXT LIMIT: Maximum 20 characters per nav item - ABBREVIATE if longer:
-     * "Intelligent Enterprise Solutions" → "Enterprise Solutions"
-     * "Industries & Use Cases" → "Industries"
-     * "Customer Success Stories" → "Success Stories"
+   - Container: class="hidden md:flex items-center gap-6"
    - Each nav link MUST have: data-segment="[segment-slug]" attribute
-   - Primary CTA button on the right - MAX 18 characters, use short text like "Get Started"
+   - Primary CTA button on the right - MAX 18 characters
    - CTA button MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact]"
+
+   MOBILE HAMBURGER MENU (REQUIRED):
+   - Hamburger button: class="md:hidden p-2 rounded-lg"
+   - Example: <button id="mobile-menu-btn" class="md:hidden p-2" aria-label="Menu"><i data-feather="menu" class="w-6 h-6"></i></button>
+   - Mobile menu overlay (slides in from right):
+     <div id="mobile-menu" class="fixed inset-0 bg-white z-50 transform translate-x-full transition-transform duration-300 md:hidden">
+       <div class="flex justify-between items-center p-4 border-b">
+         <span class="font-bold text-lg">Menu</span>
+         <button id="mobile-menu-close" class="p-2"><i data-feather="x" class="w-6 h-6"></i></button>
+       </div>
+       <nav class="p-6 space-y-6">
+         <!-- Full-width nav links with data-segment, py-3 for touch targets -->
+         <a data-segment="segment-slug" class="block py-3 text-lg font-medium border-b">Segment Name</a>
+       </nav>
+       <div class="p-6">
+         <button data-action="cta-primary" data-cta-type="demo" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold">Get Started</button>
+       </div>
+     </div>
+
+   - NAV TEXT LIMIT: Maximum 20 characters per nav item - ABBREVIATE if longer
    - Sticky: fixed top-0, backdrop-blur-md, bg-white/95 or bg-gray-900/95 z-50
    - Add subtle border-b border-gray-200/20 and shadow-sm
+   - NAVBAR HEIGHT: h-16 (maintains consistent header)
 
-2. HERO SECTION (IMPRESSIVE - MOST IMPORTANT)
+2. HERO SECTION (IMPRESSIVE - FULLY RESPONSIVE)
    - Full viewport height: min-h-screen
    - Dark gradient: bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800
    - Add subtle animated gradient overlay or mesh gradient effect
    - Center content vertically with flex items-center justify-center
+   - RESPONSIVE PADDING: px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32
 
-   HERO CONTENT STRUCTURE:
-   a) Small badge/pill at top: "🚀 [tagline or announcement]" with bg-white/10 backdrop-blur rounded-full px-4 py-2
-   b) Large headline: text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight
-   c) Subheadline: text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mt-6
-   d) CTA buttons row: flex gap-4 mt-10 justify-center
-      - Primary CTA MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact|learn-more]"
-        Style: bg-brand-color text-white px-8 py-4 rounded-full font-semibold shadow-lg shadow-brand/30 hover:scale-105 transition
-        Example: <button data-action="cta-primary" data-cta-type="demo" class="bg-indigo-600 text-white px-8 py-4 rounded-full...">Request Demo</button>
-      - Secondary CTA MUST have: data-action="cta-secondary" data-cta-type="[demo|signup|contact|learn-more]"
-        Style: bg-white/10 backdrop-blur text-white border border-white/20 px-8 py-4 rounded-full
-        Example: <button data-action="cta-secondary" data-cta-type="learn-more" class="bg-white/10...">Learn More</button>
-   e) FEATURE HIGHLIGHTS ROW (below CTAs) - MUST BE CENTERED:
-      - Container: mt-16 flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto w-full
-      - Each highlight: flex items-center gap-3 text-gray-300
-      - Use Feather icons: <i data-feather="check-circle" class="w-5 h-5"></i>
-      - CRITICAL: Extract 3-4 ACTUAL key benefits from the provided documents
-      - DO NOT use generic examples - find REAL differentiators from the business content
-      - Look for: unique features, statistics, guarantees, awards, certifications mentioned in documents
-      - Appropriate Feather icons: check-circle, star, shield, zap, award, trending-up, clock, users
+   HERO CONTENT STRUCTURE (RESPONSIVE):
+   a) Small badge/pill at top: "🚀 [tagline or announcement]" with bg-white/10 backdrop-blur rounded-full px-3 sm:px-4 py-2 text-sm sm:text-base
+   b) Large headline - RESPONSIVE TYPOGRAPHY:
+      class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-tight leading-tight"
+   c) Subheadline - RESPONSIVE:
+      class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto mt-4 sm:mt-6 px-4"
+   d) CTA buttons - STACK ON MOBILE:
+      Container: class="flex flex-col sm:flex-row gap-4 mt-8 sm:mt-10 justify-center items-center px-4"
+      - Primary CTA: class="w-full sm:w-auto px-6 sm:px-8 py-4 rounded-full font-semibold shadow-lg"
+        MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact|learn-more]"
+      - Secondary CTA: class="w-full sm:w-auto px-6 sm:px-8 py-4 rounded-full"
+        MUST have: data-action="cta-secondary" data-cta-type="[demo|signup|contact|learn-more]"
+   e) FEATURE HIGHLIGHTS ROW (RESPONSIVE):
+      Container: class="mt-10 sm:mt-16 flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 max-w-4xl mx-auto w-full px-4"
+      Each highlight: class="flex items-center gap-3 text-gray-300 text-sm sm:text-base"
+      Use Feather icons: <i data-feather="check-circle" class="w-5 h-5 flex-shrink-0"></i>
 
-      EXACT HTML STRUCTURE FOR BENEFITS (copy this pattern):
-      <div class="mt-16 flex flex-wrap justify-center items-center gap-8 max-w-4xl mx-auto w-full">
-        <span class="flex items-center gap-3 text-gray-300">
-          <i data-feather="check-circle" class="w-5 h-5"></i>
+      RESPONSIVE HTML STRUCTURE FOR BENEFITS:
+      <div class="mt-10 sm:mt-16 flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 max-w-4xl mx-auto w-full px-4">
+        <span class="flex items-center gap-3 text-gray-300 text-sm sm:text-base">
+          <i data-feather="check-circle" class="w-5 h-5 flex-shrink-0"></i>
           <span>Benefit 1</span>
         </span>
-        <span class="flex items-center gap-3 text-gray-300">
-          <i data-feather="star" class="w-5 h-5"></i>
+        <span class="flex items-center gap-3 text-gray-300 text-sm sm:text-base">
+          <i data-feather="star" class="w-5 h-5 flex-shrink-0"></i>
           <span>Benefit 2</span>
         </span>
-        <span class="flex items-center gap-3 text-gray-300">
-          <i data-feather="zap" class="w-5 h-5"></i>
+        <span class="flex items-center gap-3 text-gray-300 text-sm sm:text-base">
+          <i data-feather="zap" class="w-5 h-5 flex-shrink-0"></i>
           <span>Benefit 3</span>
         </span>
       </div>
@@ -116,39 +134,51 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - CTA text: Match the business's actual call-to-action (from documents or AI-discovered primaryCTA)
    - If no clear content found, use the AI-discovered segment names as feature highlights
 
-3. SEGMENT CARDS SECTION (with icons)
+3. SEGMENT CARDS SECTION (RESPONSIVE GRID)
    - Light background: bg-gray-50 or bg-white
-   - Section title: text-3xl font-bold text-center mb-12
+   - RESPONSIVE SECTION PADDING: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
+   - Section title: class="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8 sm:mb-12"
+   - Container: class="max-w-7xl mx-auto"
    - Clickable cards for EACH DISCOVERED SEGMENT
    - Each card MUST have: data-segment="[segment-slug]" and cursor-pointer
 
-   CARD DESIGN:
-   - bg-white rounded-2xl p-8 shadow-lg border border-gray-100
-   - ICON at top: Use Feather icon with gradient background:
-     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4">
-       <i data-feather="grid" class="w-6 h-6 text-white"></i>
-     </div>
-   - Use appropriate Feather icon for each segment: box (products), briefcase (services), zap (features), lightbulb (solutions), users (team), mail (contact), help-circle (faq)
-   - Segment name: text-xl font-semibold text-gray-900
-   - Description: text-gray-600 mt-2
-   - Arrow indicator: <i data-feather="arrow-right" class="w-5 h-5 opacity-0 group-hover:opacity-100 transition"></i>
-   - Hover: hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300
+   RESPONSIVE CARD GRID:
+   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
 
-4. CTA SECTION (Bold, Conversion-focused)
+   RESPONSIVE CARD DESIGN:
+   - class="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-8 shadow-lg border border-gray-100 group cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300"
+   - ICON at top: Use Feather icon with gradient background:
+     <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-3 sm:mb-4">
+       <i data-feather="grid" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
+     </div>
+   - Segment name: class="text-lg sm:text-xl font-semibold text-gray-900"
+   - Description: class="text-gray-600 mt-2 text-sm sm:text-base"
+   - Arrow indicator: <i data-feather="arrow-right" class="w-5 h-5 opacity-0 group-hover:opacity-100 transition"></i>
+   - Use appropriate Feather icons: box (products), briefcase (services), zap (features), lightbulb (solutions), users (team), mail (contact), help-circle (faq)
+
+4. CTA SECTION (RESPONSIVE, Conversion-focused)
    - Full-width gradient background: bg-gradient-to-r from-brand-600 to-brand-700
    - Or dark: bg-gray-900 with subtle pattern overlay
-   - Large headline: text-3xl md:text-4xl font-bold text-white text-center
-   - Subtext: text-gray-200 text-lg mt-4
-   - CTA buttons centered: flex gap-4 justify-center mt-8
+   - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8
+   - Large headline: class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center"
+   - Subtext: class="text-gray-200 text-base sm:text-lg mt-3 sm:mt-4 max-w-2xl mx-auto"
+   - CTA buttons - STACK ON MOBILE:
+     Container: class="flex flex-col sm:flex-row gap-4 justify-center mt-6 sm:mt-8"
+     Buttons: class="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-3 rounded-full font-semibold"
    - CRITICAL: All CTA buttons MUST have data-action and data-cta-type attributes
-     Example: <button data-action="cta-primary" data-cta-type="demo" class="...">Get Started</button>
-   - Add trust badges or stats row below
+     Example: <button data-action="cta-primary" data-cta-type="demo" class="w-full sm:w-auto...">Get Started</button>
+   - Add trust badges or stats row below (responsive: flex-col sm:flex-row)
 
-5. MINIMAL FOOTER
+5. MINIMAL FOOTER (RESPONSIVE)
    - Dark background: bg-gray-900 or bg-slate-900
-   - Logo and copyright
+   - RESPONSIVE PADDING: py-12 sm:py-16 px-4 sm:px-6 lg:px-8
+   - Container: class="max-w-7xl mx-auto"
+   - RESPONSIVE GRID for footer columns:
+     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
+   - Logo and copyright (centered on mobile): class="text-center sm:text-left"
    - Quick links for ALL discovered segments (with data-segment attributes)
-   - Social media icons using Feather: <i data-feather="facebook" class="w-5 h-5"></i>, twitter, linkedin, instagram, youtube
+   - Social media icons row: class="flex gap-4 justify-center sm:justify-start mt-6"
+   - Footer bottom: class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
    - Any footer CTAs MUST have: data-action="cta-footer" data-cta-type="contact"
    - Privacy Policy | Terms of Use links
 
@@ -216,15 +246,38 @@ JAVASCRIPT (CRITICAL - AVOID ERRORS):
 - Use 'const' for values that don't change, 'let' for values that change - avoid 'var'
 - NEVER use multiple <script> tags with the same variable names
 - All JavaScript should be in ONE unified <script> block before </body>
-- Example structure:
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle
-    const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    // All other code here in ONE block...
-  });
-  </script>
+- MUST INCLUDE mobile menu toggle code:
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Feather icons
+  if (typeof feather !== 'undefined') feather.replace();
+
+  // Mobile menu toggle (REQUIRED)
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const mobileMenuClose = document.getElementById('mobile-menu-close');
+
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+      mobileMenu.classList.remove('translate-x-full');
+    });
+  }
+  if (mobileMenuClose && mobileMenu) {
+    mobileMenuClose.addEventListener('click', function() {
+      mobileMenu.classList.add('translate-x-full');
+    });
+  }
+  // Close mobile menu when nav link is clicked
+  if (mobileMenu) {
+    mobileMenu.querySelectorAll('[data-segment], [data-action]').forEach(function(link) {
+      link.addEventListener('click', function() {
+        mobileMenu.classList.add('translate-x-full');
+      });
+    });
+  }
+});
+</script>
 
 OUTPUT FORMAT:
 - One complete HTML document

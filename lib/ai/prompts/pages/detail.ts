@@ -26,17 +26,47 @@ CRITICAL: CONSISTENT UI/UX WITH SEGMENT PAGES
 The detail page MUST look like it belongs to the same website as segment pages.
 Use the EXACT SAME navigation bar structure, fonts, colors, and spacing.
 
+================================================================================
+RESPONSIVE DESIGN (CRITICAL - MOBILE-FIRST)
+================================================================================
+
+ALL SECTIONS MUST BE FULLY RESPONSIVE:
+- Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
+- Write mobile styles first, add sm:/md:/lg: for larger screens
+- Typography: text-2xl sm:text-3xl md:text-4xl lg:text-5xl for headings
+- Grids: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+- Buttons: w-full sm:w-auto, stack vertically on mobile (flex-col sm:flex-row)
+- Touch targets: minimum 44px height on mobile (py-4)
+- Section padding: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
+
+================================================================================
 REQUIRED SECTIONS:
 
-1. NAVIGATION BAR (MUST MATCH SEGMENT PAGES EXACTLY)
+1. NAVIGATION BAR (RESPONSIVE - MUST MATCH SEGMENT PAGES)
    - Fixed position: fixed top-0 left-0 right-0 z-50
    - Background: bg-white/95 backdrop-blur-md shadow-sm
    - Height: h-16 (64px)
-   - Structure (LEFT TO RIGHT):
-     * Logo on LEFT (clickable, data-action="back-to-landing")
-     * Navigation links in CENTER-LEFT area with data-segment attributes
-     * "Get Started" CTA button on RIGHT with data-action="cta-primary" data-cta-type="demo"
-   - DO NOT center the navigation - keep it left-aligned like segment pages
+
+   DESKTOP NAV (hidden on mobile):
+   - Container: class="hidden md:flex items-center gap-6"
+   - Logo on LEFT (clickable, data-action="back-to-landing")
+   - Navigation links with data-segment attributes
+   - "Get Started" CTA button on RIGHT
+
+   MOBILE HAMBURGER MENU (REQUIRED):
+   - Hamburger button: class="md:hidden p-2"
+   - <button id="mobile-menu-btn" class="md:hidden p-2" aria-label="Menu"><i data-feather="menu" class="w-6 h-6"></i></button>
+   - Mobile menu overlay (slides in from right):
+     <div id="mobile-menu" class="fixed inset-0 bg-white z-50 transform translate-x-full transition-transform duration-300 md:hidden">
+       <div class="flex justify-between items-center p-4 border-b">
+         <span class="font-bold text-lg">Menu</span>
+         <button id="mobile-menu-close" class="p-2"><i data-feather="x" class="w-6 h-6"></i></button>
+       </div>
+       <nav class="p-6 space-y-6">
+         <!-- Nav links with py-3 for touch targets -->
+       </nav>
+     </div>
+
    - Include breadcrumb BELOW navbar, not IN navbar
 
 2. BREADCRUMB (BELOW NAVBAR) - EXACT HTML STRUCTURE:
@@ -68,39 +98,66 @@ REQUIRED SECTIONS:
    ⚠️ WRONG: Using data-action="back-to-landing" for parent segment (breaks navigation!)
    ✅ CORRECT: Using data-segment="parent-slug" for parent segment (navigates to segment page)
 
-3. PAGE HEADER
+3. PAGE HEADER (RESPONSIVE)
    - Dark gradient background (from-slate-900 via-gray-900 to-slate-800)
-   - Topic name as main heading (H1): text-4xl md:text-5xl font-bold text-white
-   - Brief tagline or description: text-xl text-gray-300
-   - Padding: py-16 md:py-24
+   - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
+   - Topic name as main heading (H1): class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white"
+   - Brief tagline or description: class="text-base sm:text-lg lg:text-xl text-gray-300 mt-3 sm:mt-4"
 
-4. OVERVIEW SECTION
+4. OVERVIEW SECTION (RESPONSIVE)
    - Key benefits (3-4 points) with Feather icons
-   - Each benefit: icon (w-6 h-6) + text
+   - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
+   - Each benefit: icon (w-5 h-5 sm:w-6 sm:h-6) + text
+   - SECTION PADDING: py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8
    - Background: bg-white
 
-5. DETAILED CONTENT
+5. DETAILED CONTENT (RESPONSIVE)
    - Comprehensive explanation with proper sections
+   - Max content width: class="max-w-4xl mx-auto"
+   - SECTION PADDING: py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8
    - How it works (step-by-step if applicable)
    - Technical details and business value
 
-6. USE CASES
+6. USE CASES (RESPONSIVE)
    - Real-world scenarios with icons
-   - Card-based layout matching segment page cards
+   - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
+   - CARD STYLING: class="p-5 sm:p-6 rounded-xl"
 
-7. RELATED TOPICS
+7. RELATED TOPICS (RESPONSIVE)
    - Links to related features/solutions with proper data attributes
+   - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
    - Card layout MATCHING segment page card styling
    - Each card MUST have: data-topic="slug" data-parent-segment="parent-slug" class="cursor-pointer"
 
-8. CTA SECTION
+8. CTA SECTION (RESPONSIVE)
+   - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8
+   - Buttons STACK ON MOBILE: class="flex flex-col sm:flex-row gap-4 justify-center"
+   - Button styling: class="w-full sm:w-auto px-6 sm:px-8 py-4 sm:py-3 rounded-full"
    - Primary: data-action="cta-primary" data-cta-type="demo"
    - Secondary: data-segment="parent-slug" (back to segment)
 
-9. FOOTER (MUST MATCH SEGMENT PAGES)
-   - Same structure as segment page footers
+9. FOOTER (RESPONSIVE - MUST MATCH SEGMENT PAGES)
+   - RESPONSIVE PADDING: py-12 sm:py-16 px-4 sm:px-6 lg:px-8
+   - RESPONSIVE GRID: class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8"
    - Logo with data-action="back-to-landing"
    - Quick links with data-segment attributes
+
+10. MOBILE MENU JAVASCRIPT (REQUIRED):
+    Include in ONE script block before </body>:
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuClose = document.getElementById('mobile-menu-close');
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.remove('translate-x-full'));
+    }
+    if (mobileMenuClose && mobileMenu) {
+      mobileMenuClose.addEventListener('click', () => mobileMenu.classList.add('translate-x-full'));
+    }
+    if (mobileMenu) {
+      mobileMenu.querySelectorAll('[data-segment], [data-action]').forEach(link => {
+        link.addEventListener('click', () => mobileMenu.classList.add('translate-x-full'));
+      });
+    }
 
 ================================================================================
 ICON RULES (STRICTLY ENFORCED - NO EXCEPTIONS)
