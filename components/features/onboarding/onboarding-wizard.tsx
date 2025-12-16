@@ -161,7 +161,7 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
         throw new Error(error.error?.message || "Failed to create workspace");
       }
 
-      const workspace = await workspaceResponse.json();
+      const { workspace } = await workspaceResponse.json();
       const siteId = workspace.id;
 
       // Step 2: Upload logo if provided
