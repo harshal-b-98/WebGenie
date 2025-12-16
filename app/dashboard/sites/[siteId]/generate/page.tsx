@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,8 @@ import {
   Zap,
   TrendingUp,
   BarChart3,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -57,6 +59,8 @@ export default function GeneratePage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
   const [stats, setStats] = useState<GenerationStats | null>(null);
+  const [streamingHtml, setStreamingHtml] = useState<string>("");
+  const [showLivePreview, setShowLivePreview] = useState(true);
 
   // AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -250,6 +254,11 @@ export default function GeneratePage() {
       updateEstimatedTime(newProgress);
     }
 
+    // Handle HTML streaming for live preview
+    if (data.partial) {
+      setStreamingHtml(data.partial as string);
+    }
+
     if (data.stage === "complete" || data.success === true) {
       // Mark all sections as complete
       setSections((prev) => prev.map((s) => ({ ...s, status: "complete" })));
@@ -271,6 +280,66 @@ export default function GeneratePage() {
       setError((data.message as string) || "Generation failed");
     }
   };
+
+  // Create blob URL for streaming preview
+  const previewBlobUrl = useMemo(() => {
+    if (!streamingHtml || streamingHtml.length < 200) return null;
+
+    // Wrap partial HTML with Tailwind CDN for proper rendering
+    let previewContent = streamingHtml;
+
+    // If it doesn't start with DOCTYPE, wrap it
+    if (!previewContent.toLowerCase().startsWith("<!doctype")) {
+      // Check if it has <html> tag
+      if (!previewContent.toLowerCase().includes("<html")) {
+        previewContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+  </style>
+</head>
+<body>
+${previewContent}
+<script>if(typeof feather !== 'undefined') feather.replace();</script>
+</body>
+</html>`;
+      } else {
+        // Has <html> but no DOCTYPE
+        previewContent = "<!DOCTYPE html>" + previewContent;
+      }
+    }
+
+    // Ensure Tailwind CDN is present
+    if (!previewContent.includes("cdn.tailwindcss.com")) {
+      previewContent = previewContent.replace(
+        "</head>",
+        '<script src="https://cdn.tailwindcss.com"></script></head>'
+      );
+    }
+
+    const blob = new Blob([previewContent], { type: "text/html" });
+    return URL.createObjectURL(blob);
+  }, [streamingHtml]);
+
+  // Cleanup blob URL on unmount or when it changes
+  const previousBlobUrl = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousBlobUrl.current && previousBlobUrl.current !== previewBlobUrl) {
+      URL.revokeObjectURL(previousBlobUrl.current);
+    }
+    previousBlobUrl.current = previewBlobUrl;
+
+    return () => {
+      if (previousBlobUrl.current) {
+        URL.revokeObjectURL(previousBlobUrl.current);
+      }
+    };
+  }, [previewBlobUrl]);
 
   if (error) {
     return (
@@ -372,7 +441,7 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* Skeleton Preview */}
+          {/* Live Preview / Skeleton */}
           <div className="bg-gray-800/50 rounded-xl overflow-hidden border border-gray-700/50 mb-8">
             {/* Mini browser chrome */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700/50 bg-gray-800">
@@ -382,87 +451,129 @@ export default function GeneratePage() {
                 <div className="w-3 h-3 rounded-full bg-green-500/60" />
               </div>
               <div className="flex-1 ml-4">
-                <div className="h-6 bg-gray-700 rounded-md w-48 mx-auto" />
+                <div className="h-6 bg-gray-700 rounded-md w-48 mx-auto flex items-center justify-center text-xs text-gray-400">
+                  {previewBlobUrl ? "Live Preview" : "Generating..."}
+                </div>
               </div>
+              {/* Toggle preview mode */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLivePreview(!showLivePreview)}
+                className="text-gray-400 hover:text-gray-200 h-7 px-2"
+              >
+                {showLivePreview ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5 mr-1" /> Hide
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5 mr-1" /> Show
+                  </>
+                )}
+              </Button>
             </div>
 
-            {/* Skeleton sections */}
-            <div className="p-4">
-              {/* Header skeleton */}
-              <div
-                className={`h-12 rounded-lg mb-4 transition-all duration-500 ${
-                  progress >= 40
-                    ? "bg-green-500/20 section-complete"
-                    : progress >= 25
-                      ? "skeleton-pulse section-generating"
-                      : "bg-gray-700/50"
-                }`}
-              />
-
-              {/* Hero skeleton */}
-              <div
-                className={`h-48 rounded-lg mb-4 transition-all duration-500 ${
-                  progress >= 55
-                    ? "bg-green-500/20 section-complete"
-                    : progress >= 40
-                      ? "skeleton-pulse section-generating"
-                      : "bg-gray-700/50"
-                }`}
-              />
-
-              {/* Content grid skeleton */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
+            {/* Live Preview iframe or Skeleton */}
+            {showLivePreview && previewBlobUrl ? (
+              <div className="relative" style={{ height: "400px" }}>
+                <iframe
+                  src={previewBlobUrl}
+                  className="w-full h-full border-0 bg-white"
+                  title="Live Generation Preview"
+                  sandbox="allow-scripts"
+                />
+                {/* Progress overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/80 to-transparent p-4">
+                  <div className="flex items-center justify-between text-xs text-white">
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Generating live preview...
+                    </span>
+                    <span className="text-gray-400">
+                      {Math.round(streamingHtml.length / 1024)}KB
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4">
+                {/* Header skeleton */}
                 <div
-                  className={`h-32 rounded-lg transition-all duration-500 ${
-                    progress >= 70
+                  className={`h-12 rounded-lg mb-4 transition-all duration-500 ${
+                    progress >= 40
                       ? "bg-green-500/20 section-complete"
-                      : progress >= 55
+                      : progress >= 25
                         ? "skeleton-pulse section-generating"
                         : "bg-gray-700/50"
                   }`}
                 />
+
+                {/* Hero skeleton */}
                 <div
-                  className={`h-32 rounded-lg transition-all duration-500 ${
-                    progress >= 70
+                  className={`h-48 rounded-lg mb-4 transition-all duration-500 ${
+                    progress >= 55
                       ? "bg-green-500/20 section-complete"
-                      : progress >= 58
+                      : progress >= 40
                         ? "skeleton-pulse section-generating"
                         : "bg-gray-700/50"
                   }`}
                 />
+
+                {/* Content grid skeleton */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div
+                    className={`h-32 rounded-lg transition-all duration-500 ${
+                      progress >= 70
+                        ? "bg-green-500/20 section-complete"
+                        : progress >= 55
+                          ? "skeleton-pulse section-generating"
+                          : "bg-gray-700/50"
+                    }`}
+                  />
+                  <div
+                    className={`h-32 rounded-lg transition-all duration-500 ${
+                      progress >= 70
+                        ? "bg-green-500/20 section-complete"
+                        : progress >= 58
+                          ? "skeleton-pulse section-generating"
+                          : "bg-gray-700/50"
+                    }`}
+                  />
+                  <div
+                    className={`h-32 rounded-lg transition-all duration-500 ${
+                      progress >= 70
+                        ? "bg-green-500/20 section-complete"
+                        : progress >= 62
+                          ? "skeleton-pulse section-generating"
+                          : "bg-gray-700/50"
+                    }`}
+                  />
+                </div>
+
+                {/* CTA skeleton */}
                 <div
-                  className={`h-32 rounded-lg transition-all duration-500 ${
-                    progress >= 70
+                  className={`h-24 rounded-lg mb-4 transition-all duration-500 ${
+                    progress >= 85
                       ? "bg-green-500/20 section-complete"
-                      : progress >= 62
+                      : progress >= 70
+                        ? "skeleton-pulse section-generating"
+                        : "bg-gray-700/50"
+                  }`}
+                />
+
+                {/* Footer skeleton */}
+                <div
+                  className={`h-16 rounded-lg transition-all duration-500 ${
+                    progress >= 95
+                      ? "bg-green-500/20 section-complete"
+                      : progress >= 85
                         ? "skeleton-pulse section-generating"
                         : "bg-gray-700/50"
                   }`}
                 />
               </div>
-
-              {/* CTA skeleton */}
-              <div
-                className={`h-24 rounded-lg mb-4 transition-all duration-500 ${
-                  progress >= 85
-                    ? "bg-green-500/20 section-complete"
-                    : progress >= 70
-                      ? "skeleton-pulse section-generating"
-                      : "bg-gray-700/50"
-                }`}
-              />
-
-              {/* Footer skeleton */}
-              <div
-                className={`h-16 rounded-lg transition-all duration-500 ${
-                  progress >= 95
-                    ? "bg-green-500/20 section-complete"
-                    : progress >= 85
-                      ? "skeleton-pulse section-generating"
-                      : "bg-gray-700/50"
-                }`}
-              />
-            </div>
+            )}
           </div>
 
           {/* Section Progress */}

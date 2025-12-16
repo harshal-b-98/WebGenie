@@ -26,45 +26,40 @@ export default function DocumentsPage() {
   const siteId = params.siteId as string;
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    loadDocuments();
+    loadDocuments(true);
 
-    // Poll for document status updates every 3 seconds
+    // Poll for document status updates every 5 seconds (reduced from 3s)
+    // Only poll if there are documents still processing
     const interval = setInterval(() => {
-      loadDocuments();
-    }, 3000);
+      loadDocuments(false);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [siteId]);
 
-  const loadDocuments = async () => {
-    setIsLoading(true);
+  const loadDocuments = async (showLoading: boolean) => {
+    // Only show loading spinner on initial load
+    if (showLoading && isInitialLoad) {
+      setIsLoading(true);
+    }
     try {
       const response = await fetch(`/api/sites/${siteId}/documents`);
       if (response.ok) {
         const data = await response.json();
-        const docs = data.documents || [];
-
-        // Fetch embedding counts for each document
-        const docsWithCounts = await Promise.all(
-          docs.map(async (doc: Document) => {
-            try {
-              const embRes = await fetch(`/api/documents/${doc.id}/embedding-count`);
-              const embData = await embRes.json();
-              return { ...doc, embedding_count: embData.count || 0 };
-            } catch {
-              return { ...doc, embedding_count: 0 };
-            }
-          })
-        );
-
-        setDocuments(docsWithCounts);
+        // Embedding counts now included in API response
+        setDocuments(data.documents || []);
       }
     } catch (error) {
-      toast.error("Failed to load documents");
+      // Only show error on initial load
+      if (showLoading) {
+        toast.error("Failed to load documents");
+      }
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -82,7 +77,7 @@ export default function DocumentsPage() {
       toast.success(`Generated ${data.chunkCount} embeddings for ${filename}`);
 
       // Reload documents to show updated counts
-      await loadDocuments();
+      await loadDocuments(false);
     } catch (error) {
       toast.error(`Failed to generate embeddings for ${filename}`);
     }
@@ -146,7 +141,7 @@ export default function DocumentsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DocumentUploader siteId={siteId} onUploadComplete={loadDocuments} />
+            <DocumentUploader siteId={siteId} onUploadComplete={() => loadDocuments(false)} />
           </CardContent>
         </Card>
 

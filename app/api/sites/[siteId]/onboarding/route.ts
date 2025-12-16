@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
       industry,
     };
 
-    // Update site with onboarding metadata using existing columns
+    // Update site with onboarding metadata and enable feature flags
     const { error } = await supabase
       .from("sites")
       .update({
@@ -40,6 +40,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         target_audience: targetAudience,
         main_goal: mainGoal,
         requirements: onboardingData,
+        // Enable features for new sites created via onboarding
+        dynamic_pages_enabled: true,
+        chat_widget_enabled: true,
       } as never)
       .eq("id", siteId);
 

@@ -166,17 +166,23 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
 
       // Step 2: Upload logo if provided
       if (data.logo) {
-        const formData = new FormData();
-        formData.append("file", data.logo);
+        const logoFormData = new FormData();
+        logoFormData.append("file", data.logo);
 
-        await fetch(`/api/sites/${siteId}/logo`, {
+        const logoResponse = await fetch(`/api/sites/${siteId}/logo`, {
           method: "POST",
-          body: formData,
+          body: logoFormData,
         });
+
+        if (!logoResponse.ok) {
+          const error = await logoResponse.json().catch(() => ({}));
+          console.error("Logo upload failed:", error);
+          // Continue anyway - logo is optional
+        }
       }
 
       // Step 3: Save brand settings
-      await fetch(`/api/sites/${siteId}/settings`, {
+      const settingsResponse = await fetch(`/api/sites/${siteId}/settings`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,22 +196,34 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
         }),
       });
 
-      // Step 4: Upload documents if provided
+      if (!settingsResponse.ok) {
+        const error = await settingsResponse.json().catch(() => ({}));
+        throw new Error(error.error?.message || "Failed to save brand settings");
+      }
+
+      // Step 4: Upload documents if provided (use correct endpoint)
       if (data.documents.length > 0) {
         for (const doc of data.documents) {
-          const formData = new FormData();
-          formData.append("file", doc);
+          const docFormData = new FormData();
+          docFormData.append("file", doc);
+          docFormData.append("siteId", siteId);
 
-          await fetch(`/api/sites/${siteId}/documents`, {
+          const docResponse = await fetch(`/api/documents/upload`, {
             method: "POST",
-            body: formData,
+            body: docFormData,
           });
+
+          if (!docResponse.ok) {
+            const error = await docResponse.json().catch(() => ({}));
+            console.error("Document upload failed:", error);
+            // Continue with other documents
+          }
         }
       }
 
       // Step 5: Save text content as a document if provided
       if (data.textContent.trim()) {
-        await fetch(`/api/sites/${siteId}/documents/text`, {
+        const textResponse = await fetch(`/api/sites/${siteId}/documents/text`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -213,10 +231,16 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
             title: "Business Information",
           }),
         });
+
+        if (!textResponse.ok) {
+          const error = await textResponse.json().catch(() => ({}));
+          console.error("Text content save failed:", error);
+          // Continue anyway
+        }
       }
 
       // Step 6: Mark onboarding as complete
-      await fetch(`/api/sites/${siteId}/onboarding`, {
+      const onboardingResponse = await fetch(`/api/sites/${siteId}/onboarding`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -227,6 +251,11 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
           mainGoal: data.mainGoal,
         }),
       });
+
+      if (!onboardingResponse.ok) {
+        const error = await onboardingResponse.json().catch(() => ({}));
+        throw new Error(error.error?.message || "Failed to complete onboarding");
+      }
 
       toast.success("Project created! Redirecting to generation...");
       handleClose();

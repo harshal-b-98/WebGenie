@@ -8,11 +8,26 @@ interface PreviewFrameProps {
 }
 
 /**
- * CSS fix for hero section benefit items centering
- * This ensures AI-generated benefit rows are properly centered
+ * CSS fixes for common AI-generation issues:
+ * 1. Hero section benefit items centering
+ * 2. Navbar z-index to prevent content scrolling above
  */
 const heroCenteringCSS = `
 <style id="ngw-hero-fix">
+  /* Fix navbar z-index - ensure it stays above all content */
+  nav, header, [class*="fixed"][class*="top-0"] {
+    z-index: 50 !important;
+    position: fixed !important;
+  }
+
+  /* Ensure main content has proper top padding to account for fixed navbar */
+  body > main:first-of-type,
+  body > section:first-of-type,
+  body > div:first-of-type > section:first-of-type {
+    scroll-margin-top: 5rem;
+  }
+</style>
+<style id="ngw-hero-fix-2">
   /* Fix hero benefit items centering */
   section[class*="from-slate"] .flex.items-center.gap-3,
   section[class*="from-gray"] .flex.items-center.gap-3,

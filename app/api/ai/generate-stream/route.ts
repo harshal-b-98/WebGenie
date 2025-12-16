@@ -343,9 +343,19 @@ export async function POST(request: Request) {
               currentCheckpoint++;
             }
 
-            // Send chunk event for real-time streaming feedback
-            if (chunkCount % 10 === 0) {
-              sendEvent("chunk", { length: fullHtml.length });
+            // Send HTML chunk every 20 tokens for live preview (throttled for performance)
+            if (chunkCount % 20 === 0) {
+              // Clean partial HTML for preview (remove markdown code block start if present)
+              const previewHtml = fullHtml.replace(/^```html\s*/i, "").replace(/^```\s*/i, "");
+
+              // Only send if we have substantial content (starts looking like HTML)
+              if (previewHtml.includes("<") && previewHtml.length > 100) {
+                sendEvent("html", {
+                  partial: previewHtml,
+                  length: previewHtml.length,
+                  progress: Math.round(estimatedProgress),
+                });
+              }
             }
           }
 

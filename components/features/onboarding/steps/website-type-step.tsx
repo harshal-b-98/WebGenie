@@ -125,7 +125,7 @@ export function WebsiteTypeStep({ data, updateData }: WebsiteTypeStepProps) {
       {/* Website Type Selection */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">What type of website do you need?</Label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {WEBSITE_TYPES.map((type) => {
             const Icon = type.icon;
             const isSelected = data.websiteType === type.id;
@@ -135,19 +135,21 @@ export function WebsiteTypeStep({ data, updateData }: WebsiteTypeStepProps) {
                 key={type.id}
                 type="button"
                 onClick={() => updateData({ websiteType: type.id })}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                className={`p-3 sm:p-4 rounded-lg border-2 transition-all text-left flex flex-col items-start min-h-[100px] ${
                   isSelected
                     ? "border-indigo-600 bg-indigo-50 ring-2 ring-indigo-600 ring-offset-2"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
                 <div
-                  className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center mb-2`}
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${type.color} flex items-center justify-center mb-2 shrink-0`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <h3 className="font-medium text-sm text-gray-900">{type.title}</h3>
-                <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                <h3 className="font-medium text-xs sm:text-sm text-gray-900 leading-tight">
+                  {type.title}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{type.description}</p>
               </button>
             );
           })}
