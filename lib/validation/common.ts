@@ -57,12 +57,11 @@ export const normalizedString = z.string().transform((val) => val.trim().replace
 // URL validation
 export const urlSchema = z.string().url("Invalid URL format").max(2048, "URL is too long");
 
-export const optionalUrlSchema = z
-  .string()
-  .url("Invalid URL format")
-  .max(2048, "URL is too long")
-  .optional()
-  .nullable();
+// Optional URL that allows empty strings (converts to undefined)
+export const optionalUrlSchema = z.preprocess(
+  (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+  z.string().url("Invalid URL format").max(2048, "URL is too long").optional().nullable()
+);
 
 // Email validation
 export const emailSchema = z
