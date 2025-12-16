@@ -7,7 +7,7 @@
 
 import { generateText } from "ai";
 import { defaultGenerationModel } from "@/lib/ai/client";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/utils/logger";
 import * as documentService from "./document-service";
 import { injectChatWidget, type ChatWidgetConfig } from "./generation-service";
@@ -207,7 +207,7 @@ function generatePageSlug(pageType: PageType, segment?: string, topic?: string):
  * Also validates cached content - if invalid, deletes from cache and returns null
  */
 async function checkCache(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   siteId: string,
   pageSlug: string,
   pageType: PageType,
@@ -260,7 +260,7 @@ async function checkCache(
  * Save page to cache
  */
 async function saveToCache(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   siteId: string,
   pageSlug: string,
   pageType: PageType,

@@ -236,7 +236,7 @@ Remember: Brief, direct answer. A detailed page will follow.`;
               },
             ],
             temperature: 0.7,
-            maxTokens: 200, // Keep summary short
+            maxOutputTokens: 200, // Keep summary short
           });
 
           // Stream each chunk
