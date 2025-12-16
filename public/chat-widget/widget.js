@@ -2,6 +2,11 @@
  * NextGenWeb Chat Widget
  * Self-contained chat widget for AI-powered visitor assistance
  * Embeds into generated websites to answer questions about the business
+ *
+ * Features:
+ * - Text-based chat responses
+ * - Dynamic answer page generation for relevant questions
+ * - Conversation history with page links
  */
 
 (function () {
@@ -19,6 +24,11 @@
       this.messages = [];
       this.isOpen = false;
       this.isTyping = false;
+      this.isGeneratingPage = false;
+
+      // Parallel page generation: stores pending page generation promises
+      // Key: questionSlug, Value: { promise: Promise, data: object, status: 'pending'|'ready'|'error' }
+      this.pendingPages = new Map();
 
       this.init();
     }
@@ -34,10 +44,78 @@
         role: "assistant",
         content:
           config.welcomeMessage ||
-          "Hi! I can help answer questions about our products and services. What would you like to know?",
+          "Hi! I can help answer questions about our products and services. Ask a question and I'll show you a detailed answer page!",
       });
 
-      console.log("[NextGenWeb Widget] Initialized", { projectId: this.projectId });
+      // Listen for page ready event from nav-controller
+      window.addEventListener("ngw-answer-ready", () => {
+        this.hideBubbleLoading();
+        this.isGeneratingPage = false;
+      });
+
+      // Listen for content replacement event - re-create elements if destroyed
+      window.addEventListener("ngw-content-replaced", () => {
+        this.ensureElementsExist();
+      });
+
+      console.log("[NextGenWeb Widget] Initialized with page generation", {
+        projectId: this.projectId,
+      });
+    }
+
+    /**
+     * Ensure widget elements exist in the DOM
+     * Called after nav-controller replaces content, which destroys our elements
+     */
+    ensureElementsExist() {
+      const buttonExists = document.getElementById("nextgenweb-chat-button");
+      const panelExists = document.getElementById("nextgenweb-chat-panel");
+
+      if (!buttonExists) {
+        console.log("[NextGenWeb Widget] Re-creating button element");
+        this.createButton();
+      }
+
+      if (!panelExists) {
+        console.log("[NextGenWeb Widget] Re-creating panel element");
+        this.createPanel();
+        // Re-render messages
+        this.renderMessages();
+      }
+
+      // Re-attach event listeners (they were lost with the elements)
+      if (!buttonExists || !panelExists) {
+        this.attachEventListeners();
+      }
+
+      // Update references
+      this.button = document.getElementById("nextgenweb-chat-button");
+      this.panel = document.getElementById("nextgenweb-chat-panel");
+      this.messagesContainer = document.getElementById("nextgenweb-chat-messages");
+      this.input = document.getElementById("nextgenweb-chat-input");
+
+      // Restore open state if it was open
+      if (this.isOpen && this.panel) {
+        this.panel.style.display = "flex";
+        this.panel.classList.add("nextgenweb-chat-panel-open");
+        if (this.button) this.button.style.display = "none";
+      }
+    }
+
+    /**
+     * Re-render all messages (used after panel is re-created)
+     */
+    renderMessages() {
+      if (!this.messagesContainer) return;
+
+      // Clear and re-render all messages
+      this.messagesContainer.innerHTML = "";
+      const messagesToRender = [...this.messages];
+      this.messages = []; // Reset so addMessage works correctly
+
+      messagesToRender.forEach((msg) => {
+        this.addMessage(msg);
+      });
     }
 
     createButton() {
@@ -50,8 +128,13 @@
       button.classList.add(`position-${position}`);
 
       button.innerHTML = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="chat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <svg class="loading-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+          <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32">
+            <animate attributeName="stroke-dashoffset" dur="1s" values="32;0;32" repeatCount="indefinite"/>
+          </circle>
         </svg>
       `;
 
@@ -72,7 +155,7 @@
 
       panel.innerHTML = `
         <div class="nextgenweb-chat-header">
-          <h3>Chat with Us</h3>
+          <h3>Ask a Question</h3>
           <button id="nextgenweb-chat-close" aria-label="Close chat">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -110,7 +193,7 @@
       // Close button
       document
         .getElementById("nextgenweb-chat-close")
-        ?.addEventListener("click", () => this.toggleChat());
+        ?.addEventListener("click", () => this.closeChat());
 
       // Send message
       document
@@ -127,24 +210,48 @@
     }
 
     toggleChat() {
-      this.isOpen = !this.isOpen;
-
       if (this.isOpen) {
-        this.panel.style.display = "flex";
-        this.button.style.display = "none";
-        this.input?.focus();
-
-        // Smooth slide-up animation
-        requestAnimationFrame(() => {
-          this.panel.classList.add("nextgenweb-chat-panel-open");
-        });
+        this.closeChat();
       } else {
-        this.panel.classList.remove("nextgenweb-chat-panel-open");
-        setTimeout(() => {
-          this.panel.style.display = "none";
-          this.button.style.display = "flex";
-        }, 300);
+        this.openChat();
       }
+    }
+
+    openChat() {
+      this.isOpen = true;
+      this.panel.style.display = "flex";
+      this.button.style.display = "none";
+      this.input?.focus();
+
+      // Smooth slide-up animation
+      requestAnimationFrame(() => {
+        this.panel.classList.add("nextgenweb-chat-panel-open");
+      });
+    }
+
+    closeChat() {
+      this.isOpen = false;
+      this.panel.classList.remove("nextgenweb-chat-panel-open");
+      setTimeout(() => {
+        this.panel.style.display = "none";
+        this.button.style.display = "flex";
+      }, 300);
+    }
+
+    showBubbleLoading() {
+      this.button.classList.add("loading");
+      const chatIcon = this.button.querySelector(".chat-icon");
+      const loadingIcon = this.button.querySelector(".loading-icon");
+      if (chatIcon) chatIcon.style.display = "none";
+      if (loadingIcon) loadingIcon.style.display = "block";
+    }
+
+    hideBubbleLoading() {
+      this.button.classList.remove("loading");
+      const chatIcon = this.button.querySelector(".chat-icon");
+      const loadingIcon = this.button.querySelector(".loading-icon");
+      if (chatIcon) chatIcon.style.display = "block";
+      if (loadingIcon) loadingIcon.style.display = "none";
     }
 
     addMessage(message) {
@@ -158,6 +265,25 @@
       contentEl.textContent = message.content;
 
       messageEl.appendChild(contentEl);
+
+      // Add "View Answer Page" link if message has page data
+      if (message.hasPage && message.pageSlug) {
+        const linkEl = document.createElement("a");
+        linkEl.className = "nextgenweb-view-page-link";
+        linkEl.href = "#";
+        linkEl.textContent = "View Answer Page →";
+        linkEl.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.triggerPageGeneration(
+            message.question,
+            message.pageSlug,
+            message.questionTitle,
+            message.content
+          );
+        });
+        messageEl.appendChild(linkEl);
+      }
+
       this.messagesContainer?.appendChild(messageEl);
 
       // Auto-scroll to bottom
@@ -199,9 +325,153 @@
       }
     }
 
+    /**
+     * Start background page generation (called when chat API returns generatePage: true)
+     * This runs in parallel with showing the response to the user
+     */
+    startBackgroundPageGeneration(completeData) {
+      const { question, questionSlug, questionTitle, content } = completeData;
+
+      // Check if already generating or cached
+      if (this.pendingPages.has(questionSlug)) {
+        console.log("[NextGenWeb Widget] Page already generating/cached:", questionSlug);
+        return;
+      }
+
+      console.log("[NextGenWeb Widget] Starting background page generation:", questionSlug);
+
+      // Create the pending entry
+      const pageEntry = {
+        status: "pending",
+        data: completeData,
+        html: null,
+        promise: null,
+      };
+
+      // Start the API call
+      pageEntry.promise = fetch(`${this.apiEndpoint}/generate-answer-page`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: this.projectId,
+          question: question,
+          questionSlug: questionSlug,
+          questionTitle: questionTitle,
+          content: content,
+          sessionId: window.NEXTGENWEB_NAV_CONFIG?.sessionId,
+        }),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          if (!data.html) {
+            throw new Error("No HTML content received");
+          }
+
+          // Cache the result
+          pageEntry.status = "ready";
+          pageEntry.html = data.html;
+          pageEntry.generationTime = data.generationTime;
+          pageEntry.cached = data.cached;
+
+          console.log("[NextGenWeb Widget] Background page ready:", questionSlug, {
+            generationTime: data.generationTime,
+            cached: data.cached,
+          });
+
+          return data;
+        })
+        .catch((error) => {
+          console.error("[NextGenWeb Widget] Background page generation failed:", error);
+          pageEntry.status = "error";
+          pageEntry.error = error;
+          throw error;
+        });
+
+      this.pendingPages.set(questionSlug, pageEntry);
+    }
+
+    /**
+     * Trigger page generation - uses pre-generated page if available
+     */
+    async triggerPageGeneration(question, questionSlug, questionTitle, content) {
+      // Close chat and show loading
+      this.closeChat();
+      this.showBubbleLoading();
+      this.isGeneratingPage = true;
+
+      // Check if page was pre-generated in background
+      const pendingPage = this.pendingPages.get(questionSlug);
+
+      if (pendingPage) {
+        if (pendingPage.status === "ready" && pendingPage.html) {
+          // Page is already generated! Dispatch event with pre-generated HTML
+          console.log("[NextGenWeb Widget] Using pre-generated page:", questionSlug);
+
+          window.dispatchEvent(
+            new CustomEvent("ngw-generate-answer", {
+              detail: {
+                question,
+                questionSlug,
+                questionTitle,
+                content,
+                preGeneratedHtml: pendingPage.html, // Include pre-generated HTML
+              },
+            })
+          );
+          return;
+        } else if (pendingPage.status === "pending" && pendingPage.promise) {
+          // Page is still generating, wait for it
+          console.log("[NextGenWeb Widget] Waiting for pending page generation:", questionSlug);
+
+          try {
+            await pendingPage.promise;
+
+            // Now it should be ready
+            if (pendingPage.status === "ready" && pendingPage.html) {
+              console.log("[NextGenWeb Widget] Pending page now ready:", questionSlug);
+
+              window.dispatchEvent(
+                new CustomEvent("ngw-generate-answer", {
+                  detail: {
+                    question,
+                    questionSlug,
+                    questionTitle,
+                    content,
+                    preGeneratedHtml: pendingPage.html,
+                  },
+                })
+              );
+              return;
+            }
+          } catch (error) {
+            console.error("[NextGenWeb Widget] Pending page failed:", error);
+            // Fall through to generate normally
+          }
+        }
+      }
+
+      // No pre-generated page, dispatch event to generate normally
+      console.log("[NextGenWeb Widget] Generating page on-demand:", questionSlug);
+      window.dispatchEvent(
+        new CustomEvent("ngw-generate-answer", {
+          detail: {
+            question,
+            questionSlug,
+            questionTitle,
+            content,
+          },
+        })
+      );
+    }
+
     async sendMessage() {
       const message = this.input?.value.trim();
-      if (!message) return;
+      if (!message || this.isGeneratingPage) return;
 
       // Clear input
       if (this.input) {
@@ -218,8 +488,8 @@
       this.showTypingIndicator();
 
       try {
-        // Send to API
-        const response = await fetch(`${this.apiEndpoint}/chat`, {
+        // Send to chat-with-page API (SSE)
+        const response = await fetch(`${this.apiEndpoint}/chat-with-page`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -227,18 +497,15 @@
           body: JSON.stringify({
             projectId: this.projectId,
             message: message,
-            conversationHistory: this.messages.slice(-10), // Last 10 messages for context
+            conversationHistory: this.messages.slice(-10),
+            sessionId: window.NEXTGENWEB_NAV_CONFIG?.sessionId,
+            versionId: this.versionId,
           }),
         });
 
         if (!response.ok) {
           throw new Error("Failed to get response");
         }
-
-        // Stream response
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let assistantMessage = "";
 
         // Hide typing, prepare for streaming
         this.hideTypingIndicator();
@@ -251,33 +518,152 @@
         messageEl.appendChild(contentEl);
         this.messagesContainer?.appendChild(messageEl);
 
+        // Process SSE stream
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let assistantMessage = "";
+        let completeData = null;
+
         if (reader) {
+          let buffer = "";
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split("\n");
+            buffer += decoder.decode(value, { stream: true });
 
-            for (const line of lines) {
-              if (line.startsWith("0:")) {
-                // Parse SSE data
-                const data = line.substring(2).trim();
-                if (data) {
-                  assistantMessage += data;
-                  contentEl.textContent = assistantMessage;
-                  this.scrollToBottom();
+            // Process complete SSE events
+            const events = buffer.split("\n\n");
+            buffer = events.pop() || ""; // Keep incomplete event in buffer
+
+            for (const eventBlock of events) {
+              if (!eventBlock.trim()) continue;
+
+              const lines = eventBlock.split("\n");
+              let eventType = "";
+              let eventData = "";
+
+              for (const line of lines) {
+                if (line.startsWith("event: ")) {
+                  eventType = line.substring(7);
+                } else if (line.startsWith("data: ")) {
+                  eventData = line.substring(6);
+                }
+              }
+
+              if (eventType === "summary" && eventData) {
+                try {
+                  const data = JSON.parse(eventData);
+                  if (data.chunk) {
+                    assistantMessage += data.chunk;
+                    contentEl.textContent = assistantMessage;
+                    this.scrollToBottom();
+                  }
+                } catch (e) {
+                  console.error("[NextGenWeb Widget] Failed to parse summary:", e);
+                }
+              } else if (eventType === "complete" && eventData) {
+                try {
+                  completeData = JSON.parse(eventData);
+
+                  // Start background page generation immediately if generatePage is true
+                  // This runs in parallel while the user reads the text summary
+                  if (completeData?.generatePage) {
+                    this.startBackgroundPageGeneration(completeData);
+                  }
+                } catch (e) {
+                  console.error("[NextGenWeb Widget] Failed to parse complete:", e);
+                }
+              } else if (eventType === "error" && eventData) {
+                try {
+                  const errorData = JSON.parse(eventData);
+                  console.error("[NextGenWeb Widget] Stream error:", errorData.message);
+                } catch (e) {
+                  console.error("[NextGenWeb Widget] Failed to parse error:", e);
                 }
               }
             }
           }
         }
 
-        // Add complete message to history
-        this.messages.push({
+        // Store message with page data if available
+        const messageData = {
           role: "assistant",
           content: assistantMessage,
-        });
+        };
+
+        if (completeData?.generatePage) {
+          messageData.hasPage = true;
+          messageData.pageSlug = completeData.questionSlug;
+          messageData.questionTitle = completeData.questionTitle;
+          messageData.question = completeData.question;
+          messageData.pageContent = completeData.content;
+
+          // Add transition message container
+          const pagePromptEl = document.createElement("div");
+          pagePromptEl.className = "nextgenweb-page-prompt";
+          pagePromptEl.innerHTML = `
+            <div class="nextgenweb-page-prompt-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              <span>I can show you a detailed answer page with more information.</span>
+            </div>
+          `;
+
+          // Add prominent "View Full Answer" button
+          const buttonEl = document.createElement("button");
+          buttonEl.className = "nextgenweb-view-page-button";
+          buttonEl.innerHTML = `
+            <span>View Full Answer Page</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          `;
+          buttonEl.addEventListener("click", (e) => {
+            e.preventDefault();
+            // Add generating indicator in chat
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = `
+              <span>Generating page...</span>
+              <svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="10"></circle>
+              </svg>
+            `;
+            this.triggerPageGeneration(
+              completeData.question,
+              completeData.questionSlug,
+              completeData.questionTitle,
+              completeData.content
+            );
+          });
+
+          pagePromptEl.appendChild(buttonEl);
+          messageEl.appendChild(pagePromptEl);
+
+          // Also add a smaller text link for quick access
+          const linkEl = document.createElement("a");
+          linkEl.className = "nextgenweb-view-page-link";
+          linkEl.href = "#";
+          linkEl.textContent = "or click here to view →";
+          linkEl.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.triggerPageGeneration(
+              completeData.question,
+              completeData.questionSlug,
+              completeData.questionTitle,
+              completeData.content
+            );
+          });
+          messageEl.appendChild(linkEl);
+        }
+
+        this.messages.push(messageData);
       } catch (error) {
         this.hideTypingIndicator();
         this.addMessage({

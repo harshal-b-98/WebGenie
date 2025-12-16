@@ -98,11 +98,51 @@ REQUIRED SECTIONS:
    ⚠️ WRONG: Using data-action="back-to-landing" for parent segment (breaks navigation!)
    ✅ CORRECT: Using data-segment="parent-slug" for parent segment (navigates to segment page)
 
-3. PAGE HEADER (RESPONSIVE)
+3. PAGE HEADER (RESPONSIVE - VISUALLY IMPRESSIVE)
    - Dark gradient background (from-slate-900 via-gray-900 to-slate-800)
-   - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
-   - Topic name as main heading (H1): class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white"
-   - Brief tagline or description: class="text-base sm:text-lg lg:text-xl text-gray-300 mt-3 sm:mt-4"
+   - RESPONSIVE PADDING: py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-8
+   - MUST include visual enhancements like landing page
+
+   HERO SECTION STRUCTURE (MUST MATCH LANDING PAGE QUALITY):
+   <section class="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
+     <!-- Decorative gradient orbs (REQUIRED for visual richness) -->
+     <div class="absolute top-20 right-10 sm:right-20 w-48 sm:w-64 h-48 sm:h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+     <div class="absolute bottom-10 left-10 sm:left-20 w-32 sm:w-48 h-32 sm:h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
+
+     <div class="max-w-4xl mx-auto text-center relative z-10">
+       <!-- Badge/pill showing parent segment context (REQUIRED) -->
+       <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-sm text-gray-300 mb-6">
+         <i data-feather="layers" class="w-4 h-4"></i>
+         <span>[Parent Segment Name] Feature</span>
+       </div>
+
+       <!-- Main heading -->
+       <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
+         [Topic Name]
+       </h1>
+
+       <!-- Intro paragraph -->
+       <p class="text-base sm:text-lg lg:text-xl text-gray-300 mt-4 sm:mt-6 max-w-2xl mx-auto">
+         [Compelling description of this topic]
+       </p>
+
+       <!-- Feature highlights row (REQUIRED - 3 key benefits specific to this topic) -->
+       <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 max-w-3xl mx-auto">
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>[Key benefit 1]</span>
+         </span>
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>[Key benefit 2]</span>
+         </span>
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>[Key benefit 3]</span>
+         </span>
+       </div>
+     </div>
+   </section>
 
 4. OVERVIEW SECTION (RESPONSIVE)
    - Key benefits (3-4 points) with Feather icons
@@ -125,9 +165,27 @@ REQUIRED SECTIONS:
 
 7. RELATED TOPICS (RESPONSIVE)
    - Links to related features/solutions with proper data attributes
-   - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-   - Card layout MATCHING segment page card styling
-   - Each card MUST have: data-topic="slug" data-parent-segment="parent-slug" class="cursor-pointer"
+   - Section background: class="bg-gray-50 py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8"
+   - Section title: class="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4"
+   - Section subtitle: class="text-gray-600 text-center max-w-2xl mx-auto mb-12"
+   - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+
+   RELATED TOPIC CARD (MUST MATCH LANDING PAGE QUALITY):
+   <div data-topic="topic-slug" data-parent-segment="parent-slug" class="group bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 cursor-pointer hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300">
+     <!-- Icon with gradient background (REQUIRED) -->
+     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+       <i data-feather="icon-name" class="w-6 h-6 text-white"></i>
+     </div>
+
+     <!-- Title with arrow indicator -->
+     <div class="flex items-center justify-between mb-2">
+       <h3 class="text-lg sm:text-xl font-semibold text-gray-900">[Topic Title]</h3>
+       <i data-feather="arrow-right" class="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+     </div>
+
+     <!-- Description -->
+     <p class="text-gray-600 text-sm sm:text-base">[Brief description]</p>
+   </div>
 
 8. CTA SECTION (RESPONSIVE)
    - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8

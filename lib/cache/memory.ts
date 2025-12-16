@@ -200,6 +200,12 @@ export const memoryCache = {
   /** Content structure cache - caches AI-discovered content */
   content: new MemoryCache<AnyValue>("content", CACHE_CONFIGS.content),
 
+  /** Pages cache - caches generated answer pages */
+  pages: new MemoryCache<AnyValue>("pages", {
+    max: 200,
+    ttl: 60 * 60 * 1000, // 1 hour
+  }),
+
   /**
    * Create a custom cache instance
    */
@@ -215,6 +221,7 @@ export const memoryCache = {
     embeddings: memoryCache.embeddings.getStats(),
     sites: memoryCache.sites.getStats(),
     content: memoryCache.content.getStats(),
+    pages: memoryCache.pages.getStats(),
   }),
 
   /**
@@ -226,6 +233,7 @@ export const memoryCache = {
     memoryCache.embeddings.clear();
     memoryCache.sites.clear();
     memoryCache.content.clear();
+    memoryCache.pages.clear();
     logger.info("All memory caches cleared");
   },
 };

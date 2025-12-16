@@ -15,7 +15,42 @@ import {
   ExtractedColors,
 } from "@/lib/utils/color-extractor";
 
-interface ChatWidgetConfig {
+/**
+ * Clean generated HTML by removing markdown code blocks and other AI artifacts
+ * @param html - Raw HTML output from AI generation
+ * @returns Cleaned HTML string
+ */
+export function cleanGeneratedHTML(html: string): string {
+  if (!html) return "";
+
+  let cleaned = html;
+
+  // Remove markdown code blocks (```html ... ```)
+  cleaned = cleaned.replace(/^```html?\n?/gim, "");
+  cleaned = cleaned.replace(/\n?```$/gim, "");
+  cleaned = cleaned.replace(/```$/gim, "");
+
+  // Remove any leading/trailing whitespace
+  cleaned = cleaned.trim();
+
+  // Ensure the HTML starts with <!DOCTYPE html> or <html>
+  if (
+    !cleaned.toLowerCase().startsWith("<!doctype") &&
+    !cleaned.toLowerCase().startsWith("<html")
+  ) {
+    // Check if it starts with a valid HTML tag
+    if (cleaned.startsWith("<")) {
+      // Wrap in basic HTML structure if needed
+      if (!cleaned.includes("<html")) {
+        cleaned = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${cleaned}</body></html>`;
+      }
+    }
+  }
+
+  return cleaned;
+}
+
+export interface ChatWidgetConfig {
   position?: "bottom-right" | "bottom-left";
   primaryColor?: string;
   welcomeMessage?: string;
@@ -25,8 +60,9 @@ interface ChatWidgetConfig {
  * Inject chat widget into generated HTML
  * Adds interactive chat capability for website visitors
  * Only injects if chat widget is enabled in settings
+ * Exported for use in dynamic-page-service
  */
-function injectChatWidget(
+export function injectChatWidget(
   html: string,
   siteId: string,
   versionId: string,

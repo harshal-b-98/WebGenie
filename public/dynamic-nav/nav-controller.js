@@ -108,6 +108,9 @@
       // Handle browser back/forward (within iframe context)
       window.addEventListener("popstate", (e) => this.handlePopState(e));
 
+      // Listen for answer page generation requests from chat widget
+      window.addEventListener("ngw-generate-answer", (e) => this.handleAnswerPageRequest(e));
+
       // Set initial history state
       if (!history.state) {
         history.replaceState(
@@ -322,6 +325,9 @@
       const overlay = document.createElement("div");
       overlay.id = "ngw-loading-overlay";
       overlay.className = "ngw-loading-overlay";
+      // Add inline styles to ensure overlay is hidden by default (before CSS loads)
+      overlay.style.cssText =
+        "position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity 0.3s,visibility 0.3s;";
       overlay.innerHTML = `
         <div class="ngw-loading-content">
           <div class="ngw-loading-spinner"></div>
@@ -339,6 +345,9 @@
       const overlay = document.getElementById("ngw-loading-overlay");
       if (overlay) {
         overlay.classList.add("visible");
+        // Also set inline styles to ensure visibility
+        overlay.style.opacity = "1";
+        overlay.style.visibility = "visible";
         // Animate progress bar
         const progressBar = overlay.querySelector(".ngw-loading-progress-bar");
         if (progressBar) {
@@ -360,6 +369,9 @@
         }
         setTimeout(() => {
           overlay.classList.remove("visible");
+          // Also reset inline styles to ensure hidden state
+          overlay.style.opacity = "0";
+          overlay.style.visibility = "hidden";
           if (progressBar) progressBar.style.width = "0%";
         }, 300);
       }
@@ -1738,15 +1750,35 @@
 
       // Inject deterministic navigation bar (unless skipped for landing page)
       if (!skipNavInjection && this.navigationStack.length > 0) {
-        // Remove any existing AI-generated top nav to avoid duplication
-        const existingNavs = document.querySelectorAll("nav:first-of-type, header > nav");
-        existingNavs.forEach((nav) => {
-          // Only remove if it looks like a main navigation (not breadcrumb or footer nav)
-          if (
-            nav.querySelector("[data-segment]") ||
-            nav.querySelector('[data-action="back-to-landing"]')
-          ) {
-            nav.remove();
+        // Remove ALL AI-generated navigation elements to avoid duplication
+        // This includes: fixed nav bars, header navs, mobile menus, breadcrumbs
+        const elementsToRemove = document.querySelectorAll(
+          // Fixed position navs (AI-generated main nav)
+          'nav[class*="fixed"], nav[class*="sticky"],' +
+            // Header-based navs
+            "header > nav, header nav," +
+            // Mobile menu overlays (typically have translate-x or inset-0)
+            'div[id*="mobile-menu"], div[class*="mobile-menu"],' +
+            // Breadcrumb navs (we'll use our own)
+            'nav[class*="breadcrumb"], nav.bg-gray-50,' +
+            // Any nav with our data attributes (navigation links)
+            'nav:has([data-segment]), nav:has([data-action="back-to-landing"])'
+        );
+
+        elementsToRemove.forEach((el) => {
+          // Don't remove footer navs
+          const isInFooter = el.closest("footer");
+          if (!isInFooter) {
+            el.remove();
+          }
+        });
+
+        // Also remove any standalone header elements that might contain nav
+        const headers = document.querySelectorAll("header:not(footer header)");
+        headers.forEach((header) => {
+          // Only remove if it's a main nav header (has nav links)
+          if (header.querySelector("[data-segment]") || header.querySelector("nav")) {
+            header.remove();
           }
         });
 
@@ -1757,11 +1789,16 @@
         // Add class to body for fixed nav padding (defined in styles.css)
         document.body.classList.add("ngw-has-fixed-nav");
 
-        console.log("[DynamicNav] Injected deterministic navigation bar");
+        console.log(
+          "[DynamicNav] Injected deterministic navigation bar, removed AI-generated navs"
+        );
       }
 
       // Initialize Feather icons after content is replaced
       this.initializeFeatherIcons();
+
+      // Notify chat widget to re-create its elements (they were destroyed by innerHTML replacement)
+      window.dispatchEvent(new CustomEvent("ngw-content-replaced"));
 
       console.log("[DynamicNav] Content replaced without destroying listeners");
     }
@@ -1783,10 +1820,19 @@
             this.rebuildNavigationStack(event.state.page);
           }
 
-          // Check if we have this page cached
-          const cacheKey = event.state.page.includes("/")
-            ? `detail_${event.state.page.replace("/", "_")}`
-            : `segment_${event.state.page}`;
+          // Determine cache key based on page type
+          let cacheKey;
+          if (event.state.isAnswerPage || event.state.page.startsWith("answer/")) {
+            // Answer page
+            const questionSlug = event.state.page.replace("answer/", "");
+            cacheKey = `answer_${questionSlug}`;
+          } else if (event.state.page.includes("/")) {
+            // Detail/topic page
+            cacheKey = `detail_${event.state.page.replace("/", "_")}`;
+          } else {
+            // Segment page
+            cacheKey = `segment_${event.state.page}`;
+          }
 
           if (this.pageCache[cacheKey]) {
             this.replaceContent(this.pageCache[cacheKey]);
@@ -1796,8 +1842,13 @@
             // Re-inject dynamic nav elements
             this.injectLoadingOverlay();
           } else {
-            // Re-fetch the page
-            if (event.state.page.includes("/")) {
+            // Re-fetch the page (answer pages need to go back to landing if not cached)
+            if (event.state.isAnswerPage || event.state.page.startsWith("answer/")) {
+              // Answer pages can't be re-fetched without the original content
+              // Navigate back to landing instead
+              console.log("[DynamicNav] Answer page not cached, returning to landing");
+              this.navigateToLanding();
+            } else if (event.state.page.includes("/")) {
               const [segment, topic] = event.state.page.split("/");
               this.navigateToDetail(segment, topic);
             } else {
@@ -1829,6 +1880,164 @@
           { slug: pagePath, name: this.slugToName(pagePath), type: "segment" },
         ];
       }
+    }
+
+    /**
+     * Handle answer page generation request from chat widget
+     * Triggered when user asks a question and relevant content is found
+     * Supports pre-generated HTML for faster display (parallel generation)
+     */
+    async handleAnswerPageRequest(event) {
+      const { question, questionSlug, questionTitle, content, preGeneratedHtml } = event.detail;
+
+      console.log("[DynamicNav] Answer page request received:", {
+        questionSlug,
+        questionTitle,
+        contentLength: content?.length || 0,
+        hasPreGeneratedHtml: !!preGeneratedHtml,
+      });
+
+      // Save current page before navigating
+      if (this.currentPage === "landing") {
+        this.saveLandingPage();
+      }
+
+      // If pre-generated HTML is provided (from parallel generation), display immediately
+      if (preGeneratedHtml) {
+        console.log("[DynamicNav] Using pre-generated answer page HTML:", questionSlug);
+
+        // Cache the pre-generated HTML
+        const cacheKey = `answer_${questionSlug}`;
+        this.pageCache[cacheKey] = preGeneratedHtml;
+
+        // Display directly (skip API call)
+        this.displayAnswerPage(preGeneratedHtml, questionSlug, questionTitle);
+        return;
+      }
+
+      // No pre-generated HTML, generate the answer page via API
+      await this.generateAnswerPage(question, questionSlug, questionTitle, content);
+    }
+
+    /**
+     * Generate an answer page for a visitor's question
+     * Calls the generate-answer-page API and displays the result
+     */
+    async generateAnswerPage(question, questionSlug, questionTitle, content) {
+      // Check cache first
+      const cacheKey = `answer_${questionSlug}`;
+      if (this.pageCache[cacheKey]) {
+        console.log("[DynamicNav] Using cached answer page:", questionSlug);
+        this.displayAnswerPage(this.pageCache[cacheKey], questionSlug, questionTitle);
+        return;
+      }
+
+      // Show loading overlay
+      this.showLoading();
+
+      // Update loading message
+      const loadingContent = document.querySelector(".ngw-loading-content h3");
+      const loadingDesc = document.querySelector(".ngw-loading-content p");
+      if (loadingContent) loadingContent.textContent = "Generating Answer";
+      if (loadingDesc) loadingDesc.textContent = "Creating a detailed answer page...";
+
+      try {
+        const response = await fetch(`${config.apiEndpoint}/generate-answer-page`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectId: config.siteId,
+            question: question,
+            questionSlug: questionSlug,
+            questionTitle: questionTitle,
+            content: content,
+            sessionId: this.sessionId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.html) {
+          throw new Error("No HTML content received");
+        }
+
+        // Cache the result
+        this.pageCache[cacheKey] = data.html;
+
+        console.log("[DynamicNav] Answer page generated:", {
+          questionSlug,
+          cached: data.cached,
+          generationTime: data.generationTime,
+          htmlLength: data.html.length,
+        });
+
+        // Display the answer page
+        this.displayAnswerPage(data.html, questionSlug, questionTitle);
+      } catch (error) {
+        console.error("[DynamicNav] Failed to generate answer page:", error);
+        this.hideLoading();
+
+        // Notify chat widget that generation failed
+        window.dispatchEvent(new CustomEvent("ngw-answer-ready", { detail: { error: true } }));
+
+        // Show error message
+        alert("Failed to generate answer page. Please try again.");
+      }
+    }
+
+    /**
+     * Display a generated answer page
+     * Updates navigation stack and history for breadcrumb navigation
+     */
+    displayAnswerPage(html, questionSlug, questionTitle) {
+      // Update navigation stack for answer page (like a detail page)
+      this.navigationStack = [
+        { slug: `answer/${questionSlug}`, name: questionTitle, type: "answer" },
+      ];
+
+      // Track behavior
+      behaviorTracker.trackPageVisit(`answer/${questionSlug}`);
+
+      // Replace content
+      this.replaceContent(html);
+      this.currentPage = `answer/${questionSlug}`;
+
+      // Update history
+      const baseUrl = window.location.href.split("#")[0];
+      history.pushState(
+        {
+          page: `answer/${questionSlug}`,
+          siteId: config.siteId,
+          versionId: config.versionId,
+          navigationStack: [...this.navigationStack],
+          isAnswerPage: true,
+        },
+        "",
+        `${baseUrl}#answer/${questionSlug}`
+      );
+
+      // Hide all loading indicators (overlay + streaming indicator)
+      this.hideLoading();
+      this.hideStreamingIndicator();
+
+      window.scrollTo(0, 0);
+
+      // Re-inject dynamic nav elements (creates hidden overlay for future use)
+      this.injectLoadingOverlay();
+
+      // Notify chat widget that answer page is ready
+      window.dispatchEvent(
+        new CustomEvent("ngw-answer-ready", { detail: { success: true, questionSlug } })
+      );
+
+      console.log("[DynamicNav] Answer page displayed:", questionSlug);
     }
   }
 

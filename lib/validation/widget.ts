@@ -123,6 +123,25 @@ export const widgetGenerateStreamRequestSchema = z.object({
   sessionId: sessionIdSchema,
 });
 
+// Chat with page generation request schema
+export const chatWithPageRequestSchema = z.object({
+  projectId: projectIdSchema,
+  message: messageSchema,
+  conversationHistory: z.array(widgetMessageSchema).max(20).optional(),
+  sessionId: sessionIdSchema,
+  versionId: z.string().uuid().optional(),
+});
+
+// Generate answer page request schema
+export const generateAnswerPageRequestSchema = z.object({
+  projectId: projectIdSchema,
+  question: z.string().min(1).max(500, "Question too long"),
+  questionSlug: z.string().min(1).max(200, "Question slug too long"),
+  questionTitle: z.string().min(1).max(100, "Question title too long"),
+  content: z.string().min(1).max(50000, "Content too long"),
+  sessionId: sessionIdSchema,
+});
+
 // Export types
 export type ProjectId = z.infer<typeof projectIdSchema>;
 export type WidgetMessage = z.infer<typeof widgetMessageSchema>;
@@ -132,3 +151,5 @@ export type SegmentType = z.infer<typeof segmentTypeSchema>;
 export type BehaviorSignals = z.infer<typeof behaviorSignalsSchema>;
 export type GeneratePageRequest = z.infer<typeof generatePageRequestSchema>;
 export type LeadCaptureRequest = z.infer<typeof leadCaptureRequestSchema>;
+export type ChatWithPageRequest = z.infer<typeof chatWithPageRequestSchema>;
+export type GenerateAnswerPageRequest = z.infer<typeof generateAnswerPageRequestSchema>;

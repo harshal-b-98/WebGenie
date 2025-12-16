@@ -11,11 +11,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateDynamicPage, type GeneratePageInput } from "@/lib/services/dynamic-page-service";
 import { detectPersona } from "@/lib/ai/prompts/personas";
 import { type SegmentType } from "@/lib/ai/prompts/pages";
-import { createClient } from "@/lib/db/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/utils/logger";
 import { generatePageRequestSchema, formatZodErrors } from "@/lib/validation";
 import { ZodError } from "zod";
 import { memoryCache, CacheKeys } from "@/lib/cache";
+
+// Service client for public widget access (bypasses RLS)
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // CORS headers for widget requests
 const corsHeaders = {
@@ -66,14 +74,16 @@ export async function POST(request: NextRequest) {
     let site = memoryCache.sites.get(siteConfigKey) as SiteConfig | undefined;
 
     if (!site) {
-      const supabase = await createClient();
-      const { data: siteRow } = await supabase
+      // Use service client for public widget access (bypasses RLS)
+      const supabase = getServiceClient();
+      const { data: siteRow, error: siteError } = await supabase
         .from("sites")
         .select("id, dynamic_pages_enabled, persona_detection_enabled")
         .eq("id", siteId)
         .single();
 
-      if (!siteRow) {
+      if (siteError || !siteRow) {
+        logger.error("Site not found for generate-page", { siteId, error: siteError });
         return NextResponse.json(
           { error: "Site not found" },
           { status: 404, headers: corsHeaders }

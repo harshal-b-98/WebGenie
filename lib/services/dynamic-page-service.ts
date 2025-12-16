@@ -7,14 +7,24 @@
 
 import { generateText } from "ai";
 import { defaultGenerationModel } from "@/lib/ai/client";
-import { createClient } from "@/lib/db/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/utils/logger";
 import * as documentService from "./document-service";
+import { injectChatWidget, type ChatWidgetConfig } from "./generation-service";
 import {
   extractColorsFromImage,
   generateColorPrompt,
   ExtractedColors,
 } from "@/lib/utils/color-extractor";
+
+// Service client for public widget access (bypasses RLS)
+// This is needed because dynamic pages are generated from widget context without auth
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Import prompts
 import {
@@ -301,12 +311,18 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
 
   logger.info("Generating dynamic page", { siteId, pageType, segment, topic, pageSlug, persona });
 
-  const supabase = await createClient();
+  // Use service client for public widget access (bypasses RLS)
+  const supabase = getServiceClient();
 
   // Get site details
-  const { data: site } = await supabase.from("sites").select("*").eq("id", siteId).single();
+  const { data: site, error: siteError } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("id", siteId)
+    .single();
 
-  if (!site) {
+  if (siteError || !site) {
+    logger.error("Site not found in dynamic page generation", { siteId, error: siteError });
     throw new Error("Site not found");
   }
 
@@ -468,9 +484,15 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
     });
   }
 
-  // Get site persona detection setting
-  const siteRow = site as { persona_detection_enabled?: boolean };
+  // Get site settings for persona detection and chat widget
+  const siteRow = site as {
+    persona_detection_enabled?: boolean;
+    chat_widget_enabled?: boolean;
+    chat_widget_config?: ChatWidgetConfig;
+  };
   const personaEnabled = siteRow.persona_detection_enabled ?? false;
+  const chatWidgetEnabled = siteRow.chat_widget_enabled ?? true;
+  const chatWidgetConfig = siteRow.chat_widget_config || {};
 
   // Inject dynamic navigation scripts so this page can navigate to other pages
   // Use versionId if provided, otherwise use siteId as fallback for cache key
@@ -480,6 +502,15 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
     versionId || siteId,
     companyName,
     personaEnabled
+  );
+
+  // Inject chat widget if enabled (allows visitors to ask questions on dynamic pages too)
+  cleanedHtml = injectChatWidget(
+    cleanedHtml,
+    siteId,
+    versionId || siteId,
+    chatWidgetEnabled,
+    chatWidgetConfig
   );
 
   // Save to cache
@@ -532,7 +563,8 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
  * Clear cached pages for a site
  */
 export async function clearPageCache(siteId: string, pageSlug?: string): Promise<void> {
-  const supabase = await createClient();
+  // Use service client for consistency with other widget operations
+  const supabase = getServiceClient();
 
   if (pageSlug) {
     await supabase.from("site_pages").delete().eq("site_id", siteId).eq("page_slug", pageSlug);

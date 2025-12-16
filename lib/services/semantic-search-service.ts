@@ -1,11 +1,19 @@
 // Semantic Search Service
 // Uses vector similarity to find relevant content from document embeddings
 
-import { createClient } from "@/lib/db/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/utils/logger";
 import { DatabaseError } from "@/lib/utils/errors";
 import type { ChunkType } from "./embedding-service";
 import OpenAI from "openai";
+
+// Create service role client for public widget access (bypasses RLS)
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface SearchResult {
   id: string;
@@ -94,7 +102,8 @@ async function vectorSearch(
 ): Promise<SearchResult[]> {
   const { chunkTypes, limit = 10, threshold = 0.7 } = options;
 
-  const supabase = await createClient();
+  // Use service client to bypass RLS for public widget access
+  const supabase = getServiceClient();
 
   // Call the match_documents PostgreSQL function
   const { data, error } = await supabase.rpc("match_documents", {
