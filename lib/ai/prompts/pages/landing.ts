@@ -66,31 +66,33 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
 
    REQUIRED 3-SECTION LAYOUT (Logo | Nav Links | CTA Button):
 
-   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b border-gray-200/20">
-     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+       <div class="flex items-center justify-between h-16 gap-4">
 
-       <!-- SECTION 1: LOGO (Left) - ALWAYS separate container -->
-       <a href="#" data-action="back-to-landing" class="flex-shrink-0">
-         <!-- Use EITHER logo image OR company name text, NEVER both -->
-         <!-- Example with logo: <img src="[URL]" alt="Logo" class="h-8 md:h-10 w-auto"> -->
-         <!-- Example without logo: <span class="text-xl font-bold text-indigo-600">CompanyName</span> -->
-       </a>
+         <!-- SECTION 1: LOGO (Left) - Constrained width prevents overlap -->
+         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">
+           <!-- Use EITHER logo image OR company name text, NEVER both -->
+           <!-- Example with logo: <img src="[URL]" alt="Logo" class="h-8 md:h-10 w-auto"> -->
+           <!-- Example without logo: <span class="text-xl font-bold text-indigo-600">CompanyName</span> -->
+         </a>
 
-       <!-- SECTION 2: NAV LINKS (Center) - SEPARATE container with LEFT margin -->
-       <nav class="hidden md:flex items-center gap-6 ml-8">
-         <a href="#" data-segment="segment-1" class="hover:underline">Link 1</a>
-         <a href="#" data-segment="segment-2" class="hover:underline">Link 2</a>
-         <!-- Add more segment links as needed -->
-       </nav>
+         <!-- SECTION 2: NAV LINKS (Center) - Grows to fill space, centers links -->
+         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">
+           <a href="#" data-segment="segment-1" class="hover:underline">Link 1</a>
+           <a href="#" data-segment="segment-2" class="hover:underline">Link 2</a>
+           <!-- Add more segment links as needed -->
+         </nav>
 
-       <!-- SECTION 3: CTA + MOBILE MENU (Right) - SEPARATE container with ml-auto -->
-       <div class="flex items-center gap-4 ml-auto">
-         <button data-action="cta-primary" data-cta-type="signup" class="hidden md:block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700">Get Started</button>
-         <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" aria-label="Menu">
-           <i data-feather="menu" class="w-6 h-6"></i>
-         </button>
+         <!-- SECTION 3: CTA + MOBILE MENU (Right) - Fixed size, won't shrink -->
+         <div class="flex items-center gap-3 flex-shrink-0">
+           <button data-action="cta-primary" data-cta-type="signup" class="hidden md:block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700">Get Started</button>
+           <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" aria-label="Menu">
+             <i data-feather="menu" class="w-6 h-6"></i>
+           </button>
+         </div>
+
        </div>
-
      </div>
    </header>
 

@@ -53,13 +53,18 @@ ALL SECTIONS MUST BE FULLY RESPONSIVE:
 REQUIRED SECTIONS
 ================================================================================
 
-1. NAVIGATION BAR (RESPONSIVE)
-   - Fixed: fixed top-0 left-0 right-0 z-50
-   - Background: bg-white/95 backdrop-blur-md shadow-sm
-   - Height: h-16
+1. NAVIGATION BAR - ADAPTIVE (NO OVERLAP):
 
-   DESKTOP NAV: class="hidden md:flex items-center gap-6"
-   MOBILE HAMBURGER: <button id="mobile-menu-btn" class="md:hidden p-2"><i data-feather="menu" class="w-6 h-6"></i></button>
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+       <div class="flex items-center justify-between h-16 gap-4">
+         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">[LOGO]</a>
+         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">[LINKS]</nav>
+         <div class="flex items-center gap-3 flex-shrink-0">[CTA+MENU]</div>
+       </div>
+     </div>
+   </header>
+
    MOBILE MENU:
    <div id="mobile-menu" class="fixed inset-0 bg-white z-50 transform translate-x-full transition-transform duration-300 md:hidden">
      <div class="flex justify-between items-center p-4 border-b">
