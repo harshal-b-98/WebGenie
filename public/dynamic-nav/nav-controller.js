@@ -787,8 +787,9 @@
         const decoder = new TextDecoder();
         let buffer = "";
         // Initialize with fallback HTML to prevent race condition
+        // Note: closing script tag is escaped to prevent breaking when this JS is inlined in HTML
         let fullHtml =
-          '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-50">';
+          '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-gray-50">';
         const sectionHtml = {};
 
         while (true) {
@@ -1165,8 +1166,9 @@
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        // Note: closing script tag is escaped to prevent breaking when this JS is inlined in HTML
         let fullHtml =
-          '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"></script></head><body>';
+          '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"><\/script></head><body>';
         const sectionHtml = {};
 
         while (true) {

@@ -1,10 +1,53 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 
 interface PreviewFrameProps {
   htmlContent: string;
   className?: string;
+}
+
+/**
+ * Dark-themed skeleton that matches generated website hero sections
+ * This prevents the white flash during loading
+ */
+function PreviewSkeleton() {
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 animate-pulse">
+      {/* Navbar skeleton */}
+      <div className="h-16 bg-white/5 flex items-center justify-between px-6">
+        <div className="h-8 w-32 bg-white/10 rounded-lg" />
+        <div className="hidden md:flex items-center gap-4">
+          <div className="h-4 w-20 bg-white/10 rounded" />
+          <div className="h-4 w-20 bg-white/10 rounded" />
+          <div className="h-4 w-20 bg-white/10 rounded" />
+          <div className="h-10 w-28 bg-indigo-500/30 rounded-full" />
+        </div>
+      </div>
+
+      {/* Hero skeleton */}
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+        {/* Badge */}
+        <div className="h-8 w-48 bg-white/10 rounded-full mb-8" />
+        {/* Headline */}
+        <div className="h-12 w-[80%] max-w-2xl bg-white/10 rounded-lg mb-4" />
+        <div className="h-12 w-[60%] max-w-xl bg-white/10 rounded-lg mb-6" />
+        {/* Subtitle */}
+        <div className="h-6 w-[70%] max-w-lg bg-white/5 rounded mb-8" />
+        {/* CTA buttons */}
+        <div className="flex gap-4 mb-12">
+          <div className="h-14 w-40 bg-indigo-500/30 rounded-full" />
+          <div className="h-14 w-40 bg-white/10 rounded-full" />
+        </div>
+        {/* Feature highlights */}
+        <div className="flex gap-8">
+          <div className="h-6 w-32 bg-white/5 rounded" />
+          <div className="h-6 w-32 bg-white/5 rounded" />
+          <div className="h-6 w-32 bg-white/5 rounded" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -118,9 +161,15 @@ function createBlobUrl(content: string): string | null {
  * PreviewFrame renders HTML content in an iframe using blob URLs.
  * This approach ensures external scripts (like Tailwind CDN) execute properly.
  * Blob URLs have better compatibility with external resource loading than srcdoc.
+ *
+ * Features:
+ * - Dark-themed skeleton that matches generated websites
+ * - Smooth fade-in transition to prevent white flash
+ * - Double requestAnimationFrame to ensure paint completion
  */
 export function PreviewFrame({ htmlContent, className = "" }: PreviewFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Create blob URL synchronously during render using useMemo
   // This is safe because URL.createObjectURL is a pure function
@@ -129,7 +178,7 @@ export function PreviewFrame({ htmlContent, className = "" }: PreviewFrameProps)
   // Store previous URL for cleanup
   const previousUrlRef = useRef<string | null>(null);
 
-  // Effect only handles cleanup - no setState calls
+  // Effect only handles cleanup - state resets automatically when iframe reloads with new blobUrl
   useEffect(() => {
     // Clean up previous URL when a new one is created
     const previousUrl = previousUrlRef.current;
@@ -146,12 +195,41 @@ export function PreviewFrame({ htmlContent, className = "" }: PreviewFrameProps)
     };
   }, [blobUrl]);
 
+  // Handle iframe load - use double RAF to ensure paint completion
+  const handleLoad = () => {
+    // Double requestAnimationFrame ensures the paint is complete before showing
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    });
+  };
+
   return (
-    <iframe
-      ref={iframeRef}
-      src={blobUrl || "about:blank"}
-      className={`w-full h-full border-0 bg-white ${className}`}
-      title="Website Preview"
-    />
+    <div className="relative w-full h-full">
+      {/* Dark skeleton overlay - fades out when content is ready */}
+      <div
+        className={`absolute inset-0 z-10 transition-opacity duration-500 ${
+          isVisible ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+      >
+        <PreviewSkeleton />
+      </div>
+
+      {/* Iframe - fades in when loaded, key ensures remount on content change */}
+      <iframe
+        key={blobUrl}
+        ref={iframeRef}
+        src={blobUrl || "about:blank"}
+        onLoad={handleLoad}
+        className={`w-full h-full border-0 bg-slate-900 transition-opacity duration-500 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        } ${className}`}
+        title="Website Preview"
+      />
+    </div>
   );
 }
+
+// Export the skeleton for use in other components
+export { PreviewSkeleton };

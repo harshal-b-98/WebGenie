@@ -30,7 +30,7 @@ export async function getSiteGenerationStats(siteId: string): Promise<Generation
 
   // Get all versions for the site to calculate stats
   const { data: versions, error } = await supabase
-    .from("website_versions")
+    .from("site_versions")
     .select("id, created_at, generation_time_ms, status")
     .eq("site_id", siteId)
     .order("created_at", { ascending: false });
@@ -123,7 +123,7 @@ export async function getUserGenerationStats(userId: string): Promise<Generation
 
   // Get all versions for user's sites
   const { data: versions, error } = await supabase
-    .from("website_versions")
+    .from("site_versions")
     .select("id, created_at, generation_time_ms, status")
     .in("site_id", siteIds)
     .order("created_at", { ascending: false });

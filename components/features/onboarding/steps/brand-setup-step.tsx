@@ -4,7 +4,8 @@ import { useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Palette } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Upload, X, Palette, Sparkles, MessageSquare } from "lucide-react";
 import type { OnboardingData } from "../onboarding-wizard";
 
 const PRESET_COLORS = [
@@ -236,6 +237,60 @@ export function BrandSetupStep({ data, updateData }: BrandSetupStepProps) {
               }
             />
           </div>
+        </div>
+      </div>
+
+      {/* Feature Settings */}
+      <div className="space-y-4 pt-4 border-t">
+        <Label className="text-base font-semibold">Feature Settings</Label>
+        <p className="text-sm text-gray-500">
+          Choose which AI-powered features to enable for your website
+        </p>
+
+        {/* Dynamic Page Generation Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50/50">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="dynamicPages" className="font-medium cursor-pointer">
+                Dynamic Page Generation
+              </Label>
+              <p className="text-xs text-gray-500">
+                Automatically generate new pages when visitors ask questions not covered by existing
+                content
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="dynamicPages"
+            checked={data.dynamicPagesEnabled}
+            onCheckedChange={(checked) => updateData({ dynamicPagesEnabled: checked })}
+          />
+        </div>
+
+        {/* Chat Widget Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50/50">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600">
+              <MessageSquare className="w-5 h-5 text-white" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="chatWidget" className="font-medium cursor-pointer">
+                AI Chat Widget
+              </Label>
+              <p className="text-xs text-gray-500">
+                Enable an AI-powered chat assistant to help visitors find information on your
+                website
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="chatWidget"
+            checked={data.chatWidgetEnabled}
+            onCheckedChange={(checked) => updateData({ chatWidgetEnabled: checked })}
+          />
         </div>
       </div>
     </div>

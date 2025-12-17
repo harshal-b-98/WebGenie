@@ -30,25 +30,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
 
     const supabase = await createClient();
 
-    // Create text content as a blob and upload to storage
-    const textBlob = new Blob([content], { type: "text/plain" });
+    // Generate filename for the document record
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.txt`;
-    const storagePath = `${siteId}/${filename}`;
 
-    // Upload to storage
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(storagePath, textBlob, {
-        contentType: "text/plain",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      logger.error("Failed to upload text content", uploadError, { siteId });
-      throw uploadError;
-    }
-
-    // Create document record with type assertion
+    // Create document record directly (no storage needed - text saved in extracted_text)
+    // Note: We skip storage upload because Supabase storage doesn't allow text/plain MIME type
+    // and the content is already stored in the extracted_text column
     const { data, error: insertError } = await supabase
       .from("documents")
       .insert({
@@ -57,9 +44,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         filename: filename,
         file_type: "text/plain",
         file_size: content.length,
-        storage_path: storagePath,
+        storage_path: null, // No storage for text-only documents
         processing_status: "processing",
-        extracted_text: content,
+        extracted_text: content, // Content saved directly here
       } as never)
       .select("id, filename, file_size")
       .single();

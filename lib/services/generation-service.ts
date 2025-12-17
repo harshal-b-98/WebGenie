@@ -14,6 +14,12 @@ import {
   generateColorPrompt,
   ExtractedColors,
 } from "@/lib/utils/color-extractor";
+// Import unified widget injection utility for inline mode support
+import {
+  injectChatWidget as injectChatWidgetInline,
+  injectDynamicNav as injectDynamicNavInline,
+  ChatWidgetConfig as WidgetConfig,
+} from "@/lib/utils/widget-injection";
 
 /**
  * Clean generated HTML by removing markdown code blocks and other AI artifacts
@@ -50,16 +56,12 @@ export function cleanGeneratedHTML(html: string): string {
   return cleaned;
 }
 
-export interface ChatWidgetConfig {
-  position?: "bottom-right" | "bottom-left";
-  primaryColor?: string;
-  welcomeMessage?: string;
-}
+// Re-export ChatWidgetConfig type for backward compatibility
+export type { WidgetConfig as ChatWidgetConfig };
 
 /**
  * Inject chat widget into generated HTML
- * Adds interactive chat capability for website visitors
- * Only injects if chat widget is enabled in settings
+ * Uses inline mode by default for blob URL compatibility
  * Exported for use in dynamic-page-service
  */
 export function injectChatWidget(
@@ -67,7 +69,7 @@ export function injectChatWidget(
   siteId: string,
   versionId: string,
   enabled: boolean,
-  config: ChatWidgetConfig
+  config: WidgetConfig
 ): string {
   // Don't inject if chat widget is disabled
   if (!enabled) {
@@ -75,45 +77,13 @@ export function injectChatWidget(
     return html;
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729";
-  const position = config.position || "bottom-right";
-  const primaryColor = config.primaryColor || "#667eea";
-  const welcomeMessage = config.welcomeMessage || "Hi! How can I help you today?";
-
-  const widgetCode = `
-  <!-- NextGenWeb Chat Widget -->
-  <link rel="stylesheet" href="${appUrl}/chat-widget/widget.css">
-  <script>
-    window.NEXTGENWEB_CONFIG = {
-      projectId: '${siteId}',
-      versionId: '${versionId}',
-      apiEndpoint: '${appUrl}/api/widget',
-      position: '${position}',
-      primaryColor: '${primaryColor}',
-      welcomeMessage: '${welcomeMessage.replace(/'/g, "\\'")}'
-    };
-  </script>
-  <script src="${appUrl}/chat-widget/widget.js" defer></script>
-  <!-- End NextGenWeb Chat Widget -->
-`;
-
-  // Inject before closing </body> tag
-  if (html.includes("</body>")) {
-    return html.replace("</body>", `${widgetCode}</body>`);
-  }
-
-  // Fallback: Check for </html> and inject before it
-  if (html.includes("</html>")) {
-    return html.replace("</html>", `${widgetCode}</body></html>`);
-  }
-
-  // Last resort: append at end with proper closing tags
-  return html + `${widgetCode}</body></html>`;
+  // Use the unified injection utility with inline mode for blob URL compatibility
+  return injectChatWidgetInline(html, siteId, versionId, enabled, config, "inline");
 }
 
 /**
  * Inject dynamic navigation scripts into generated HTML
- * Enables progressive page generation and segment exploration
+ * Uses inline mode by default for blob URL compatibility
  * Exported for use in refine route
  */
 export function injectDynamicNav(
@@ -123,31 +93,15 @@ export function injectDynamicNav(
   companyName: string,
   personaDetectionEnabled: boolean
 ): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729";
-
-  const navCode = `
-  <!-- NextGenWeb Dynamic Navigation -->
-  <link rel="stylesheet" href="${appUrl}/dynamic-nav/styles.css">
-  <script>
-    window.NEXTGENWEB_NAV_CONFIG = {
-      siteId: '${siteId}',
-      versionId: '${versionId}',
-      apiEndpoint: '${appUrl}/api/widget',
-      personaDetectionEnabled: ${personaDetectionEnabled},
-      companyName: '${companyName.replace(/'/g, "\\'")}'
-    };
-  </script>
-  <script src="${appUrl}/dynamic-nav/nav-controller.js" defer></script>
-  <!-- End NextGenWeb Dynamic Navigation -->
-`;
-
-  // Inject before closing </body> tag
-  if (html.includes("</body>")) {
-    return html.replace("</body>", `${navCode}</body>`);
-  }
-
-  // Fallback: append at end
-  return html + navCode;
+  // Use the unified injection utility with inline mode for blob URL compatibility
+  return injectDynamicNavInline(
+    html,
+    siteId,
+    versionId,
+    companyName,
+    personaDetectionEnabled,
+    "inline"
+  );
 }
 
 interface GenerationInput {
@@ -184,7 +138,7 @@ export async function generateWebsite(input: GenerationInput) {
       dynamic_pages_enabled?: boolean;
       persona_detection_enabled?: boolean;
       chat_widget_enabled?: boolean;
-      chat_widget_config?: ChatWidgetConfig;
+      chat_widget_config?: WidgetConfig;
     };
 
     // Extract brand assets (logo, social media) from site

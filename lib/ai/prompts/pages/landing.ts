@@ -59,6 +59,41 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - Primary CTA button on the right - MAX 18 characters
    - CTA button MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact]"
 
+   NAVBAR HTML STRUCTURE (COPY THIS EXACTLY - CRITICAL FOR PROPER SPACING):
+   <nav class="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md shadow-sm z-50 border-b border-gray-200/20">
+     <div class="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+       <!-- LOGO SECTION (Left) - MUST be separate from nav -->
+       <!-- IF logo URL provided: use img tag -->
+       <!-- IF NO logo: use styled text with company name - NEVER use placeholders -->
+       <a data-action="back-to-landing" class="flex-shrink-0 cursor-pointer">
+         <!-- With logo: <img src="[ACTUAL_LOGO_URL]" alt="Company" class="h-8 md:h-10 w-auto" /> -->
+         <!-- Without logo: <span class="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">CompanyName</span> -->
+       </a>
+
+       <!-- DESKTOP NAVIGATION (Center/Right) - SEPARATE CONTAINER with gap -->
+       <div class="hidden md:flex items-center gap-6 ml-8">
+         <a data-segment="segment-1" class="text-gray-600 hover:text-gray-900 font-medium transition">Link 1</a>
+         <a data-segment="segment-2" class="text-gray-600 hover:text-gray-900 font-medium transition">Link 2</a>
+       </div>
+
+       <!-- CTA BUTTON (Right) -->
+       <div class="hidden md:flex items-center gap-4 ml-auto">
+         <button data-action="cta-primary" data-cta-type="demo" class="px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition">Get Started</button>
+       </div>
+
+       <!-- MOBILE HAMBURGER (hidden on desktop) -->
+       <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Menu">
+         <i data-feather="menu" class="w-6 h-6"></i>
+       </button>
+     </div>
+   </nav>
+
+   CRITICAL NAVBAR RULES:
+   - Logo MUST be in its own container (flex-shrink-0) to prevent overlapping
+   - Desktop nav links MUST have ml-8 (margin-left) to create space from logo
+   - Use justify-between on the parent flex container
+   - Never place logo and nav links in the same inner container without explicit spacing
+
    MOBILE HAMBURGER MENU (REQUIRED):
    - Hamburger button: class="md:hidden p-2 rounded-lg"
    - Example: <button id="mobile-menu-btn" class="md:hidden p-2" aria-label="Menu"><i data-feather="menu" class="w-6 h-6"></i></button>
@@ -77,7 +112,13 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
        </div>
      </div>
 
-   - NAV TEXT LIMIT: Maximum 20 characters per nav item - ABBREVIATE if longer
+   - NAV TEXT LIMIT (MANDATORY): Maximum 20 characters per nav item - ABBREVIATE if longer
+     * NEVER let nav text wrap to multiple lines
+     * "Intelligent Enterprise Solutions" → "Enterprise"
+     * "Industries & Use Cases" → "Industries"
+     * "Frequently Asked Questions" → "FAQ"
+     * "Customer Success Stories" → "Success"
+     * Count characters and abbreviate BEFORE rendering
    - Sticky: fixed top-0, backdrop-blur-md, bg-white/95 or bg-gray-900/95 z-50
    - Add subtle border-b border-gray-200/20 and shadow-sm
    - NAVBAR HEIGHT: h-16 (maintains consistent header)
@@ -448,12 +489,20 @@ DO NOT use placeholder text - extract or intelligently derive from actual conten
     prompt += `MAIN GOAL: ${requirements.mainGoal}\n`;
   }
 
-  // Logo placement
+  // Logo placement - CRITICAL: Handle missing logo gracefully
   if (requirements.logoUrl) {
     prompt += `\nLOGO:\n`;
     prompt += `- URL: ${requirements.logoUrl}\n`;
-    prompt += `- Use: <img src="${requirements.logoUrl}" alt="Logo" class="h-8 md:h-10 w-auto">\n`;
+    prompt += `- Use: <img src="${requirements.logoUrl}" alt="${requirements.companyName || "Logo"}" class="h-8 md:h-10 w-auto">\n`;
     prompt += `- Place in navbar on the left\n`;
+  } else {
+    // No logo provided - use company name as text-based logo
+    prompt += `\nLOGO (NO IMAGE PROVIDED - USE TEXT LOGO):\n`;
+    prompt += `- IMPORTANT: No logo image was uploaded. DO NOT use any placeholder images or broken image icons.\n`;
+    prompt += `- Instead, use the company name "${requirements.companyName || "Company"}" as a stylish TEXT-BASED LOGO.\n`;
+    prompt += `- Example text logo: <a data-action="back-to-landing" class="flex-shrink-0 cursor-pointer text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">${requirements.companyName || "Company"}</a>\n`;
+    prompt += `- Make it visually appealing with gradient text, bold font, or brand colors.\n`;
+    prompt += `- NEVER use placeholder images, generic icons, or [LOGO] text.\n`;
   }
 
   // Brand colors

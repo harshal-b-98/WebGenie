@@ -32,6 +32,10 @@ NAVBAR STRUCTURE:
 - Logo + company name combined should not exceed 200px width
 - Maximum 5 nav items (excluding CTA button)
 - If more than 5 segments, use "More" dropdown or prioritize top 4
+- CRITICAL: Logo and nav links MUST be in SEPARATE containers
+- Use flex-shrink-0 on logo container to prevent shrinking/overlapping
+- Add ml-8 (margin-left) to nav links container for spacing from logo
+- Use justify-between on parent flex to space elements properly
 
 NAVBAR STYLING:
 - Height: h-16 (64px) standard
@@ -377,11 +381,20 @@ SEGMENT NAVIGATION:
 10. CONTENT RULES
 --------------------------------------------------------------------------------
 
-NO PLACEHOLDERS:
+NO PLACEHOLDERS (CRITICAL):
 - Never use "Lorem ipsum"
 - Never use "[Company Name]" - use actual name
 - Never use generic text if real content available
 - Never use "?" or broken icon placeholders
+
+LOGO HANDLING (IMPORTANT):
+- IF logo URL is provided: Use the actual image with <img src="...">
+- IF NO logo is provided: Use the COMPANY NAME as a stylish TEXT-BASED LOGO
+  - Example: <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">CompanyName</span>
+- NEVER use placeholder images, broken image icons, or "[LOGO]" text
+- NEVER use generic placeholder URLs like "logo.png" or "/images/logo.svg"
+- The website should look COMPLETE and PROFESSIONAL without a logo image
+- Text-based logos can be just as beautiful - use gradients, bold fonts, brand colors
 
 CONTENT EXTRACTION:
 - Extract real headlines from documents
@@ -400,11 +413,18 @@ END OF GUIDELINES
 export const UI_GUIDELINES_SHORT = `
 MANDATORY UI RULES:
 1. NAV: Max 20 chars per link, hamburger menu on mobile (md:hidden), desktop nav hidden sm
+   - CRITICAL: Logo and nav links MUST be in SEPARATE containers (never in same div)
+   - Logo container: flex-shrink-0 to prevent overlap
+   - Nav links container: ml-8 for spacing from logo
+   - Parent container: flex items-center justify-between
 2. ICONS: Use Feather icons only, min w-5 h-5, high contrast, no emojis
 3. BUTTONS: data-action + data-cta-type required, full-width on mobile (w-full sm:w-auto)
 4. HOME NAV: Logo must have data-action="back-to-landing"
 5. NO PLACEHOLDERS: Real content only, no "?", no Lorem ipsum
-6. RESPONSIVE (CRITICAL):
+6. LOGO HANDLING: If no logo image provided, use company name as stylish TEXT logo (gradient text, bold font)
+   - NEVER use placeholder images or broken icons
+   - Text logos: <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">CompanyName</span>
+7. RESPONSIVE (CRITICAL):
    - Mobile-first: base styles for mobile, add sm:/md:/lg: for larger
    - Typography: text-3xl sm:text-4xl md:text-5xl lg:text-6xl for headings
    - Grids: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3

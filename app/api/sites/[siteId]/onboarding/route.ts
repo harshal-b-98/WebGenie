@@ -21,7 +21,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
     const { siteId } = await params;
     const body = await request.json();
 
-    const { websiteType, industry, targetAudience, mainGoal } = body;
+    const {
+      websiteType,
+      industry,
+      targetAudience,
+      mainGoal,
+      dynamicPagesEnabled = true,
+      chatWidgetEnabled = true,
+    } = body;
 
     const supabase = await createClient();
 
@@ -32,7 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
       industry,
     };
 
-    // Update site with onboarding metadata and enable feature flags
+    // Update site with onboarding metadata and feature flags from user selection
     const { error } = await supabase
       .from("sites")
       .update({
@@ -40,9 +47,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
         target_audience: targetAudience,
         main_goal: mainGoal,
         requirements: onboardingData,
-        // Enable features for new sites created via onboarding
-        dynamic_pages_enabled: true,
-        chat_widget_enabled: true,
+        // Feature flags from user selection (default to true if not provided)
+        dynamic_pages_enabled: dynamicPagesEnabled,
+        chat_widget_enabled: chatWidgetEnabled,
       } as never)
       .eq("id", siteId);
 

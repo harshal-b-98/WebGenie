@@ -42,6 +42,10 @@ export interface OnboardingData {
   contentMethod: "text" | "document" | "both";
   textContent: string;
   documents: File[];
+
+  // Feature Settings
+  dynamicPagesEnabled: boolean;
+  chatWidgetEnabled: boolean;
 }
 
 const initialData: OnboardingData = {
@@ -64,6 +68,8 @@ const initialData: OnboardingData = {
   contentMethod: "text",
   textContent: "",
   documents: [],
+  dynamicPagesEnabled: true,
+  chatWidgetEnabled: true,
 };
 
 const STEPS = [
@@ -239,7 +245,7 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
         }
       }
 
-      // Step 6: Mark onboarding as complete
+      // Step 6: Mark onboarding as complete with feature flags
       const onboardingResponse = await fetch(`/api/sites/${siteId}/onboarding`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,6 +255,8 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
           industry: data.industry,
           targetAudience: data.targetAudience,
           mainGoal: data.mainGoal,
+          dynamicPagesEnabled: data.dynamicPagesEnabled,
+          chatWidgetEnabled: data.chatWidgetEnabled,
         }),
       });
 

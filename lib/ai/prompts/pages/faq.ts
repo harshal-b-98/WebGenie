@@ -136,8 +136,14 @@ export function generateFAQPagePrompt(requirements: FAQPageRequirements): string
     prompt += `COMPANY NAME: ${requirements.companyName}\n`;
   }
 
+  // Logo handling - graceful fallback to text logo
   if (requirements.logoUrl) {
-    prompt += `LOGO URL: ${requirements.logoUrl}\n`;
+    prompt += `LOGO: Use image - <img src="${requirements.logoUrl}" alt="${requirements.companyName || "Logo"}" class="h-8 md:h-10 w-auto">\n`;
+  } else {
+    prompt += `LOGO (NO IMAGE - USE TEXT LOGO):\n`;
+    prompt += `- No logo image provided. Use "${requirements.companyName || "Company"}" as a stylish TEXT-BASED LOGO.\n`;
+    prompt += `- Example: <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">${requirements.companyName || "Company"}</span>\n`;
+    prompt += `- NEVER use placeholder images or "[LOGO]" text.\n`;
   }
 
   if (requirements.brandColors) {

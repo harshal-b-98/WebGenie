@@ -5,7 +5,11 @@ import { defaultGenerationModel } from "@/lib/ai/client";
 import { createClient } from "@/lib/db/server";
 import { GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts/generation";
 import { refineRequestSchema, validateBody } from "@/lib/validation";
-import { injectDynamicNav } from "@/lib/services/generation-service";
+import {
+  injectDynamicNav,
+  injectChatWidget,
+  ChatWidgetConfig,
+} from "@/lib/services/generation-service";
 import { AuthenticationError } from "@/lib/utils/errors";
 
 export async function POST(request: Request) {
@@ -35,7 +39,9 @@ export async function POST(request: Request) {
     // Verify site ownership and get site details
     const { data: site } = await supabase
       .from("sites")
-      .select("id, user_id, title")
+      .select(
+        "id, user_id, title, chat_widget_enabled, chat_widget_config, dynamic_pages_enabled, persona_detection_enabled"
+      )
       .eq("id", versionData.site_id)
       .eq("user_id", user.id)
       .single();
@@ -44,7 +50,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const siteData = site as { id: string; user_id: string; title: string };
+    const siteData = site as {
+      id: string;
+      user_id: string;
+      title: string;
+      chat_widget_enabled?: boolean;
+      chat_widget_config?: ChatWidgetConfig;
+      dynamic_pages_enabled?: boolean;
+      persona_detection_enabled?: boolean;
+    };
 
     const currentHTML = versionData.html_content;
 
@@ -127,14 +141,33 @@ Generate the updated HTML now (raw HTML only, no markdown):`;
 
     const newVersionId = (newVersion as { id: string }).id;
 
-    // NOW inject dynamic navigation scripts with the new version ID
-    // This ensures the refined version caches landing page under the correct version key
-    const enhancedHTML = injectDynamicNav(
-      cleanedHTML,
+    // Extract settings from site data
+    const dynamicPagesEnabled = siteData.dynamic_pages_enabled ?? true;
+    const personaDetectionEnabled = siteData.persona_detection_enabled ?? false;
+    const chatWidgetEnabled = siteData.chat_widget_enabled ?? true;
+    const chatWidgetConfig = siteData.chat_widget_config || {};
+
+    // Inject widgets based on settings
+    let enhancedHTML = cleanedHTML;
+
+    // Inject dynamic navigation if enabled
+    if (dynamicPagesEnabled) {
+      enhancedHTML = injectDynamicNav(
+        enhancedHTML,
+        siteId,
+        newVersionId,
+        siteData.title || "Company",
+        personaDetectionEnabled
+      );
+    }
+
+    // Inject chat widget if enabled
+    enhancedHTML = injectChatWidget(
+      enhancedHTML,
       siteId,
       newVersionId,
-      siteData.title || "Company",
-      true // personaDetectionEnabled
+      chatWidgetEnabled,
+      chatWidgetConfig
     );
 
     // Update the version with enhanced HTML

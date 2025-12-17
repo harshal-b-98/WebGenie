@@ -15,8 +15,28 @@ import {
   BarChart3,
   Eye,
   EyeOff,
+  FileText,
+  AlertCircle,
+  SkipForward,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+interface DocumentStatus {
+  id: string;
+  filename: string;
+  processing_status: string;
+  file_size: number;
+}
+
+interface DocumentStatusResponse {
+  totalDocuments: number;
+  isReady: boolean;
+  pendingCount: number;
+  processingCount: number;
+  completedCount: number;
+  failedCount: number;
+  documents: DocumentStatus[];
+}
 
 interface Section {
   id: string;
@@ -61,6 +81,13 @@ export default function GeneratePage() {
   const [stats, setStats] = useState<GenerationStats | null>(null);
   const [streamingHtml, setStreamingHtml] = useState<string>("");
   const [showLivePreview, setShowLivePreview] = useState(true);
+
+  // Document processing status
+  const [docStatus, setDocStatus] = useState<DocumentStatusResponse | null>(null);
+  const [isCheckingDocs, setIsCheckingDocs] = useState(true);
+  const [documentsReady, setDocumentsReady] = useState(false);
+  const [docCheckTime, setDocCheckTime] = useState(0);
+  const [skipWarningShown, setSkipWarningShown] = useState(false);
 
   // AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -150,15 +177,85 @@ export default function GeneratePage() {
     fetchStats();
   }, [siteId]);
 
+  // Check document processing status before generation
   useEffect(() => {
-    generateWebsite();
+    let intervalId: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const checkDocumentStatus = async () => {
+      try {
+        const response = await fetch(`/api/sites/${siteId}/documents/status`);
+        if (response.ok) {
+          const data: DocumentStatusResponse = await response.json();
+          setDocStatus(data);
+
+          // If no documents or all ready, proceed
+          if (data.totalDocuments === 0 || data.isReady) {
+            setDocumentsReady(true);
+            setIsCheckingDocs(false);
+            if (intervalId) {
+              clearInterval(intervalId);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check document status:", err);
+        // On error, proceed with generation anyway
+        setDocumentsReady(true);
+        setIsCheckingDocs(false);
+      }
+    };
+
+    // Start checking immediately
+    checkDocumentStatus();
+
+    // Poll every 2 seconds
+    intervalId = setInterval(() => {
+      checkDocumentStatus();
+      setDocCheckTime((prev) => prev + 2);
+    }, 2000);
+
+    // Stop polling after 60 seconds max
+    timeoutId = setTimeout(() => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      // After 30 seconds, show skip warning if still not ready
+      if (!documentsReady) {
+        setSkipWarningShown(true);
+      }
+    }, 60000);
+
     return () => {
-      // Cleanup on unmount
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [siteId, documentsReady]);
+
+  // Handle skip - start generation even if documents aren't ready
+  const handleSkipProcessing = () => {
+    toast.warning(
+      "Starting generation without waiting for all documents to process. Content quality may be affected."
+    );
+    setDocumentsReady(true);
+    setIsCheckingDocs(false);
+  };
+
+  // Start generation when documents are ready
+  useEffect(() => {
+    if (documentsReady && !isComplete && progress === 0) {
+      generateWebsite();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentsReady]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cancel generation handler
@@ -351,6 +448,127 @@ ${previewContent}
           <h2 className="text-xl font-semibold text-white mb-2">Generation Failed</h2>
           <p className="text-gray-400 mb-4">{error}</p>
           <p className="text-gray-500 text-sm">Redirecting back...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show document processing status if not ready
+  if (isCheckingDocs && docStatus && !documentsReady && docStatus.totalDocuments > 0) {
+    const processingDocs = docStatus.documents.filter(
+      (d) => d.processing_status === "processing" || d.processing_status === "pending"
+    );
+    const completedDocs = docStatus.documents.filter((d) => d.processing_status === "completed");
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 p-4">
+        <div className="max-w-lg w-full">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-500/20 flex items-center justify-center">
+              <FileText className="w-8 h-8 text-indigo-400 animate-pulse" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Processing Your Documents</h2>
+            <p className="text-gray-400">
+              We&apos;re analyzing your documents to generate a better website.
+            </p>
+          </div>
+
+          {/* Progress */}
+          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 mb-6">
+            <div className="flex items-center justify-between text-sm mb-4">
+              <span className="text-gray-400">Documents Processed</span>
+              <span className="text-white font-medium">
+                {completedDocs.length} / {docStatus.totalDocuments}
+              </span>
+            </div>
+            <div className="h-2 bg-gray-700 rounded-full overflow-hidden mb-4">
+              <div
+                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                style={{
+                  width: `${docStatus.totalDocuments > 0 ? (completedDocs.length / docStatus.totalDocuments) * 100 : 0}%`,
+                }}
+              />
+            </div>
+
+            {/* Document list */}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {docStatus.documents.map((doc) => (
+                <div key={doc.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-700/30">
+                  {doc.processing_status === "completed" ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  ) : doc.processing_status === "processing" ? (
+                    <Loader2 className="w-4 h-4 text-indigo-400 animate-spin flex-shrink-0" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  )}
+                  <span className="text-sm text-gray-300 truncate flex-1">{doc.filename}</span>
+                  <span
+                    className={`text-xs ${
+                      doc.processing_status === "completed"
+                        ? "text-green-400"
+                        : doc.processing_status === "processing"
+                          ? "text-indigo-400"
+                          : "text-gray-500"
+                    }`}
+                  >
+                    {doc.processing_status === "completed"
+                      ? "Ready"
+                      : doc.processing_status === "processing"
+                        ? "Processing..."
+                        : "Pending"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tips while waiting */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-blue-300 font-medium mb-1">
+                  Better Content = Better Website
+                </p>
+                <p className="text-xs text-blue-200/70">
+                  We&apos;re extracting key information from your documents to create accurate,
+                  relevant website content.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Skip option after 30 seconds */}
+          {(docCheckTime >= 30 || skipWarningShown) && processingDocs.length > 0 && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-yellow-300 font-medium mb-1">
+                    Taking longer than expected?
+                  </p>
+                  <p className="text-xs text-yellow-200/70 mb-3">
+                    You can skip waiting, but content quality may be affected for unprocessed
+                    documents.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSkipProcessing}
+                    className="border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10"
+                  >
+                    <SkipForward className="w-4 h-4 mr-2" />
+                    Skip and Generate Now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Time indicator */}
+          <p className="text-center text-xs text-gray-500">
+            Waiting for {docCheckTime}s • Usually takes 10-30 seconds per document
+          </p>
         </div>
       </div>
     );

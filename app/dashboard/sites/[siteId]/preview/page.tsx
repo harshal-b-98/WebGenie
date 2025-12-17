@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { PreviewFrame } from "@/components/features/preview/preview-frame";
+import { PreviewFrame, PreviewSkeleton } from "@/components/features/preview/preview-frame";
 import { CodePreview } from "@/components/features/preview/code-preview";
 import { DeviceToggle } from "@/components/features/preview/device-toggle";
 import { RefinementSidebar } from "@/components/features/refinement/refinement-sidebar";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
@@ -166,13 +165,16 @@ export default function PreviewPage() {
           )}
 
           {/* Preview Area - Right side (bigger), dynamic width based on sidebar state */}
+          {/* Use dark background to match generated hero sections and prevent white flash */}
           <div
             className={`transition-all duration-300 ${
               isSidebarOpen ? "w-2/3" : "w-full"
-            } rounded-lg border border-gray-200 bg-gray-100 p-4`}
+            } rounded-lg border border-gray-700 bg-slate-900 p-4 overflow-hidden`}
           >
             {isLoading ? (
-              <Skeleton className="h-full w-full" />
+              <div className="h-full w-full rounded-lg overflow-hidden">
+                <PreviewSkeleton />
+              </div>
             ) : viewMode === "preview" ? (
               <div className="flex h-full justify-center overflow-auto">
                 <div className={`h-full transition-all duration-300 ${deviceSizes[device]}`}>
