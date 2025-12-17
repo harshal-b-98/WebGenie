@@ -143,7 +143,19 @@ export async function generateWebsite(input: GenerationInput) {
 
     // Extract brand assets (logo, social media) from site
     const brandAssets = siteData.brand_assets || {};
-    const logoUrl = brandAssets.logo?.url || null;
+    let logoUrl = brandAssets.logo?.url || null;
+
+    // Normalize logo URL to use production Supabase URL (not localhost)
+    // This ensures logos work in production deployments
+    if (logoUrl && (logoUrl.includes("localhost") || logoUrl.includes("127.0.0.1"))) {
+      const productionSupabaseUrl = "https://cfhssgueszhoracjeyou.supabase.co";
+      logoUrl = logoUrl.replace(/http:\/\/(127\.0\.0\.1|localhost):[0-9]+/, productionSupabaseUrl);
+      logger.info("Normalized logo URL from localhost to production", {
+        original: brandAssets.logo?.url,
+        normalized: logoUrl,
+      });
+    }
+
     const socialMedia = brandAssets.socialMedia || {};
 
     // Check dynamic page and persona settings

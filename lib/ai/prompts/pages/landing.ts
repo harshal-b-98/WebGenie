@@ -28,12 +28,13 @@ You must output a COMPLETE, SELF-CONTAINED HTML5 document that:
 
 Your output must use:
 - Semantic HTML5
-- Tailwind CSS v3 via CDN
+- Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"></script> (REQUIRED - use exact URL)
 - Google Fonts: Roboto
 - Vanilla JavaScript only
 - No frameworks (no React, Next.js, Vue, Angular)
 - No placeholder text EVER
 - No invented facts, data, names, or content
+- NEVER use cdn.jsdelivr.net or npm CDN for Tailwind (they don't work)
 
 ================================================================================
 MANDATORY UI/UX RULES (MUST FOLLOW)
@@ -56,8 +57,10 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - Navigation links for EACH DISCOVERED SEGMENT with hover underline effect
    - Container: class="hidden md:flex items-center gap-6"
    - Each nav link MUST have: data-segment="[segment-slug]" attribute
-   - Primary CTA button on the right - MAX 18 characters
+   - Primary CTA button on the right - MAXIMUM 18 characters (STRICTLY ENFORCED!)
    - CTA button MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact]"
+   - CTA Examples (all ≤18 chars): "Get Started" (11), "Book Demo" (9), "Start Free Trial" (16), "Contact Us" (10)
+   - NEVER use long CTAs like "Start Your Journey" (19), "Schedule Meeting" (16 is ok), or anything >18 chars
 
    NAVBAR HTML STRUCTURE (COPY THIS EXACTLY - CRITICAL FOR PROPER SPACING):
    <nav class="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md shadow-sm z-50 border-b border-gray-200/20">
@@ -325,7 +328,26 @@ OUTPUT FORMAT:
 - Starting with <!DOCTYPE html>
 - Ending with </html>
 - No explanations or markdown formatting
-- Include Tailwind CDN and Roboto font in <head>
+
+REQUIRED <head> SECTION (use EXACTLY these CDN URLs):
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[Company Name]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+
+CRITICAL: The <script> tag for Tailwind MUST be exactly:
+<script src="https://cdn.tailwindcss.com"></script>
+
+DO NOT use:
+❌ https://cdn.jsdelivr.net/npm/tailwindcss
+❌ Any other Tailwind CDN URL
+✅ ONLY use: https://cdn.tailwindcss.com
 
 Return ONLY the complete HTML document.`;
 

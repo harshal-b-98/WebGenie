@@ -95,10 +95,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ sit
       );
     }
 
-    // Get public URL
+    // Get public URL - always use production Supabase URL for logos (not localhost)
+    // This ensures logos work in production deployments
+    const productionSupabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("localhost") ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("127.0.0.1")
+        ? "https://cfhssgueszhoracjeyou.supabase.co"
+        : process.env.NEXT_PUBLIC_SUPABASE_URL;
+
     const {
-      data: { publicUrl },
+      data: { publicUrl: tempUrl },
     } = serviceSupabase.storage.from("site-logos").getPublicUrl(fileName);
+
+    // Replace localhost URL with production URL
+    const publicUrl = tempUrl.replace(
+      /http:\/\/(127\.0\.0\.1|localhost):[0-9]+/,
+      productionSupabaseUrl!
+    );
 
     // Update site's brand_assets with new logo
     const currentBrandAssets = (siteData.brand_assets as Record<string, unknown>) || {};
