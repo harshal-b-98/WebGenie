@@ -62,40 +62,63 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - CTA Examples (all ≤18 chars): "Get Started" (11), "Book Demo" (9), "Start Free Trial" (16), "Contact Us" (10)
    - NEVER use long CTAs like "Start Your Journey" (19), "Schedule Meeting" (16 is ok), or anything >18 chars
 
-   NAVBAR HTML STRUCTURE (COPY THIS EXACTLY - CRITICAL FOR PROPER SPACING):
-   <nav class="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md shadow-sm z-50 border-b border-gray-200/20">
-     <div class="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-       <!-- LOGO SECTION (Left) - MUST be separate from nav -->
-       <!-- IF logo URL provided: use img tag -->
-       <!-- IF NO logo: use styled text with company name - NEVER use placeholders -->
-       <a data-action="back-to-landing" class="flex-shrink-0 cursor-pointer">
-         <!-- With logo: <img src="[ACTUAL_LOGO_URL]" alt="Company" class="h-8 md:h-10 w-auto" /> -->
-         <!-- Without logo: <span class="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">CompanyName</span> -->
+   NAVBAR HTML STRUCTURE (USE THIS EXACT TEMPLATE - DO NOT DEVIATE):
+
+   REQUIRED 3-SECTION LAYOUT (Logo | Nav Links | CTA Button):
+
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b border-gray-200/20">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+
+       <!-- SECTION 1: LOGO (Left) - ALWAYS separate container -->
+       <a href="#" data-action="back-to-landing" class="flex-shrink-0">
+         <!-- Use EITHER logo image OR company name text, NEVER both -->
+         <!-- Example with logo: <img src="[URL]" alt="Logo" class="h-8 md:h-10 w-auto"> -->
+         <!-- Example without logo: <span class="text-xl font-bold text-indigo-600">CompanyName</span> -->
        </a>
 
-       <!-- DESKTOP NAVIGATION (Center/Right) - SEPARATE CONTAINER with gap -->
-       <div class="hidden md:flex items-center gap-6 ml-8">
-         <a data-segment="segment-1" class="text-gray-600 hover:text-gray-900 font-medium transition">Link 1</a>
-         <a data-segment="segment-2" class="text-gray-600 hover:text-gray-900 font-medium transition">Link 2</a>
+       <!-- SECTION 2: NAV LINKS (Center) - SEPARATE container with LEFT margin -->
+       <nav class="hidden md:flex items-center gap-6 ml-8">
+         <a href="#" data-segment="segment-1" class="hover:underline">Link 1</a>
+         <a href="#" data-segment="segment-2" class="hover:underline">Link 2</a>
+         <!-- Add more segment links as needed -->
+       </nav>
+
+       <!-- SECTION 3: CTA + MOBILE MENU (Right) - SEPARATE container with ml-auto -->
+       <div class="flex items-center gap-4 ml-auto">
+         <button data-action="cta-primary" data-cta-type="signup" class="hidden md:block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700">Get Started</button>
+         <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" aria-label="Menu">
+           <i data-feather="menu" class="w-6 h-6"></i>
+         </button>
        </div>
 
-       <!-- CTA BUTTON (Right) -->
-       <div class="hidden md:flex items-center gap-4 ml-auto">
-         <button data-action="cta-primary" data-cta-type="demo" class="px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition">Get Started</button>
-       </div>
-
-       <!-- MOBILE HAMBURGER (hidden on desktop) -->
-       <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Menu">
-         <i data-feather="menu" class="w-6 h-6"></i>
-       </button>
      </div>
-   </nav>
+   </header>
 
-   CRITICAL NAVBAR RULES:
-   - Logo MUST be in its own container (flex-shrink-0) to prevent overlapping
-   - Desktop nav links MUST have ml-8 (margin-left) to create space from logo
-   - Use justify-between on the parent flex container
-   - Never place logo and nav links in the same inner container without explicit spacing
+   ABSOLUTELY CRITICAL - NAVBAR MUST HAVE 3 SEPARATE CONTAINERS:
+   1. Logo container: class="flex-shrink-0" (prevents shrinking)
+   2. Nav links container: class="hidden md:flex items-center gap-6" (hidden on mobile)
+   3. CTA+Menu container: class="flex items-center gap-4" (contains both CTA and hamburger)
+
+   SPACING RULES (MANDATORY):
+   - Parent container MUST use: justify-between (distributes space evenly)
+   - Nav links MUST NOT be in same div as logo
+   - CTA button MUST NOT be in same div as nav links
+   - Each of the 3 sections needs its own <a>, <nav>, or <div> container
+
+   WRONG ❌ (causes overlap):
+   <div class="flex items-center gap-4">
+     <a>Logo</a>
+     <a>Link1</a>
+     <a>Link2</a>
+     <button>CTA</button>
+   </div>
+
+   CORRECT ✅:
+   <div class="flex justify-between">
+     <a class="flex-shrink-0">Logo</a>
+     <nav class="hidden md:flex gap-6"><a>Link1</a><a>Link2</a></nav>
+     <div class="flex gap-4"><button>CTA</button><button>Menu</button></div>
+   </div>
 
    MOBILE HAMBURGER MENU (REQUIRED):
    - Hamburger button: class="md:hidden p-2 rounded-lg"

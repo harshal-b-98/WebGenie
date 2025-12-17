@@ -22,6 +22,23 @@
     useStreaming: true, // Enable streaming by default
   };
 
+  // Auto-detect API endpoint if not provided or if it's a blob URL context
+  // This makes it work on any port dynamically
+  if (!config.apiEndpoint || config.apiEndpoint.includes("localhost:1729")) {
+    // If we're in a blob URL (iframe preview), try to use the parent window's origin
+    if (window.location.protocol === "blob:") {
+      try {
+        config.apiEndpoint = window.parent.location.origin + "/api/widget";
+      } catch (e) {
+        // Fallback if cross-origin
+        config.apiEndpoint = "http://localhost:3000/api/widget";
+      }
+    } else {
+      // Regular page - use current origin
+      config.apiEndpoint = window.location.origin + "/api/widget";
+    }
+  }
+
   // Session management
   function getOrCreateSessionId() {
     let sessionId = sessionStorage.getItem("ngw_session_id");

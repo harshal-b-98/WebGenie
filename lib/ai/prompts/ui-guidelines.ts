@@ -412,11 +412,28 @@ END OF GUIDELINES
  */
 export const UI_GUIDELINES_SHORT = `
 MANDATORY UI RULES:
-1. NAV: Max 20 chars per link, hamburger menu on mobile (md:hidden), desktop nav hidden sm
-   - CRITICAL: Logo and nav links MUST be in SEPARATE containers (never in same div)
-   - Logo container: flex-shrink-0 to prevent overlap
-   - Nav links container: ml-8 for spacing from logo
-   - Parent container: flex items-center justify-between
+1. NAVBAR - ADAPTIVE LAYOUT (handles ANY logo size):
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+       <div class="flex items-center justify-between h-16 gap-4">
+         <!-- Logo: constrained width, won't overlap -->
+         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">[LOGO]</a>
+
+         <!-- Nav: grows/shrinks to fit available space -->
+         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">[LINKS]</nav>
+
+         <!-- CTA+Menu: fixed size on right -->
+         <div class="flex items-center gap-3 flex-shrink-0">[CTA+MENU]</div>
+       </div>
+     </div>
+   </header>
+
+   ADAPTIVE SPACING (handles variable logo/nav sizes):
+   - Logo: max-w-[180px] sm:max-w-[200px] + flex-shrink-0 (constrained but won't shrink)
+   - Nav: flex-1 justify-center (takes remaining space, centers links)
+   - CTA: flex-shrink-0 (always full size)
+   - Parent: gap-4 (automatic spacing between all sections)
+   - Text limits: Nav links ≤20 chars, CTA ≤18 chars
 2. ICONS: Use Feather icons only, min w-5 h-5, high contrast, no emojis
 3. BUTTONS: data-action + data-cta-type required, full-width on mobile (w-full sm:w-auto)
 4. HOME NAV: Logo must have data-action="back-to-landing"

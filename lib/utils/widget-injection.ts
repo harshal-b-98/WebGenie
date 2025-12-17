@@ -77,7 +77,7 @@ export function injectChatWidget(
 ): string {
   if (!enabled) return html;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const position = config.position || "bottom-right";
   const primaryColor = config.primaryColor || "#667eea";
   const welcomeMessage = config.welcomeMessage || "Hi! How can I help you today?";
@@ -152,7 +152,7 @@ export function injectDynamicNav(
   personaDetectionEnabled: boolean,
   mode: InjectionMode = "inline"
 ): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   let navCode: string;
 
