@@ -100,7 +100,7 @@ ${widgetCSS}
   window.NEXTGENWEB_CONFIG = {
     projectId: '${siteId}',
     versionId: '${versionId}',
-    apiEndpoint: '${appUrl}/api/widget',
+    apiEndpoint: '',  // Client-side auto-detects using window.location.origin
     position: '${position}',
     primaryColor: '${primaryColor}',
     welcomeMessage: '${welcomeMessage.replace(/'/g, "\\'")}'
@@ -121,7 +121,7 @@ ${widgetJS}
   window.NEXTGENWEB_CONFIG = {
     projectId: '${siteId}',
     versionId: '${versionId}',
-    apiEndpoint: '${appUrl}/api/widget',
+    apiEndpoint: '',  // Client-side auto-detects using window.location.origin
     position: '${position}',
     primaryColor: '${primaryColor}',
     welcomeMessage: '${welcomeMessage.replace(/'/g, "\\'")}'
@@ -172,7 +172,7 @@ ${navCSS}
   window.NEXTGENWEB_NAV_CONFIG = {
     siteId: '${siteId}',
     versionId: '${versionId}',
-    apiEndpoint: '${appUrl}/api/widget',
+    apiEndpoint: '',  // Client-side auto-detects using window.location.origin
     personaDetectionEnabled: ${personaDetectionEnabled},
     companyName: '${companyName.replace(/'/g, "\\'")}'
   };
@@ -191,7 +191,7 @@ ${navJS}
   window.NEXTGENWEB_NAV_CONFIG = {
     siteId: '${siteId}',
     versionId: '${versionId}',
-    apiEndpoint: '${appUrl}/api/widget',
+    apiEndpoint: '',  // Client-side auto-detects using window.location.origin
     personaDetectionEnabled: ${personaDetectionEnabled},
     companyName: '${companyName.replace(/'/g, "\\'")}'
   };

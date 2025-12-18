@@ -14,7 +14,8 @@
 
   // Widget configuration (set by parent page via NEXTGENWEB_CONFIG)
   const config = window.NEXTGENWEB_CONFIG || {};
-  const API_ENDPOINT = config.apiEndpoint || "http://localhost:1729/api/widget";
+  // Auto-detect API endpoint using current origin for same-origin calls (no CORS)
+  const API_ENDPOINT = config.apiEndpoint || window.location.origin + "/api/widget";
 
   class ChatWidget {
     constructor(config) {

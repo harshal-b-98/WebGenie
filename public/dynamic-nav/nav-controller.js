@@ -22,9 +22,9 @@
     useStreaming: true, // Enable streaming by default
   };
 
-  // Auto-detect API endpoint if not provided or if it's a blob URL context
-  // This makes it work on any port dynamically
-  if (!config.apiEndpoint || config.apiEndpoint.includes("localhost:1729")) {
+  // Auto-detect API endpoint if not provided (empty string triggers this)
+  // This enables same-origin API calls regardless of where the site is hosted
+  if (!config.apiEndpoint) {
     // If we're in a blob URL (iframe preview), try to use the parent window's origin
     if (window.location.protocol === "blob:") {
       try {

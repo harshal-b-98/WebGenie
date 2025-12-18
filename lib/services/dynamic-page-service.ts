@@ -166,7 +166,7 @@ function injectDynamicNavScripts(
     window.NEXTGENWEB_NAV_CONFIG = {
       siteId: '${siteId}',
       versionId: '${versionId}',
-      apiEndpoint: '${appUrl}/api/widget',
+      apiEndpoint: '',  // Client-side auto-detects using window.location.origin
       personaDetectionEnabled: ${personaDetectionEnabled},
       companyName: '${companyName.replace(/'/g, "\\'")}'
     };
