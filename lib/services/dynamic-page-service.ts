@@ -156,7 +156,8 @@ function injectDynamicNavScripts(
   companyName: string,
   personaDetectionEnabled: boolean
 ): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729";
+  // Remove trailing slash to prevent double-slash URLs (e.g., https://example.com//api)
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:1729").replace(/\/+$/, "");
 
   const navCode = `
   <!-- NextGenWeb Dynamic Navigation -->
