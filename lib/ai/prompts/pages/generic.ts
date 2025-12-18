@@ -78,23 +78,13 @@ ALL SECTIONS MUST BE FULLY RESPONSIVE:
 REQUIRED SECTIONS:
 ================================================================================
 
-1. NAVIGATION BAR - COPY THIS EXACT STRUCTURE (DO NOT MODIFY):
+1. NAVIGATION BAR (RESPONSIVE)
+   - Fixed position: fixed top-0 left-0 right-0 z-50
+   - Background: bg-white/95 backdrop-blur-md shadow-sm
+   - Height: h-16
 
-   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
-     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-       <div class="flex items-center justify-between h-16 gap-4">
-         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">[LOGO]</a>
-         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">[NAV LINKS]</nav>
-         <div class="flex items-center gap-3 flex-shrink-0">[CTA + HAMBURGER]</div>
-       </div>
-     </div>
-   </header>
-
-   CRITICAL SPACING (prevents overlap with ANY logo size):
-   - Logo: max-w-[180px] + flex-shrink-0
-   - Nav: flex-1 justify-center
-   - CTA container: flex-shrink-0
-   - Parent: gap-4 (auto spacing)
+   DESKTOP NAV: class="hidden md:flex items-center gap-6"
+   MOBILE HAMBURGER: <button id="mobile-menu-btn" class="md:hidden p-2"><i data-feather="menu" class="w-6 h-6"></i></button>
 
    MOBILE HAMBURGER MENU (REQUIRED):
    - Hamburger button: <button id="mobile-menu-btn" class="md:hidden p-2" aria-label="Menu"><i data-feather="menu" class="w-6 h-6"></i></button>

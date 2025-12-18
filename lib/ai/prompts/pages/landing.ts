@@ -50,77 +50,92 @@ You MUST use the exact segment SLUGS provided but can ABBREVIATE display names.
 REQUIRED SECTIONS (IN THIS ORDER ONLY):
 
 1. NAVBAR (Sticky, Professional, FULLY RESPONSIVE)
-   - Logo on the left - MUST have data-action="back-to-landing" (clickable to go home)
-   - If using company name as logo, wrap in <a data-action="back-to-landing" class="cursor-pointer">
 
-   DESKTOP NAV (hidden on mobile):
+   ⚠️  CRITICAL STRUCTURE RULE ⚠️
+   The <nav> element contains ONLY <a> tags (nav links).
+   The CTA <button> goes in a SEPARATE <div> container AFTER the nav.
+   DO NOT put buttons inside the nav element - this causes overlap!
+
+   DESKTOP NAV (MUST BE HIDDEN ON MOBILE):
    - Navigation links for EACH DISCOVERED SEGMENT with hover underline effect
-   - Container: class="hidden md:flex items-center gap-6"
-   - Each nav link MUST have: data-segment="[segment-slug]" attribute
-   - Primary CTA button on the right - MAXIMUM 18 characters (STRICTLY ENFORCED!)
-   - CTA button MUST have: data-action="cta-primary" data-cta-type="[demo|signup|contact]"
-   - CTA Examples (all ≤18 chars): "Get Started" (11), "Book Demo" (9), "Start Free Trial" (16), "Contact Us" (10)
-   - NEVER use long CTAs like "Start Your Journey" (19), "Schedule Meeting" (16 is ok), or anything >18 chars
+   - Container: class="hidden md:flex items-center gap-6 ml-8"
+     * hidden: hides on mobile
+     * md:flex: shows on desktop (768px+)
+     * ml-8: spacing from logo (REQUIRED!)
+   - Nav contains ONLY <a> tags with data-segment attributes
+   - CTA button goes in SEPARATE div AFTER nav (NOT inside nav!)
+   - CTA container: class="flex items-center gap-4 ml-auto"
+   - CTA text: MAXIMUM 18 characters (STRICTLY ENFORCED!)
+   - CTA Examples: "Get Started" (11), "Book Demo" (9), "Start Free Trial" (16)
+   - NEVER: "Start Your Orchestration Journey" (32 chars) → use "Get Started"
 
    NAVBAR HTML STRUCTURE (USE THIS EXACT TEMPLATE - DO NOT DEVIATE):
 
    REQUIRED 3-SECTION LAYOUT (Logo | Nav Links | CTA Button):
 
-   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
-     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-       <div class="flex items-center justify-between h-16 gap-4">
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b border-gray-200/20">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
 
-         <!-- SECTION 1: LOGO (Left) - Constrained width prevents overlap -->
-         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">
-           <!-- Use EITHER logo image OR company name text, NEVER both -->
-           <!-- Example with logo: <img src="[URL]" alt="Logo" class="h-8 md:h-10 w-auto"> -->
-           <!-- Example without logo: <span class="text-xl font-bold text-indigo-600">CompanyName</span> -->
-         </a>
+       <!-- SECTION 1: LOGO (Left) -->
+       <a href="#" data-action="back-to-landing" class="flex-shrink-0">
+         <!-- Use EITHER logo image OR company name text, NEVER both -->
+         <!-- Example with logo: <img src="[URL]" alt="Logo" class="h-8 md:h-10 w-auto"> -->
+         <!-- Example without logo: <span class="text-xl font-bold text-indigo-600">CompanyName</span> -->
+       </a>
 
-         <!-- SECTION 2: NAV LINKS (Center) - Grows to fill space, centers links -->
-         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">
-           <a href="#" data-segment="segment-1" class="hover:underline">Link 1</a>
-           <a href="#" data-segment="segment-2" class="hover:underline">Link 2</a>
-           <!-- Add more segment links as needed -->
-         </nav>
+       <!-- SECTION 2: NAV LINKS (Center) - ⚠️ DO NOT SKIP THIS ELEMENT! -->
+       <nav class="hidden md:flex items-center gap-6 ml-8">
+         <a href="#" data-segment="segment-1" class="hover:underline">Link 1</a>
+         <a href="#" data-segment="segment-2" class="hover:underline">Link 2</a>
+         <a href="#" data-segment="segment-3" class="hover:underline">Link 3</a>
+         <!-- ⚠️ REQUIRED: Include an <a> tag for EACH discovered segment -->
+         <!-- ⚠️ DO NOT omit this nav element or put it elsewhere -->
+       </nav>
 
-         <!-- SECTION 3: CTA + MOBILE MENU (Right) - Fixed size, won't shrink -->
-         <div class="flex items-center gap-3 flex-shrink-0">
-           <button data-action="cta-primary" data-cta-type="signup" class="hidden md:block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700">Get Started</button>
-           <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" aria-label="Menu">
-             <i data-feather="menu" class="w-6 h-6"></i>
-           </button>
-         </div>
-
+       <!-- SECTION 3: CTA + MOBILE MENU (Right) - Push to right with ml-auto -->
+       <div class="flex items-center gap-4 ml-auto">
+         <button data-action="cta-primary" data-cta-type="signup" class="hidden md:block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700">Get Started</button>
+         <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg" aria-label="Menu">
+           <i data-feather="menu" class="w-6 h-6"></i>
+         </button>
        </div>
+
      </div>
    </header>
 
-   ABSOLUTELY CRITICAL - NAVBAR MUST HAVE 3 SEPARATE CONTAINERS:
-   1. Logo container: class="flex-shrink-0" (prevents shrinking)
-   2. Nav links container: class="hidden md:flex items-center gap-6" (hidden on mobile)
-   3. CTA+Menu container: class="flex items-center gap-4" (contains both CTA and hamburger)
+   ABSOLUTELY CRITICAL - HEADER MUST HAVE EXACTLY 3 CHILD ELEMENTS:
+   1. <a> tag with logo (class="flex-shrink-0")
+   2. <nav> element with segment links (class="hidden md:flex items-center gap-6 ml-8")
+   3. <div> container with CTA + menu button (class="flex items-center gap-4 ml-auto")
 
-   SPACING RULES (MANDATORY):
-   - Parent container MUST use: justify-between (distributes space evenly)
-   - Nav links MUST NOT be in same div as logo
-   - CTA button MUST NOT be in same div as nav links
-   - Each of the 3 sections needs its own <a>, <nav>, or <div> container
+   ⚠️  VALIDATION: Count the children inside the flex container - must be exactly 3!
+   If you skip the nav element, the layout will break.
 
-   WRONG ❌ (causes overlap):
-   <div class="flex items-center gap-4">
-     <a>Logo</a>
+   SPACING (SIMPLE):
+   - Logo: flex-shrink-0 (won't compress)
+   - Nav: ml-8 (spacing from logo) + hidden md:flex (hide on mobile)
+   - CTA container: ml-auto (pushes to the right)
+   - Parent: flex justify-between items-center
+
+   WRONG ❌ (CTA inside nav - causes overlap):
+   <nav class="hidden md:flex items-center gap-6">
      <a>Link1</a>
      <a>Link2</a>
-     <button>CTA</button>
+     <button>CTA</button>  <!-- WRONG! CTA must NOT be in nav -->
+   </nav>
+
+   CORRECT ✅ (CTA in separate div):
+   <nav class="hidden md:flex items-center gap-6 ml-8">
+     <a>Link1</a>
+     <a>Link2</a>
+     <!-- Nav links ONLY - NO buttons in here! -->
+   </nav>
+   <div class="flex items-center gap-4 ml-auto">
+     <button>CTA</button>  <!-- RIGHT! CTA in its own container -->
+     <button>Menu</button>
    </div>
 
-   CORRECT ✅:
-   <div class="flex justify-between">
-     <a class="flex-shrink-0">Logo</a>
-     <nav class="hidden md:flex gap-6"><a>Link1</a><a>Link2</a></nav>
-     <div class="flex gap-4"><button>CTA</button><button>Menu</button></div>
-   </div>
+   CRITICAL: Nav element contains ONLY <a> tags, NEVER <button> tags!
 
    MOBILE HAMBURGER MENU (REQUIRED):
    - Hamburger button: class="md:hidden p-2 rounded-lg"
@@ -140,13 +155,18 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
        </div>
      </div>
 
-   - NAV TEXT LIMIT (MANDATORY): Maximum 20 characters per nav item - ABBREVIATE if longer
-     * NEVER let nav text wrap to multiple lines
-     * "Intelligent Enterprise Solutions" → "Enterprise"
-     * "Industries & Use Cases" → "Industries"
-     * "Frequently Asked Questions" → "FAQ"
-     * "Customer Success Stories" → "Success"
-     * Count characters and abbreviate BEFORE rendering
+   - NAV TEXT LIMIT (STRICTLY ENFORCED): MAXIMUM 15 characters per nav item
+     * Count characters FIRST, then abbreviate if >15 chars
+     * NEVER let nav text wrap to multiple lines or use ellipsis
+     * "Beverage Intelligence" (20 chars) → "Beverage Intel" (14 chars) ✓
+     * "Competitive Intelligence" (24 chars) → "Competitive Intel" (17 chars - still too long!) → "Comp Intel" (10 chars) ✓
+     * "Business Intelligence" → "Business Intel" (14 chars) ✓
+     * "Intelligent Enterprise Solutions" → "Enterprise" (10 chars) ✓
+     * "Industries & Use Cases" → "Industries" (10 chars) ✓
+     * "Frequently Asked Questions" → "FAQ" (3 chars) ✓
+     * "Customer Success Stories" → "Success" (7 chars) ✓
+     * Any word containing "Intelligence" → shorten to "Intel"
+     * RULE: If abbreviated text still >15 chars, remove adjectives/descriptors
    - Sticky: fixed top-0, backdrop-blur-md, bg-white/95 or bg-gray-900/95 z-50
    - Add subtle border-b border-gray-200/20 and shadow-sm
    - NAVBAR HEIGHT: h-16 (maintains consistent header)
