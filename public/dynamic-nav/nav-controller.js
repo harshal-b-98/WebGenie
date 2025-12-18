@@ -1354,6 +1354,16 @@
       // Clear navigation stack when going to landing
       this.navigationStack = [];
 
+      // Clean up injected nav elements before restoring landing
+      const injectedNav = document.getElementById("ngw-injected-nav");
+      if (injectedNav) injectedNav.remove();
+
+      const spacer = document.getElementById("ngw-nav-spacer");
+      if (spacer) spacer.remove();
+
+      // Remove the fixed nav class from body (landing page uses its own navbar)
+      document.body.classList.remove("ngw-has-fixed-nav");
+
       // Restore original landing page (version-specific)
       const cacheKey = "ngw_landing_html_" + config.siteId + "_" + config.versionId;
       const originalHTML = sessionStorage.getItem(cacheKey);
@@ -1710,10 +1720,12 @@
       nav.id = "ngw-injected-nav";
       nav.className = "ngw-fixed-nav";
       nav.innerHTML = `
-        <div class="ngw-nav-container">
+        <div class="ngw-nav-row-primary">
           <a href="#" data-action="back-to-landing" class="ngw-nav-logo">${this.companyName || "Home"}</a>
-          ${this.buildBreadcrumb()}
           <button data-action="cta-primary" data-cta-type="demo" class="ngw-nav-cta">Get Started</button>
+        </div>
+        <div class="ngw-nav-row-breadcrumb">
+          ${this.buildBreadcrumb()}
         </div>
       `;
       return nav;
@@ -1793,24 +1805,53 @@
         });
 
         // Also remove any standalone header elements that might contain nav
+        // ALWAYS remove headers on segment/detail pages to avoid double navbar
         const headers = document.querySelectorAll("header:not(footer header)");
         headers.forEach((header) => {
-          // Only remove if it's a main nav header (has nav links)
-          if (header.querySelector("[data-segment]") || header.querySelector("nav")) {
-            header.remove();
-          }
+          // Remove ALL headers on non-landing pages (we inject our own nav)
+          // This prevents double navbar overlap issues
+          console.log("[DynamicNav] Removing AI-generated header to prevent overlap");
+          header.remove();
         });
 
-        // Inject our deterministic navigation
+        // Find the first content element (first child of body that isn't our elements)
+        const firstContentElement = Array.from(document.body.children).find(
+          (el) =>
+            !el.classList?.contains("ngw-fixed-nav") &&
+            !el.classList?.contains("ngw-nav-spacer") &&
+            !el.classList?.contains("ngw-loading-overlay") &&
+            !el.id?.startsWith("ngw-")
+        );
+
+        // Inject our deterministic navigation at the start
         const navBar = this.createNavigationBar();
         document.body.insertBefore(navBar, document.body.firstChild);
 
-        // Add class to body for fixed nav padding (defined in styles.css)
-        document.body.classList.add("ngw-has-fixed-nav");
+        // Inject spacer RIGHT AFTER navbar (before content)
+        const spacer = document.createElement("div");
+        spacer.className = "ngw-nav-spacer";
+        spacer.id = "ngw-nav-spacer";
+        navBar.insertAdjacentElement("afterend", spacer);
 
-        console.log(
-          "[DynamicNav] Injected deterministic navigation bar, removed AI-generated navs"
-        );
+        // Reset the first content element's top padding (belt AND suspenders)
+        if (firstContentElement) {
+          // Remove margin-top
+          firstContentElement.style.marginTop = "0";
+
+          // Check for and reset pt-* Tailwind classes
+          const classList = Array.from(firstContentElement.classList || []);
+          const hasPaddingClass = classList.some(
+            (cls) => cls.startsWith("pt-") || cls.startsWith("py-")
+          );
+
+          if (hasPaddingClass) {
+            // Override with inline style - CSS specificity wins
+            firstContentElement.style.paddingTop = "2rem";
+            console.log("[DynamicNav] Reset first element padding-top to 2rem");
+          }
+        }
+
+        console.log("[DynamicNav] Injected navbar + spacer, content starts below");
       }
 
       // Initialize Feather icons after content is replaced

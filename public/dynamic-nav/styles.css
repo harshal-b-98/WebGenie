@@ -3,6 +3,14 @@
  * Styles for the segment explorer panel, loading overlay, and navigation elements
  */
 
+/* =================================
+   CSS VARIABLES - SINGLE SOURCE OF TRUTH
+   ================================= */
+:root {
+  --ngw-navbar-height: 88px; /* 48px primary row + 40px breadcrumb row */
+  --ngw-navbar-height-mobile: 80px; /* 44px primary row + 36px breadcrumb row */
+}
+
 /* Explorer Panel */
 .ngw-explorer-panel {
   position: fixed;
@@ -538,16 +546,33 @@
   border-bottom: 1px solid rgba(229, 231, 235, 0.8);
 }
 
-/* Navigation Inner Container */
-.ngw-nav-container {
+/* =================================
+   TWO-ROW NAVIGATION LAYOUT
+   Row 1: Logo + CTA
+   Row 2: Breadcrumb
+   ================================= */
+
+/* Primary Row: Logo + CTA Button */
+.ngw-nav-row-primary {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 24px;
-  height: 64px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+}
+
+/* Breadcrumb Row */
+.ngw-nav-row-breadcrumb {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(229, 231, 235, 0.5);
+  background: rgba(249, 250, 251, 0.5);
 }
 
 /* Logo/Company Name */
@@ -570,6 +595,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  margin-left: 24px; /* Extra spacing from logo */
 }
 
 .ngw-breadcrumb ol {
@@ -651,31 +677,41 @@
   transform: translateY(0);
 }
 
-/* Mobile Responsive Styles */
+/* Mobile Responsive Styles for Two-Row Nav */
 @media (max-width: 768px) {
-  .ngw-nav-container {
+  .ngw-nav-row-primary {
     padding: 0 16px;
-    height: 56px;
-    gap: 12px;
+    height: 44px;
+  }
+
+  .ngw-nav-row-breadcrumb {
+    padding: 0 16px;
+    height: 36px;
   }
 
   .ngw-nav-logo {
     font-size: 1rem;
   }
 
-  .ngw-breadcrumb {
-    display: none; /* Hide breadcrumb on mobile, rely on back button */
+  .ngw-nav-cta {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
   }
 
-  .ngw-nav-cta {
-    padding: 8px 16px;
+  .ngw-breadcrumb-link,
+  .ngw-breadcrumb-current {
     font-size: 0.8125rem;
   }
 }
 
 @media (max-width: 480px) {
   .ngw-nav-cta {
-    padding: 6px 12px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .ngw-breadcrumb-link,
+  .ngw-breadcrumb-current {
     font-size: 0.75rem;
   }
 }
@@ -685,6 +721,11 @@
   .ngw-fixed-nav {
     background: rgba(17, 24, 39, 0.97);
     border-bottom-color: rgba(55, 65, 81, 0.8);
+  }
+
+  .ngw-nav-row-breadcrumb {
+    border-top-color: rgba(55, 65, 81, 0.5);
+    background: rgba(31, 41, 55, 0.5);
   }
 
   .ngw-nav-logo {
@@ -730,15 +771,52 @@
   outline-offset: 2px;
 }
 
-/* Body padding when injected nav is present */
-body.ngw-has-fixed-nav {
-  padding-top: 64px;
+/* =================================
+   NAVBAR SPACER - PUSHES CONTENT BELOW FIXED NAV
+   ================================= */
+
+/* Spacer element that occupies space below fixed navbar */
+.ngw-nav-spacer {
+  display: block;
+  width: 100%;
+  height: var(--ngw-navbar-height);
+  flex-shrink: 0;
+  background: transparent;
 }
 
 @media (max-width: 768px) {
-  body.ngw-has-fixed-nav {
-    padding-top: 56px;
+  .ngw-nav-spacer {
+    height: var(--ngw-navbar-height-mobile);
   }
+}
+
+/* =================================
+   CONTENT RESET - PREVENTS DOUBLE SPACING
+   ================================= */
+
+/* Reset top padding/margin on first content element after spacer */
+.ngw-nav-spacer + *,
+.ngw-nav-spacer + section,
+.ngw-nav-spacer + main,
+.ngw-nav-spacer + div {
+  margin-top: 0 !important;
+}
+
+/* Reset AI-generated hero sections with pt-* classes */
+.ngw-nav-spacer + section[class*="pt-16"],
+.ngw-nav-spacer + section[class*="pt-20"],
+.ngw-nav-spacer + section[class*="pt-24"],
+.ngw-nav-spacer + section[class*="py-16"],
+.ngw-nav-spacer + section[class*="py-20"],
+.ngw-nav-spacer + section[class*="py-24"] {
+  padding-top: 2rem !important;
+}
+
+/* Hero sections with gradients - ensure content is visible */
+.ngw-nav-spacer + section[class*="from-slate"],
+.ngw-nav-spacer + section[class*="from-gray"],
+.ngw-nav-spacer + section[class*="bg-gradient"] {
+  padding-top: 3rem !important;
 }
 
 /* =================================
