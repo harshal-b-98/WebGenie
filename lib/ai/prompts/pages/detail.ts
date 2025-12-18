@@ -158,7 +158,9 @@ REQUIRED SECTIONS:
    - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
    - CARD STYLING: class="p-5 sm:p-6 rounded-xl"
 
-7. RELATED TOPICS (RESPONSIVE)
+7. RELATED TOPICS (RESPONSIVE) - CONDITIONAL SECTION
+   - IMPORTANT: Only show this section if related topics are available
+   - If no related topics provided, SKIP this entire section (do NOT show empty grid)
    - Links to related features/solutions with proper data attributes
    - Section background: class="bg-gray-50 py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8"
    - Section title: class="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4"
@@ -194,6 +196,8 @@ REQUIRED SECTIONS:
    - RESPONSIVE GRID: class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8"
    - Logo with data-action="back-to-landing"
    - Quick links with data-segment attributes
+   - IMPORTANT: Only show Quick Links section if segments are provided
+   - If no segments available, omit the Quick Links column entirely (do NOT show empty section)
 
 10. MOBILE MENU JAVASCRIPT (REQUIRED):
     Include in ONE script block before </body>:

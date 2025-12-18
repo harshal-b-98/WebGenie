@@ -81,8 +81,9 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
 
   try {
     const response = await openaiClient.embeddings.create({
-      model: "text-embedding-ada-002",
+      model: "text-embedding-3-small",
       input: query,
+      dimensions: 1536,
     });
 
     return response.data[0].embedding;
@@ -154,7 +155,7 @@ export async function searchByType(
   return semanticSearch(projectId, query, {
     chunkTypes: [chunkType],
     limit,
-    threshold: 0.7,
+    threshold: 0.45,
   });
 }
 
@@ -169,7 +170,7 @@ export async function getRelevantContext(
 ): Promise<string> {
   const results = await semanticSearch(projectId, question, {
     limit: maxChunks,
-    threshold: 0.7,
+    threshold: 0.45,
   });
 
   if (results.length === 0) {

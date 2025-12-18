@@ -39,6 +39,9 @@
       this.createPanel();
       this.attachEventListeners();
 
+      // Setup global click handler as backup (survives DOM changes)
+      this.setupGlobalClickHandler();
+
       // Add welcome message
       this.addMessage({
         role: "assistant",
@@ -83,16 +86,15 @@
         this.renderMessages();
       }
 
-      // Re-attach event listeners (they were lost with the elements)
-      if (!buttonExists || !panelExists) {
-        this.attachEventListeners();
-      }
-
-      // Update references
+      // IMPORTANT: Update references BEFORE attaching listeners
       this.button = document.getElementById("nextgenweb-chat-button");
       this.panel = document.getElementById("nextgenweb-chat-panel");
       this.messagesContainer = document.getElementById("nextgenweb-chat-messages");
       this.input = document.getElementById("nextgenweb-chat-input");
+
+      // Always re-attach event listeners after content replacement
+      // (prevents stale reference issues)
+      this.attachEventListeners();
 
       // Restore open state if it was open
       if (this.isOpen && this.panel) {
@@ -100,6 +102,13 @@
         this.panel.classList.add("nextgenweb-chat-panel-open");
         if (this.button) this.button.style.display = "none";
       }
+
+      console.log(
+        "[NextGenWeb Widget] Elements ensured - button:",
+        !!this.button,
+        "panel:",
+        !!this.panel
+      );
     }
 
     /**
@@ -187,26 +196,95 @@
     }
 
     attachEventListeners() {
-      // Toggle chat
-      this.button.addEventListener("click", () => this.toggleChat());
+      // Ensure we have current button reference
+      if (!this.button) {
+        this.button = document.getElementById("nextgenweb-chat-button");
+      }
+
+      if (!this.button) {
+        console.error("[NextGenWeb Widget] Cannot attach listeners - button not found in DOM");
+        return;
+      }
+
+      // Use onclick property to prevent duplicate listeners
+      this.button.onclick = (e) => {
+        e.stopPropagation();
+        console.log("[NextGenWeb Widget] Button clicked!");
+        this.toggleChat();
+      };
 
       // Close button
-      document
-        .getElementById("nextgenweb-chat-close")
-        ?.addEventListener("click", () => this.closeChat());
+      const closeBtn = document.getElementById("nextgenweb-chat-close");
+      if (closeBtn) {
+        closeBtn.onclick = () => this.closeChat();
+      }
 
-      // Send message
-      document
-        .getElementById("nextgenweb-chat-send")
-        ?.addEventListener("click", () => this.sendMessage());
+      // Send button
+      const sendBtn = document.getElementById("nextgenweb-chat-send");
+      if (sendBtn) {
+        sendBtn.onclick = () => this.sendMessage();
+      }
 
       // Enter to send
-      this.input?.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          this.sendMessage();
-        }
-      });
+      if (this.input) {
+        this.input.onkeypress = (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            this.sendMessage();
+          }
+        };
+      }
+
+      console.log("[NextGenWeb Widget] Event listeners attached to button:", !!this.button);
+    }
+
+    /**
+     * Setup global click handler using event delegation
+     * This survives DOM changes and ensures clicks always work
+     */
+    setupGlobalClickHandler() {
+      // Only set up once
+      if (window._ngwClickHandlerAttached) return;
+      window._ngwClickHandlerAttached = true;
+
+      document.addEventListener(
+        "click",
+        (e) => {
+          const target = e.target;
+
+          // Chat button click
+          if (target.closest && target.closest("#nextgenweb-chat-button")) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("[NextGenWeb Widget] Global handler - button clicked");
+            this.toggleChat();
+            return;
+          }
+
+          // Close button click
+          if (target.closest && target.closest("#nextgenweb-chat-close")) {
+            e.preventDefault();
+            this.closeChat();
+            return;
+          }
+
+          // Send button click
+          if (target.closest && target.closest("#nextgenweb-chat-send")) {
+            e.preventDefault();
+            this.sendMessage();
+            return;
+          }
+
+          // View page button click
+          if (target.closest && target.closest(".nextgenweb-view-page-button")) {
+            // Let the inline handler deal with this
+            return;
+          }
+        },
+        true
+      ); // Use capture phase for priority
+
+      console.log("[NextGenWeb Widget] Global click handler attached");
     }
 
     toggleChat() {

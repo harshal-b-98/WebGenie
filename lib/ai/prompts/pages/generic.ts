@@ -215,7 +215,9 @@ REQUIRED SECTIONS:
      <p class="text-gray-600">[Description of the stat]</p>
    </div>
 
-4. EXPLORE OTHER SECTIONS
+4. EXPLORE OTHER SECTIONS - CONDITIONAL
+   - IMPORTANT: Only show this section if related segments are provided
+   - If no related segments available, SKIP this entire section (do NOT show empty section)
    - Section with links to related pages
    - Use data-segment="[slug]" for navigation
    - At least 2-3 related segment links with Feather icons
@@ -228,6 +230,8 @@ REQUIRED SECTIONS:
    - Logo with data-action="back-to-landing"
    - Quick links with data-segment attributes
    - Copyright
+   - IMPORTANT: Only show Quick Links section if segments are provided
+   - If no segments available, omit the Quick Links column entirely (do NOT show empty section)
 
 ================================================================================
 CRITICAL DATA ATTRIBUTES (MANDATORY)

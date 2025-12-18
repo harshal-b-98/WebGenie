@@ -17,12 +17,15 @@ These rules are NON-NEGOTIABLE and MUST be followed for every generated page.
 --------------------------------------------------------------------------------
 
 TEXT LENGTH LIMITS:
-- Nav link text: MAXIMUM 20 characters
-- If segment name exceeds 20 chars, ABBREVIATE intelligently:
-  - "Intelligent Enterprise Solutions" → "Enterprise Solutions"
-  - "Industries & Use Cases" → "Industries"
-  - "Customer Success Stories" → "Success Stories"
-  - "Frequently Asked Questions" → "FAQ"
+- Nav link text: MAXIMUM 15 characters (STRICTLY ENFORCED)
+- If segment name exceeds 15 chars, ABBREVIATE intelligently:
+  - "Beverage Intelligence" → "Beverage Intel" (14 chars)
+  - "Competitive Intelligence" → "Comp Intel" (10 chars)
+  - "Business Intelligence" → "Business Intel" (14 chars)
+  - "Intelligent Enterprise Solutions" → "Enterprise" (10 chars)
+  - "Industries & Use Cases" → "Industries" (10 chars)
+  - "Customer Success Stories" → "Success" (7 chars)
+  - "Frequently Asked Questions" → "FAQ" (3 chars)
 - CTA button text: MAXIMUM 18 characters
   - "Start Your Orchestration Journey" → "Get Started"
   - "Schedule a Consultation" → "Book Demo"
@@ -411,29 +414,40 @@ END OF GUIDELINES
  * Short version for inline prompts (reduces token usage)
  */
 export const UI_GUIDELINES_SHORT = `
+⚠️  CRITICAL: Nav element contains ONLY <a> tags. CTA button goes in SEPARATE div!
+
 MANDATORY UI RULES:
-1. NAVBAR - ADAPTIVE LAYOUT (handles ANY logo size):
-   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b">
-     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-       <div class="flex items-center justify-between h-16 gap-4">
-         <!-- Logo: constrained width, won't overlap -->
-         <a href="#" data-action="back-to-landing" class="flex-shrink-0 max-w-[180px] sm:max-w-[200px]">[LOGO]</a>
+1. NAVBAR - SIMPLE FLEXBOX LAYOUT (easy for AI to follow):
+   <header class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm border-b border-gray-200/20">
+     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+       <!-- Logo: won't shrink -->
+       <a href="#" data-action="back-to-landing" class="flex-shrink-0">[LOGO]</a>
 
-         <!-- Nav: grows/shrinks to fit available space -->
-         <nav class="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">[LINKS]</nav>
+       <!-- Nav: hidden on mobile, margin from logo -->
+       <nav class="hidden md:flex items-center gap-6 ml-8">[LINKS]</nav>
 
-         <!-- CTA+Menu: fixed size on right -->
-         <div class="flex items-center gap-3 flex-shrink-0">[CTA+MENU]</div>
-       </div>
+       <!-- CTA+Menu: pushed to right with ml-auto -->
+       <div class="flex items-center gap-4 ml-auto">[CTA+MENU]</div>
      </div>
    </header>
 
-   ADAPTIVE SPACING (handles variable logo/nav sizes):
-   - Logo: max-w-[180px] sm:max-w-[200px] + flex-shrink-0 (constrained but won't shrink)
-   - Nav: flex-1 justify-center (takes remaining space, centers links)
-   - CTA: flex-shrink-0 (always full size)
-   - Parent: gap-4 (automatic spacing between all sections)
-   - Text limits: Nav links ≤20 chars, CTA ≤18 chars
+   CRITICAL RULES (prevents overlap):
+   - Nav element: ONLY <a> tags, NEVER <button> tags!
+   - CTA button: MUST be in separate div, NOT inside nav
+   - Nav classes: "hidden md:flex items-center gap-6 ml-8" (ml-8 required!)
+   - CTA container: "flex items-center gap-4 ml-auto" (ml-auto required!)
+
+   WRONG ❌ (CTA inside nav):
+   <nav class="hidden md:flex gap-6">
+     <a>Link</a>
+     <button>CTA</button>  <!-- CAUSES OVERLAP! -->
+   </nav>
+
+   CORRECT ✅ (CTA in separate div):
+   <nav class="hidden md:flex gap-6 ml-8"><a>Link</a></nav>
+   <div class="flex gap-4 ml-auto"><button>CTA</button></div>
+
+   TEXT LIMITS: Nav ≤15 chars, CTA ≤18 chars
 2. ICONS: Use Feather icons only, min w-5 h-5, high contrast, no emojis
 3. BUTTONS: data-action + data-cta-type required, full-width on mobile (w-full sm:w-auto)
 4. HOME NAV: Logo must have data-action="back-to-landing"
@@ -557,7 +571,7 @@ export function getIconForSegment(segmentName: string): string {
 /**
  * Abbreviate long nav text to fit within limits
  */
-export function abbreviateNavText(text: string, maxLength: number = 20): string {
+export function abbreviateNavText(text: string, maxLength: number = 15): string {
   if (text.length <= maxLength) return text;
 
   // Common abbreviations
@@ -577,6 +591,19 @@ export function abbreviateNavText(text: string, maxLength: number = 20): string 
     "request a demo": "Get Demo",
     "start your journey": "Get Started",
     "start your orchestration journey": "Get Started",
+    "orchestration journey": "Get Started",
+    "begin your journey": "Get Started",
+    // Intelligence-related (shorten to "Intel" to fit 15 char limit)
+    "beverage intelligence": "Beverage Intel",
+    "competitive intelligence": "Comp Intel", // 10 chars - fits!
+    "business intelligence": "Business Intel",
+    "market intelligence": "Market Intel",
+    "artificial intelligence": "AI",
+    "machine learning": "ML",
+    // Even shorter variants for very long names
+    "beverage intel": "Bev Intel",
+    "competitive intel": "Comp Intel",
+    "business intel": "Biz Intel",
   };
 
   const lower = text.toLowerCase();

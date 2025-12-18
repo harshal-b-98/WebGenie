@@ -38,6 +38,23 @@ export interface OnboardingData {
     youtube: string;
   };
 
+  // Step 2: Contact Info (Optional)
+  contactInfo: {
+    email: string;
+    phone: string;
+    address: string;
+    includeContactPage: boolean;
+  };
+
+  // Step 2: About Info (Optional)
+  aboutInfo: {
+    companyHistory: string;
+    missionStatement: string;
+    visionStatement: string;
+    companyValues: string;
+    includeAboutPage: boolean;
+  };
+
   // Step 3: Content Input
   contentMethod: "text" | "document" | "both";
   textContent: string;
@@ -64,6 +81,19 @@ const initialData: OnboardingData = {
     facebook: "",
     instagram: "",
     youtube: "",
+  },
+  contactInfo: {
+    email: "",
+    phone: "",
+    address: "",
+    includeContactPage: false,
+  },
+  aboutInfo: {
+    companyHistory: "",
+    missionStatement: "",
+    visionStatement: "",
+    companyValues: "",
+    includeAboutPage: false,
   },
   contentMethod: "text",
   textContent: "",
@@ -187,7 +217,7 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
         }
       }
 
-      // Step 3: Save brand settings
+      // Step 3: Save brand settings (including contact and about info)
       const settingsResponse = await fetch(`/api/sites/${siteId}/settings`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -195,6 +225,21 @@ export function OnboardingWizard({ open, onOpenChange, onSuccess }: OnboardingWi
           description: buildWebsiteDescription(data),
           brand_assets: {
             socialMedia: data.socialMedia,
+            contactInfo: {
+              email: data.contactInfo.email,
+              phone: data.contactInfo.phone,
+              address: data.contactInfo.address,
+            },
+            aboutInfo: {
+              companyHistory: data.aboutInfo.companyHistory,
+              missionStatement: data.aboutInfo.missionStatement,
+              visionStatement: data.aboutInfo.visionStatement,
+              companyValues: data.aboutInfo.companyValues,
+            },
+            pageSettings: {
+              includeContactPage: data.contactInfo.includeContactPage,
+              includeAboutPage: data.aboutInfo.includeAboutPage,
+            },
           },
           chat_widget_config: {
             primaryColor: data.primaryColor,

@@ -134,7 +134,25 @@ export async function generateWebsite(input: GenerationInput) {
       id: string;
       title?: string;
       description?: string;
-      brand_assets?: { logo?: { url?: string }; socialMedia?: Record<string, string> };
+      brand_assets?: {
+        logo?: { url?: string };
+        socialMedia?: Record<string, string>;
+        pageSettings?: {
+          includeContactPage?: boolean;
+          includeAboutPage?: boolean;
+        };
+        contactInfo?: {
+          email?: string;
+          phone?: string;
+          address?: string;
+        };
+        aboutInfo?: {
+          companyHistory?: string;
+          missionStatement?: string;
+          visionStatement?: string;
+          companyValues?: string;
+        };
+      };
       dynamic_pages_enabled?: boolean;
       persona_detection_enabled?: boolean;
       chat_widget_enabled?: boolean;
@@ -157,6 +175,9 @@ export async function generateWebsite(input: GenerationInput) {
     }
 
     const socialMedia = brandAssets.socialMedia || {};
+    const pageSettings = brandAssets.pageSettings || {};
+    const contactInfo = brandAssets.contactInfo || {};
+    const aboutInfo = brandAssets.aboutInfo || {};
 
     // Check dynamic page and persona settings
     const dynamicPagesEnabled = siteData.dynamic_pages_enabled ?? true;
@@ -239,6 +260,10 @@ export async function generateWebsite(input: GenerationInput) {
         logoUrl: logoUrl,
         socialMedia: socialMedia,
         brandColors: colorPromptSection,
+        // Page settings for Contact/About pages
+        pageSettings: pageSettings,
+        contactInfo: contactInfo,
+        aboutInfo: aboutInfo,
       };
     } else {
       requirements = {
@@ -251,6 +276,10 @@ export async function generateWebsite(input: GenerationInput) {
         logoUrl: logoUrl,
         socialMedia: socialMedia,
         brandColors: colorPromptSection,
+        // Page settings for Contact/About pages
+        pageSettings: pageSettings,
+        contactInfo: contactInfo,
+        aboutInfo: aboutInfo,
       };
     }
 
@@ -300,6 +329,28 @@ export async function generateWebsite(input: GenerationInput) {
               facebook?: string;
               instagram?: string;
               youtube?: string;
+            }
+          | undefined,
+        // Pass page settings for Contact/About pages
+        pageSettings: requirements.pageSettings as
+          | {
+              includeContactPage?: boolean;
+              includeAboutPage?: boolean;
+            }
+          | undefined,
+        contactInfo: requirements.contactInfo as
+          | {
+              email?: string;
+              phone?: string;
+              address?: string;
+            }
+          | undefined,
+        aboutInfo: requirements.aboutInfo as
+          | {
+              companyHistory?: string;
+              missionStatement?: string;
+              visionStatement?: string;
+              companyValues?: string;
             }
           | undefined,
       });

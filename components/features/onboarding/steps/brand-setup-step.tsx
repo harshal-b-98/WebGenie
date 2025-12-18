@@ -1,11 +1,23 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Palette, Sparkles, MessageSquare } from "lucide-react";
+import {
+  Upload,
+  X,
+  Palette,
+  Sparkles,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Phone,
+  Mail,
+  MapPin,
+  Building,
+} from "lucide-react";
 import type { OnboardingData } from "../onboarding-wizard";
 
 const PRESET_COLORS = [
@@ -27,6 +39,8 @@ interface BrandSetupStepProps {
 
 export function BrandSetupStep({ data, updateData }: BrandSetupStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [contactExpanded, setContactExpanded] = useState(false);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
 
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -238,6 +252,253 @@ export function BrandSetupStep({ data, updateData }: BrandSetupStepProps) {
             />
           </div>
         </div>
+      </div>
+
+      {/* Contact Information - Collapsible */}
+      <div className="space-y-3 border rounded-lg">
+        <button
+          type="button"
+          onClick={() => setContactExpanded(!contactExpanded)}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
+              <Phone className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <span className="font-semibold text-gray-900">Contact Information</span>
+              <span className="text-xs text-gray-500 ml-2">(Optional)</span>
+              {(data.contactInfo.email || data.contactInfo.phone || data.contactInfo.address) && (
+                <p className="text-xs text-green-600 mt-0.5">
+                  {[
+                    data.contactInfo.email && "Email",
+                    data.contactInfo.phone && "Phone",
+                    data.contactInfo.address && "Address",
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}{" "}
+                  added
+                </p>
+              )}
+            </div>
+          </div>
+          {contactExpanded ? (
+            <ChevronUp className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+        </button>
+
+        {contactExpanded && (
+          <div className="px-4 pb-4 space-y-4">
+            <p className="text-sm text-gray-500">
+              Add your contact details to generate a Contact Us page for your website.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="contactEmail" className="text-xs flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> Email Address
+                </Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  placeholder="contact@yourcompany.com"
+                  value={data.contactInfo.email}
+                  onChange={(e) =>
+                    updateData({
+                      contactInfo: { ...data.contactInfo, email: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="contactPhone" className="text-xs flex items-center gap-1">
+                  <Phone className="w-3 h-3" /> Phone Number
+                </Label>
+                <Input
+                  id="contactPhone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={data.contactInfo.phone}
+                  onChange={(e) =>
+                    updateData({
+                      contactInfo: { ...data.contactInfo, phone: e.target.value },
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="contactAddress" className="text-xs flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> Address
+              </Label>
+              <textarea
+                id="contactAddress"
+                placeholder="123 Main Street, City, State 12345"
+                value={data.contactInfo.address}
+                onChange={(e) =>
+                  updateData({
+                    contactInfo: { ...data.contactInfo, address: e.target.value },
+                  })
+                }
+                rows={2}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border">
+              <div>
+                <Label htmlFor="includeContactPage" className="font-medium text-sm cursor-pointer">
+                  Add Contact Us page to website
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Show this information on a dedicated Contact page
+                </p>
+              </div>
+              <Switch
+                id="includeContactPage"
+                checked={data.contactInfo.includeContactPage}
+                onCheckedChange={(checked) =>
+                  updateData({
+                    contactInfo: { ...data.contactInfo, includeContactPage: checked },
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* About Us - Collapsible */}
+      <div className="space-y-3 border rounded-lg">
+        <button
+          type="button"
+          onClick={() => setAboutExpanded(!aboutExpanded)}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
+              <Building className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <span className="font-semibold text-gray-900">Company Story</span>
+              <span className="text-xs text-gray-500 ml-2">(Optional)</span>
+              {(data.aboutInfo.missionStatement || data.aboutInfo.companyHistory) && (
+                <p className="text-xs text-amber-600 mt-0.5">
+                  {[
+                    data.aboutInfo.companyHistory && "History",
+                    data.aboutInfo.missionStatement && "Mission",
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}{" "}
+                  added
+                </p>
+              )}
+            </div>
+          </div>
+          {aboutExpanded ? (
+            <ChevronUp className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+        </button>
+
+        {aboutExpanded && (
+          <div className="px-4 pb-4 space-y-4">
+            <p className="text-sm text-gray-500">
+              Tell your company story to generate an About Us page for your website.
+            </p>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="companyHistory" className="text-xs">
+                  Company History
+                </Label>
+                <textarea
+                  id="companyHistory"
+                  placeholder="Founded in 2020, our company started with a simple mission..."
+                  value={data.aboutInfo.companyHistory}
+                  onChange={(e) =>
+                    updateData({
+                      aboutInfo: { ...data.aboutInfo, companyHistory: e.target.value },
+                    })
+                  }
+                  rows={3}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="missionStatement" className="text-xs">
+                    Mission Statement
+                  </Label>
+                  <textarea
+                    id="missionStatement"
+                    placeholder="Our mission is to..."
+                    value={data.aboutInfo.missionStatement}
+                    onChange={(e) =>
+                      updateData({
+                        aboutInfo: { ...data.aboutInfo, missionStatement: e.target.value },
+                      })
+                    }
+                    rows={2}
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="visionStatement" className="text-xs">
+                    Vision Statement
+                  </Label>
+                  <textarea
+                    id="visionStatement"
+                    placeholder="We envision a world where..."
+                    value={data.aboutInfo.visionStatement}
+                    onChange={(e) =>
+                      updateData({
+                        aboutInfo: { ...data.aboutInfo, visionStatement: e.target.value },
+                      })
+                    }
+                    rows={2}
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="companyValues" className="text-xs">
+                  Company Values
+                </Label>
+                <Input
+                  id="companyValues"
+                  placeholder="Innovation, Integrity, Excellence, Customer Focus"
+                  value={data.aboutInfo.companyValues}
+                  onChange={(e) =>
+                    updateData({
+                      aboutInfo: { ...data.aboutInfo, companyValues: e.target.value },
+                    })
+                  }
+                />
+                <p className="text-xs text-gray-400">Separate values with commas</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border">
+              <div>
+                <Label htmlFor="includeAboutPage" className="font-medium text-sm cursor-pointer">
+                  Add About Us page to website
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Show this information on a dedicated About page
+                </p>
+              </div>
+              <Switch
+                id="includeAboutPage"
+                checked={data.aboutInfo.includeAboutPage}
+                onCheckedChange={(checked) =>
+                  updateData({
+                    aboutInfo: { ...data.aboutInfo, includeAboutPage: checked },
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Feature Settings */}

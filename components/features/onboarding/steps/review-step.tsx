@@ -11,6 +11,10 @@ import {
   Image,
   Share2,
   Edit2,
+  Mail,
+  Phone,
+  MapPin,
+  BookOpen,
 } from "lucide-react";
 import type { OnboardingData } from "../onboarding-wizard";
 
@@ -21,6 +25,15 @@ interface ReviewStepProps {
 
 export function ReviewStep({ data, onEditStep }: ReviewStepProps) {
   const hasSocialLinks = Object.values(data.socialMedia).some((v) => v.trim());
+  const hasContactInfo =
+    data.contactInfo.email.trim() ||
+    data.contactInfo.phone.trim() ||
+    data.contactInfo.address.trim();
+  const hasAboutInfo =
+    data.aboutInfo.companyHistory.trim() ||
+    data.aboutInfo.missionStatement.trim() ||
+    data.aboutInfo.visionStatement.trim() ||
+    data.aboutInfo.companyValues.trim();
 
   return (
     <div className="space-y-6">
@@ -159,6 +172,105 @@ export function ReviewStep({ data, onEditStep }: ReviewStepProps) {
           )}
         </div>
       </div>
+
+      {/* Contact Information Section */}
+      {(hasContactInfo || data.contactInfo.includeContactPage) && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Contact Information
+              {data.contactInfo.includeContactPage && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                  Contact Page Enabled
+                </span>
+              )}
+            </h4>
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(2)}>
+              <Edit2 className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+          <div className="space-y-2 text-sm">
+            {data.contactInfo.email && (
+              <div className="flex items-center gap-2">
+                <Mail className="w-3 h-3 text-gray-400" />
+                <span className="text-gray-500">Email:</span>
+                <span className="font-medium">{data.contactInfo.email}</span>
+              </div>
+            )}
+            {data.contactInfo.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="w-3 h-3 text-gray-400" />
+                <span className="text-gray-500">Phone:</span>
+                <span className="font-medium">{data.contactInfo.phone}</span>
+              </div>
+            )}
+            {data.contactInfo.address && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3 h-3 text-gray-400" />
+                <span className="text-gray-500">Address:</span>
+                <span className="font-medium">{data.contactInfo.address}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* About Information Section */}
+      {(hasAboutInfo || data.aboutInfo.includeAboutPage) && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              About Information
+              {data.aboutInfo.includeAboutPage && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                  About Page Enabled
+                </span>
+              )}
+            </h4>
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(2)}>
+              <Edit2 className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+          </div>
+          <div className="space-y-2 text-sm">
+            {data.aboutInfo.companyHistory && (
+              <div>
+                <span className="text-gray-500">Company History:</span>
+                <p className="text-sm mt-1 text-gray-700 line-clamp-2">
+                  {data.aboutInfo.companyHistory}
+                </p>
+              </div>
+            )}
+            {data.aboutInfo.missionStatement && (
+              <div>
+                <span className="text-gray-500">Mission:</span>
+                <p className="text-sm mt-1 text-gray-700 line-clamp-2">
+                  {data.aboutInfo.missionStatement}
+                </p>
+              </div>
+            )}
+            {data.aboutInfo.visionStatement && (
+              <div>
+                <span className="text-gray-500">Vision:</span>
+                <p className="text-sm mt-1 text-gray-700 line-clamp-2">
+                  {data.aboutInfo.visionStatement}
+                </p>
+              </div>
+            )}
+            {data.aboutInfo.companyValues && (
+              <div>
+                <span className="text-gray-500">Values:</span>
+                <p className="text-sm mt-1 text-gray-700 line-clamp-2">
+                  {data.aboutInfo.companyValues}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content Section */}
       <div className="bg-gray-50 rounded-lg p-4">

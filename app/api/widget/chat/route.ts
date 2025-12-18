@@ -5,12 +5,20 @@
 import { NextResponse } from "next/server";
 import { streamText } from "ai";
 import { defaultChatModel } from "@/lib/ai/client";
-import { createClient } from "@/lib/db/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import * as semanticSearchService from "@/lib/services/semantic-search-service";
 import { logger } from "@/lib/utils/logger";
 import { widgetChatRequestSchema, formatZodErrors } from "@/lib/validation";
 import { ZodError } from "zod";
 import { memoryCache, CacheKeys, hashString } from "@/lib/cache";
+
+// Create service role client for public widget access (bypasses RLS)
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // CORS headers for widget requests
 const corsHeaders = {
@@ -55,7 +63,7 @@ export async function POST(request: Request) {
       | undefined;
 
     if (!site) {
-      const supabase = await createClient();
+      const supabase = getServiceClient();
       const { data: siteData, error: siteError } = await supabase
         .from("sites")
         .select("id, title, description")
@@ -87,7 +95,7 @@ export async function POST(request: Request) {
 
       relevantChunks = await semanticSearchService.semanticSearch(projectId, message, {
         limit: 10,
-        threshold: 0.7,
+        threshold: 0.45, // Lowered from 0.7 - OpenAI text-embedding-3-small has different similarity distribution
       });
 
       // Cache search results for 5 minutes

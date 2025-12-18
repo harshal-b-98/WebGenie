@@ -231,6 +231,16 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - Clickable cards for EACH DISCOVERED SEGMENT
    - Each card MUST have: data-segment="[segment-slug]" and cursor-pointer
 
+   ⚠️ CRITICAL NAME USAGE RULES ⚠️
+   - CARD TITLES: Use the FULL segment name (e.g., "Competitive Intelligence") - NEVER abbreviate!
+   - NAVBAR LINKS: Use abbreviated "Nav Text" (max 15 chars, e.g., "Comp Intel")
+   - SECTION HEADERS: Use the FULL segment name - NEVER abbreviate!
+   - FOOTER LINKS: Can use abbreviated "Nav Text" to save space
+   - Example: If segment is "Competitive Intelligence":
+     * Card title: "Competitive Intelligence" ✓
+     * Navbar link: "Comp Intel" ✓
+     * Card title: "Comp Intel" ✗ WRONG!
+
    RESPONSIVE CARD GRID:
    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
 
@@ -240,7 +250,7 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-3 sm:mb-4">
        <i data-feather="grid" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
      </div>
-   - Segment name: class="text-lg sm:text-xl font-semibold text-gray-900"
+   - Segment name (FULL NAME, not abbreviated): class="text-lg sm:text-xl font-semibold text-gray-900"
    - Description: class="text-gray-600 mt-2 text-sm sm:text-base"
    - Arrow indicator: <i data-feather="arrow-right" class="w-5 h-5 opacity-0 group-hover:opacity-100 transition"></i>
    - Use appropriate Feather icons: box (products), briefcase (services), zap (features), lightbulb (solutions), users (team), mail (contact), help-circle (faq)
@@ -265,7 +275,9 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - RESPONSIVE GRID for footer columns:
      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
    - Logo and copyright (centered on mobile): class="text-center sm:text-left"
-   - Quick links for ALL discovered segments (with data-segment attributes)
+   - Quick links for discovered segments (with data-segment attributes)
+   - IMPORTANT: Only show Quick Links section if segments exist
+   - If no segments are discovered, show only logo, copyright, and social icons (no empty columns)
    - Social media icons row: class="flex gap-4 justify-center sm:justify-start mt-6"
    - Footer bottom: class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
    - Any footer CTAs MUST have: data-action="cta-footer" data-cta-type="contact"
@@ -417,6 +429,24 @@ export interface LandingPageRequirements {
     instagram?: string;
     youtube?: string;
   };
+  // Page settings for Contact and About pages (from onboarding)
+  pageSettings?: {
+    includeContactPage?: boolean;
+    includeAboutPage?: boolean;
+  };
+  // Contact info for Contact page
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  // About info for About page
+  aboutInfo?: {
+    companyHistory?: string;
+    missionStatement?: string;
+    visionStatement?: string;
+    companyValues?: string;
+  };
 }
 
 /**
@@ -476,17 +506,21 @@ function suggestIconForSegment(segmentName: string): string {
 }
 
 /**
- * Format segments for the prompt with abbreviated names
+ * Format segments for the prompt with both full and abbreviated names
+ * - Full Name: For card titles, section headers, breadcrumbs (NO abbreviation)
+ * - Nav Text: For navbar links and footer quick links (max 15 chars, abbreviated)
  */
 function formatSegmentsForPrompt(segments: DiscoveredSegment[]): string {
   return segments
     .sort((a, b) => a.priority - b.priority)
     .map((seg, idx) => {
       const icon = getIconForSegment(seg.name);
-      const displayName = abbreviateNavText(seg.name, 20);
-      return `   ${idx + 1}. Display: "${displayName}" | Slug: data-segment="${seg.slug}" | Icon: <i data-feather="${icon}" class="w-6 h-6 text-white"></i>
+      const navDisplayName = abbreviateNavText(seg.name, 15); // For navbar only (max 15 chars)
+      const fullName = seg.name; // For cards, headers, and other displays
+      return `   ${idx + 1}. Full Name: "${fullName}" | Nav Text: "${navDisplayName}" | Slug: data-segment="${seg.slug}" | Icon: <i data-feather="${icon}" class="w-6 h-6 text-white"></i>
       - Description: ${seg.description || "Explore our " + seg.name.toLowerCase()}
-      - Items: ${seg.items.length}`;
+      - Items: ${seg.items.length}
+      - IMPORTANT: Use "Full Name" for card titles and section headers. Use "Nav Text" for navbar links ONLY.`;
     })
     .join("\n");
 }
@@ -577,6 +611,10 @@ DO NOT use placeholder text - extract or intelligently derive from actual conten
     prompt += requirements.brandColors;
   }
 
+  // Check if Contact/About pages are enabled (used throughout prompt generation)
+  const includeAbout = requirements.pageSettings?.includeAboutPage === true;
+  const includeContact = requirements.pageSettings?.includeContactPage === true;
+
   // AI-DISCOVERED CONTENT STRUCTURE
   if (requirements.contentStructure && requirements.contentStructure.segments.length > 0) {
     const structure = requirements.contentStructure;
@@ -595,9 +633,18 @@ ${formatCTAsForPrompt(structure.primaryCTA, structure.secondaryCTAs)}
 Lead Capture Points: ${structure.leadCapturePoints.join(", ") || "None specified"}
 ========================================\n\n`;
 
+    // Build navbar links description including Contact/About if enabled
+    let navbarLinks = `navigation links for EACH segment (use "Nav Text" for link text, max 15 chars)`;
+    if (includeAbout || includeContact) {
+      const additionalLinks = [];
+      if (includeAbout) additionalLinks.push('"About" link (data-segment="about")');
+      if (includeContact) additionalLinks.push('"Contact" link (data-segment="contact")');
+      navbarLinks += ` + ${additionalLinks.join(" + ")} AFTER segment links`;
+    }
+
     prompt += `CRITICAL REQUIREMENTS (Using AI-Discovered Structure):
-1. NAVBAR: Logo + navigation links for EACH segment listed above + "${structure.primaryCTA.text}" button
-2. Each nav link MUST use the EXACT data-segment value: data-segment="${structure.segments[0]?.slug || "segment"}", etc.
+1. NAVBAR: Logo + ${navbarLinks} + "${structure.primaryCTA.text}" button
+2. Each nav link MUST use the EXACT data-segment value: data-segment="${structure.segments[0]?.slug || "segment"}", etc.${includeAbout ? '\n   - ALSO ADD: <a href="#" data-segment="about" class="hover:underline">About</a>' : ""}${includeContact ? '\n   - ALSO ADD: <a href="#" data-segment="contact" class="hover:underline">Contact</a>' : ""}
 3. HERO: Dark gradient background, white text, compelling headline
 4. Hero CTAs: "${structure.primaryCTA.text}"`;
 
@@ -609,18 +656,33 @@ Lead Capture Points: ${structure.leadCapturePoints.join(", ") || "None specified
       prompt += `, "${structure.secondaryCTAs[1].text}"`;
     }
 
-    prompt += `\n5. SEGMENT CARDS: Create a card for EACH discovered segment with:
+    prompt += `
+5. SEGMENT CARDS: Create a card for EACH discovered segment with:
+   - Card title: Use "Full Name" (e.g., "Competitive Intelligence") - NEVER use abbreviated "Nav Text"!
    - data-segment="[segment-slug]" attribute
    - cursor-pointer class
    - hover:shadow-lg hover:scale-105 transition
 6. CTA SECTION: "${structure.primaryCTA.text}" as primary button
-7. FOOTER: Quick links for ALL ${structure.segments.length} segments (with data-segment attributes)
+7. FOOTER: Quick links for ALL ${structure.segments.length} segments${includeAbout || includeContact ? ` PLUS ${[includeAbout && '"About"', includeContact && '"Contact"'].filter(Boolean).join(" and ")} links` : ""} (can use "Nav Text" for footer links)
+
+⚠️ NAME USAGE REMINDER:
+- Navbar links → Use "Nav Text" (abbreviated, max 15 chars)
+- Card titles → Use "Full Name" (complete, NO abbreviation)
+- Section headers → Use "Full Name" (complete, NO abbreviation)
 
 SEGMENT DATA-ATTRIBUTES (copy these exactly):`;
 
     structure.segments.forEach((seg) => {
       prompt += `\n- ${seg.name}: data-segment="${seg.slug}"`;
     });
+
+    // Add Contact/About data-attributes if enabled
+    if (includeAbout) {
+      prompt += `\n- About: data-segment="about"`;
+    }
+    if (includeContact) {
+      prompt += `\n- Contact: data-segment="contact"`;
+    }
   } else {
     // Fallback to default segments if no content structure available
     prompt += `\n========================================
@@ -665,6 +727,64 @@ For each social media link above, add a clickable icon in the footer:
 Place social icons in a row in the footer: <div class="flex gap-4">...</div>
 ========================================`;
     }
+  }
+
+  // Add Contact and About page links conditionally based on pageSettings (already defined above)
+  if (includeContact || includeAbout) {
+    prompt += `\n\n========================================
+ADDITIONAL NAVBAR & FOOTER LINKS (User-Enabled)
+========================================`;
+
+    if (includeAbout) {
+      prompt += `
+ABOUT US PAGE ENABLED:
+- Add "About" link to navbar: <a href="#" data-segment="about" class="hover:underline">About</a>
+- Add "About" link to footer Quick Links section
+- User provided company info:`;
+      if (requirements.aboutInfo?.companyHistory) {
+        prompt += `\n  - Company History: Available`;
+      }
+      if (requirements.aboutInfo?.missionStatement) {
+        prompt += `\n  - Mission Statement: Available`;
+      }
+      if (requirements.aboutInfo?.visionStatement) {
+        prompt += `\n  - Vision Statement: Available`;
+      }
+      if (requirements.aboutInfo?.companyValues) {
+        prompt += `\n  - Company Values: Available`;
+      }
+    }
+
+    if (includeContact) {
+      prompt += `
+CONTACT US PAGE ENABLED:
+- Add "Contact" link to navbar: <a href="#" data-segment="contact" class="hover:underline">Contact</a>
+- Add "Contact" link to footer Quick Links section
+- User provided contact info:`;
+      if (requirements.contactInfo?.email) {
+        prompt += `\n  - Email: ${requirements.contactInfo.email}`;
+      }
+      if (requirements.contactInfo?.phone) {
+        prompt += `\n  - Phone: ${requirements.contactInfo.phone}`;
+      }
+      if (requirements.contactInfo?.address) {
+        prompt += `\n  - Address: ${requirements.contactInfo.address}`;
+      }
+    }
+
+    prompt += `
+========================================
+IMPORTANT: Add these links ONLY because the user explicitly enabled them during onboarding.
+Place "About" and "Contact" links AFTER the discovered segment links in both navbar and footer.
+========================================`;
+  } else {
+    prompt += `\n\n========================================
+NO CONTACT/ABOUT PAGES
+========================================
+The user has NOT enabled Contact or About pages during onboarding.
+DO NOT add "Contact Us" or "About Us" links to the navbar or footer.
+Only include links for the AI-discovered segments listed above.
+========================================`;
   }
 
   prompt += `\n\nGenerate the complete HTML now.`;

@@ -22,7 +22,10 @@
   transition:
     transform 0.2s,
     box-shadow 0.2s;
-  z-index: 9998;
+  z-index: 2147483647; /* Maximum z-index value */
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Button position variants */
@@ -60,12 +63,13 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  z-index: 9999;
+  z-index: 2147483647; /* Maximum z-index value */
   opacity: 0;
   transform: translateY(20px);
   transition:
     opacity 0.3s,
     transform 0.3s;
+  pointer-events: auto !important;
 }
 
 #nextgenweb-chat-panel.nextgenweb-chat-panel-open {

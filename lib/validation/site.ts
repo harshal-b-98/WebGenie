@@ -35,6 +35,33 @@ export const logoSchema = z.object({
   storagePath: z.string().max(500).optional(),
 });
 
+// Contact info schema
+export const contactInfoSchema = z
+  .object({
+    email: z.string().email().max(255).optional().or(z.literal("")),
+    phone: z.string().max(50).optional(),
+    address: z.string().max(500).optional(),
+  })
+  .partial();
+
+// About info schema
+export const aboutInfoSchema = z
+  .object({
+    companyHistory: z.string().max(5000).optional(),
+    missionStatement: z.string().max(2000).optional(),
+    visionStatement: z.string().max(2000).optional(),
+    companyValues: z.string().max(2000).optional(),
+  })
+  .partial();
+
+// Page settings schema
+export const pageSettingsSchema = z
+  .object({
+    includeContactPage: z.boolean().optional(),
+    includeAboutPage: z.boolean().optional(),
+  })
+  .partial();
+
 // Brand assets schema
 export const brandAssetsSchema = z
   .object({
@@ -42,6 +69,9 @@ export const brandAssetsSchema = z
     socialMedia: socialMediaSchema.optional(),
     primaryColor: hexColorSchema.optional(),
     secondaryColor: hexColorSchema.optional(),
+    contactInfo: contactInfoSchema.optional(),
+    aboutInfo: aboutInfoSchema.optional(),
+    pageSettings: pageSettingsSchema.optional(),
   })
   .partial();
 
