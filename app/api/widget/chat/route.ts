@@ -72,7 +72,10 @@ export async function POST(request: Request) {
 
       if (siteError || !siteData) {
         logger.error("Site not found for widget chat", { projectId });
-        return NextResponse.json({ error: { message: "Project not found" } }, { status: 404 });
+        return NextResponse.json(
+          { error: { message: "Project not found" } },
+          { status: 404, headers: corsHeaders }
+        );
       }
 
       site = siteData as { id: string; title: string; description: string };
@@ -160,7 +163,16 @@ Remember: Only use the context above to answer questions. Be helpful and convers
 
     logger.info("Streaming response to widget", { projectId });
 
-    return result.toTextStreamResponse();
+    // Get the stream response and add CORS headers
+    const streamResponse = result.toTextStreamResponse();
+
+    // Create new response with CORS headers
+    return new Response(streamResponse.body, {
+      headers: {
+        ...Object.fromEntries(streamResponse.headers.entries()),
+        ...corsHeaders,
+      },
+    });
   } catch (error) {
     logger.error("Widget chat failed", error);
     console.error("Widget chat error:", error);
@@ -171,7 +183,7 @@ Remember: Only use the context above to answer questions. Be helpful and convers
           message: "Sorry, I'm having trouble right now. Please try again in a moment.",
         },
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
