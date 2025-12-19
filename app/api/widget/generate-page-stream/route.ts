@@ -161,103 +161,112 @@ Include <script src="https://unpkg.com/feather-icons"></script> in head and call
       : `Home > ${pageTitle}`;
 
   switch (section) {
-    // COMBINED: navbar + hero
+    // TWO-ROW HEADER: navbar + breadcrumb (fixed) + hero (below)
     case "header":
       return {
         system: baseSystem,
-        prompt: `Generate an IMPRESSIVE header section with navbar AND hero combined.
+        prompt: `Generate a TWO-ROW HEADER with navbar, breadcrumb, and hero section.
 
 CRITICAL RULES:
 - NO placeholder text EVER - use ONLY real content from the provided page description and context
 - NO invented facts, data, names, or Lorem ipsum
-- Extract the headline, subtitle, and benefits directly from the page description below
 - PAGE TITLE MUST BE EXACTLY: "${pageTitle}" (DO NOT change or rephrase this title)
 
 Company: ${context.companyName}
 Logo: ${context.logoUrl || "Text logo"}
-Nav: ${navItems}
 Current Page: ${pageTitle}
 Page Type: ${context.pageType === "detail" ? "Detail/Topic Page" : "Segment Page"}
 CTA: "${context.primaryCTA.text}"
 
-${
-  context.pageType === "detail"
-    ? `
-DETAIL PAGE CONTEXT:
-- User clicked on: "${context.topicName || context.topicSlug}"
-- Parent segment: ${context.parentSegment || "general"}
-- This is a DEEP DIVE page - provide detailed, specific content about this exact topic
-`
-    : ""
-}
-
 PAGE DESCRIPTION (USE THIS FOR ALL CONTENT):
 ${context.segmentDescription}
 
-DOCUMENT CONTENT (EXTRACT REAL INFO FROM HERE):
-${context.documentContent.substring(0, 2000)}
+===== EXACT HTML STRUCTURE (COPY THIS PATTERN) =====
 
-STRUCTURE:
-
-1. STICKY NAVBAR (professional, modern):
-   - Fixed top-0, backdrop-blur-md bg-white/95 shadow-sm z-50
-   - Logo on left with data-action="back-to-landing" (clickable to go home)
-   - Nav links in center with hover:text-brand-color, current page highlighted
-   - Each nav link: data-segment="[slug]"
-   - CTA button on right: bg-brand rounded-full px-6 py-2
-
-2. HERO SECTION (visually impressive, full-width):
-   - min-h-[60vh] with dark gradient: bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800
-   - Centered content with flex items-center justify-center
-
-   HERO CONTENT:
-   a) Breadcrumb: ${breadcrumb} - make "Home" clickable with data-action="back-to-landing"${context.pageType === "detail" && context.parentSegment ? ` and parent segment "${formatSlugToName(context.parentSegment)}" clickable with data-segment="${context.parentSegment}"` : ""} (text-gray-400 text-sm mb-4)
-   b) Icon badge: Use Feather icon in gradient container:
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 mx-auto">
-        <i data-feather="[icon]" class="w-8 h-8 text-white"></i>
+<header data-section="header">
+  <!-- FIXED TWO-ROW NAVBAR -->
+  <div class="fixed top-0 w-full z-50">
+    <!-- Row 1: Primary Navbar -->
+    <div class="bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200/20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-12">
+        <a href="#" data-action="back-to-landing" class="flex-shrink-0 font-bold text-xl text-indigo-600">${context.companyName}</a>
+        <div class="flex items-center gap-4 ml-auto">
+          <a href="#" data-action="cta-primary" data-cta-type="demo" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">${context.primaryCTA.text}</a>
+        </div>
       </div>
-      Icons: bar-chart-2 (analytics), settings (platform), target (solutions), help-circle (FAQ), globe (industries), box (products)
-   c) Page title: text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight text-center
-   d) Subtitle: text-xl text-gray-300 max-w-2xl mx-auto mt-4 text-center
-   e) Feature pills row: flex flex-wrap gap-3 justify-center mt-8
-      - 3-4 small pills with Feather icons:
+    </div>
+
+    <!-- Row 2: Breadcrumb Navigation -->
+    <div class="bg-white/90 backdrop-blur-sm border-b border-gray-200/30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        <ol class="flex items-center space-x-2 text-sm">
+          <li>
+            <a href="#" data-action="back-to-landing" class="text-gray-600 hover:text-indigo-600 transition-colors">Home</a>
+          </li>
+          <li><span class="text-gray-400 mx-1">›</span></li>
+${
+  context.pageType === "detail" && context.parentSegment
+    ? `          <li>
+            <a href="#" data-segment="${context.parentSegment}" class="text-gray-600 hover:text-indigo-600 transition-colors">${formatSlugToName(context.parentSegment)}</a>
+          </li>
+          <li><span class="text-gray-400 mx-1">›</span></li>
+          <li class="text-gray-900 font-medium">${pageTitle}</li>`
+    : `          <li class="text-gray-900 font-medium">${pageTitle}</li>`
+}
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPACER: Push content below fixed navbar (h-12 navbar + h-10 breadcrumb = 88px) -->
+  <div class="h-[88px]"></div>
+
+  <!-- HERO SECTION -->
+  <section class="min-h-[50vh] bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center py-16 px-4">
+    <div class="text-center max-w-4xl mx-auto">
+      <!-- Icon Badge -->
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 mx-auto">
+        <i data-feather="[APPROPRIATE_ICON]" class="w-8 h-8 text-white"></i>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">${pageTitle}</h1>
+
+      <!-- Subtitle (extract from page description) -->
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto mt-4">[SUBTITLE FROM PAGE DESCRIPTION]</p>
+
+      <!-- Feature Pills (3-4 key features) -->
+      <div class="flex flex-wrap gap-3 justify-center mt-8">
         <span class="px-4 py-2 bg-white/10 backdrop-blur rounded-full text-sm text-gray-300 flex items-center gap-2">
-          <i data-feather="check-circle" class="w-5 h-5"></i> Feature Name
+          <i data-feather="check-circle" class="w-4 h-4"></i> [Feature 1]
         </span>
-   f) CTA buttons: flex gap-4 justify-center mt-8
-      - Primary: bg-brand text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition shadow-lg
-      - Secondary: bg-white/10 border border-white/20 text-white px-8 py-3 rounded-full
+        <!-- Add 2-3 more feature pills -->
+      </div>
 
-   DECORATIVE ELEMENTS:
-   - Subtle grid pattern or dots overlay using CSS
-   - Optional: floating gradient orbs with blur
+      <!-- CTA Buttons -->
+      <div class="flex gap-4 justify-center mt-8">
+        <a href="#" data-action="cta-primary" data-cta-type="demo" class="bg-indigo-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-indigo-700 transition-colors shadow-lg">${context.primaryCTA.text}</a>
+        <a href="#" data-action="cta-secondary" class="bg-white/10 border border-white/20 text-white px-8 py-3 rounded-full hover:bg-white/20 transition-colors">Learn More</a>
+      </div>
+    </div>
+  </section>
 
-FEATHER ICONS (use these - NEVER use inline SVGs):
-Use this syntax: <i data-feather="icon-name" class="w-6 h-6"></i>
+  <script>if(typeof feather !== 'undefined') feather.replace();</script>
+</header>
 
-Available icons by context:
-- check-circle, check: Success/features
-- bar-chart-2, trending-up: Analytics/data
-- settings, sliders: Configuration/platform
-- target, crosshair: Solutions/goals
-- help-circle: FAQ/support
-- globe: Global/industries
-- zap: Speed/power
-- shield: Security
-- users: Team/customers
-- mail: Contact
-- box: Products
-- briefcase: Services
+===== END HTML PATTERN =====
 
-Icon container example:
-<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 mx-auto">
-  <i data-feather="target" class="w-8 h-8 text-white"></i>
-</div>
+IMPORTANT INSTRUCTIONS:
+1. Copy the EXACT HTML structure above
+2. Replace [APPROPRIATE_ICON] with: bar-chart-2 (analytics), settings (platform), target (solutions), help-circle (FAQ), globe (industries), box (products)
+3. Replace [SUBTITLE FROM PAGE DESCRIPTION] with actual content from page description
+4. Replace [Feature 1], etc. with real features extracted from page description (3-4 features)
+5. The TWO-ROW navbar is FIXED - do NOT change its structure
+6. The breadcrumb uses "›" character as separator
+7. The spacer div (h-[88px]) is REQUIRED to push content below fixed navbar
+8. DO NOT put breadcrumb inside hero section
 
-IMPORTANT: Include feather.replace() call at end of section to render icons:
-<script>if(typeof feather !== 'undefined') feather.replace();</script>
-
-Output <header data-section="header"> containing nav and hero section.`,
+Output the complete <header data-section="header"> element.`,
       };
 
     case "content":
