@@ -971,9 +971,8 @@
         return;
       }
 
-      // Use non-streaming for segment pages (has better content generation)
-      // Use streaming for detail/topic pages (shows progressive reveal)
-      await this.navigateToSegmentFallback(segment);
+      // Use streaming for live preview experience
+      await this.navigateToSegmentStreaming(segment);
     }
 
     /**
@@ -1981,7 +1980,7 @@
 
     /**
      * Generate an answer page for a visitor's question
-     * Calls the generate-answer-page API and displays the result
+     * Uses streaming for live preview experience
      */
     async generateAnswerPage(question, questionSlug, questionTitle, content) {
       // Check cache first
@@ -1992,17 +1991,29 @@
         return;
       }
 
-      // Show loading overlay
-      this.showLoading();
+      // Use streaming for live preview experience
+      await this.generateAnswerPageStreaming(question, questionSlug, questionTitle, content);
+    }
 
-      // Update loading message
-      const loadingContent = document.querySelector(".ngw-loading-content h3");
-      const loadingDesc = document.querySelector(".ngw-loading-content p");
-      if (loadingContent) loadingContent.textContent = "Generating Answer";
-      if (loadingDesc) loadingDesc.textContent = "Creating a detailed answer page...";
+    /**
+     * Generate answer page with streaming (live preview)
+     * Shows skeleton UI and reveals sections as they're generated
+     */
+    async generateAnswerPageStreaming(question, questionSlug, questionTitle, content) {
+      this.streamingInProgress = true;
+
+      // Show skeleton UI
+      this.showSkeleton();
+      this.showStreamingIndicator();
+
+      const cacheKey = `answer_${questionSlug}`;
+      let wrapper = { head: "", bodyOpen: "", bodyClose: "" };
+      const sectionHtmls = {};
 
       try {
-        const response = await fetch(`${config.apiEndpoint}/generate-answer-page`, {
+        console.log("[DynamicNav] Starting streaming answer page generation:", questionSlug);
+
+        const response = await fetch(`${config.apiEndpoint}/generate-answer-page-stream`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -2018,37 +2029,111 @@
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
 
-        if (!data.html) {
-          throw new Error("No HTML content received");
+        if (!reader) {
+          throw new Error("No response body");
         }
 
-        // Cache the result
-        this.pageCache[cacheKey] = data.html;
+        let buffer = "";
 
-        console.log("[DynamicNav] Answer page generated:", {
-          questionSlug,
-          cached: data.cached,
-          generationTime: data.generationTime,
-          htmlLength: data.html.length,
-        });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        // Display the answer page
-        this.displayAnswerPage(data.html, questionSlug, questionTitle);
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split("\n\n");
+          buffer = events.pop() || "";
+
+          for (const eventBlock of events) {
+            if (!eventBlock.trim()) continue;
+
+            const lines = eventBlock.split("\n");
+            let eventType = "";
+            let eventData = "";
+
+            for (const line of lines) {
+              if (line.startsWith("event: ")) {
+                eventType = line.substring(7);
+              } else if (line.startsWith("data: ")) {
+                eventData = line.substring(6);
+              }
+            }
+
+            if (!eventData) continue;
+
+            try {
+              const data = JSON.parse(eventData);
+
+              switch (eventType) {
+                case "cached":
+                  // Cached response - display immediately
+                  console.log("[DynamicNav] Using cached answer page from stream:", questionSlug);
+                  this.pageCache[cacheKey] = data.html;
+                  this.hideSkeleton();
+                  this.hideStreamingIndicator();
+                  this.displayAnswerPage(data.html, questionSlug, questionTitle);
+                  this.streamingInProgress = false;
+                  return;
+
+                case "wrapper":
+                  wrapper = data;
+                  break;
+
+                case "section-start":
+                  this.updateStreamingProgress(data.id, "generating");
+                  break;
+
+                case "section-complete":
+                  sectionHtmls[data.id] = data.html;
+                  this.revealSection(data.id, data.html);
+                  this.updateStreamingProgress(data.id, "complete");
+                  break;
+
+                case "complete":
+                  console.log("[DynamicNav] Streaming answer page complete:", {
+                    questionSlug,
+                    cached: data.cached,
+                    generationTime: data.generationTime,
+                  });
+
+                  // Assemble full HTML
+                  const fullHtml = `${wrapper.head}${wrapper.bodyOpen}${sectionHtmls.header || ""}${sectionHtmls.content || ""}${sectionHtmls.footer || ""}${wrapper.bodyClose}`;
+
+                  // Cache it
+                  this.pageCache[cacheKey] = fullHtml;
+
+                  // Hide streaming indicators
+                  this.hideStreamingIndicator();
+
+                  // Final display
+                  this.displayAnswerPage(fullHtml, questionSlug, questionTitle);
+                  break;
+
+                case "error":
+                  throw new Error(data.message || "Stream generation failed");
+              }
+            } catch (parseError) {
+              console.warn("[DynamicNav] Failed to parse SSE event:", parseError);
+            }
+          }
+        }
       } catch (error) {
-        console.error("[DynamicNav] Failed to generate answer page:", error);
-        this.hideLoading();
+        console.error("[DynamicNav] Streaming answer page failed:", error);
+
+        this.hideSkeleton();
+        this.hideStreamingIndicator();
 
         // Notify chat widget that generation failed
         window.dispatchEvent(new CustomEvent("ngw-answer-ready", { detail: { error: true } }));
 
-        // Show error message
         alert("Failed to generate answer page. Please try again.");
+      } finally {
+        this.streamingInProgress = false;
       }
     }
 
