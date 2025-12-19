@@ -143,6 +143,46 @@
       });
     }
 
+    /**
+     * Replace page content using blob URL (atomic replacement)
+     * This prevents layout distortion by rendering everything at once
+     * Uses the same pattern as the initial landing page generation (which works correctly)
+     */
+    replacePageWithBlobUrl(fullHtml, pageSlug) {
+      // Create blob URL from complete HTML
+      const blob = new Blob([fullHtml], { type: "text/html" });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Revoke previous blob URL to prevent memory leaks
+      if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl);
+      }
+      this.currentBlobUrl = blobUrl;
+
+      // Update state before navigation
+      this.currentPage = pageSlug;
+
+      // Cache in memory for back navigation
+      const cacheKey = pageSlug.includes("/")
+        ? `topic_${pageSlug.replace("/", "_")}`
+        : `segment_${pageSlug}`;
+      this.pageCache[cacheKey] = fullHtml;
+
+      // Store in sessionStorage as backup for persistence
+      const sessionKey = `ngw_page_${config.siteId}_${pageSlug}`;
+      try {
+        sessionStorage.setItem(sessionKey, fullHtml);
+      } catch (e) {
+        console.warn("[DynamicNav] SessionStorage quota exceeded, skipping cache");
+      }
+
+      console.log("[DynamicNav] Navigating to blob URL for:", pageSlug);
+
+      // Navigate to blob URL (atomic page replacement)
+      // This causes the entire page to reload with the new content
+      location.href = blobUrl;
+    }
+
     saveLandingPage() {
       // Only save if not already saved and we're on landing page
       // Include versionId in key to support version-specific navigation
@@ -748,6 +788,7 @@
 
     /**
      * Navigate to segment with streaming
+     * Uses blob URL pattern for atomic page replacement (prevents layout distortion)
      */
     async navigateToSegmentStreaming(segment) {
       if (this.streamingInProgress) return;
@@ -761,8 +802,8 @@
         this.saveLandingPage();
       }
 
-      // Show skeleton UI
-      this.showSkeleton();
+      // Show loading overlay (NOT skeleton UI - skeleton causes layout distortion)
+      this.showLoading();
 
       // Set up timeout (60 seconds)
       const STREAMING_TIMEOUT = 60000;
@@ -846,32 +887,22 @@
                   break;
 
                 case "section-start":
-                  // Section is starting to generate - update progress indicator
-                  this.updateStreamingProgress(data.id, "generating");
+                  // Section is starting - just log (no skeleton UI to update)
+                  console.log(`[DynamicNav] Generating section: ${data.id}`);
                   break;
 
                 case "section-chunk":
-                  // Buffer chunks silently - DON'T show raw HTML during streaming
-                  // The skeleton remains visible until section-complete fires
-                  // This prevents users from seeing raw HTML code during generation
+                  // Buffer chunks silently - accumulate for final blob URL
                   if (!sectionHtml[data.id]) {
                     sectionHtml[data.id] = "";
-                    // Update progress when first chunk arrives
-                    this.updateStreamingProgress(data.id, "generating");
                   }
                   sectionHtml[data.id] += data.chunk;
                   break;
 
                 case "section-complete":
-                  // Update progress to complete
-                  this.updateStreamingProgress(data.id, "complete");
-                  // Final reveal - replace skeleton with complete section
+                  // Store final section HTML
                   sectionHtml[data.id] = data.html;
-                  this.revealSection(data.id, data.html);
-                  // Initialize Feather icons if present
-                  if (typeof feather !== "undefined") {
-                    setTimeout(() => feather.replace(), 100);
-                  }
+                  console.log(`[DynamicNav] Section complete: ${data.id}`);
                   break;
 
                 case "section-error":
@@ -879,13 +910,9 @@
                   console.error(`[DynamicNav] Section "${data.id}" failed to generate`);
                   sectionHtml[data.id] =
                     `<div data-section="${data.id}" class="p-8 text-center text-red-500">Failed to load section</div>`;
-                  this.revealSection(data.id, sectionHtml[data.id]);
                   break;
 
                 case "complete":
-                  // Hide streaming indicator
-                  this.hideStreamingIndicator();
-
                   // Log any validation issues
                   if (data.validationStatus && !data.validationStatus.allValid) {
                     console.warn(
@@ -894,7 +921,7 @@
                     );
                   }
 
-                  // Assemble full HTML for caching - OPTIMIZED: 3 sections
+                  // Assemble full HTML - OPTIMIZED: 3 sections
                   const sections = ["header", "content", "footer"];
                   let assembledHtml = fullHtml;
                   for (const sec of sections) {
@@ -902,31 +929,16 @@
                   }
                   assembledHtml += "</body></html>";
 
-                  // Cache the assembled HTML
-                  const cacheKey = `segment_${segment}`;
-                  this.pageCache[cacheKey] = assembledHtml;
-                  console.log("[DynamicNav] Page cached successfully");
+                  console.log("[DynamicNav] Streaming complete, using blob URL:", segment);
 
-                  // Update state
-                  this.currentPage = segment;
-                  const baseUrl = window.location.href.split("#")[0];
-                  history.pushState(
-                    {
-                      page: segment,
-                      siteId: config.siteId,
-                      versionId: config.versionId,
-                      navigationStack: [...this.navigationStack],
-                    },
-                    "",
-                    `${baseUrl}#${segment}`
-                  );
-
-                  console.log("[DynamicNav] Streaming complete:", segment);
+                  // Use blob URL for atomic page replacement (prevents distortion)
+                  this.replacePageWithBlobUrl(assembledHtml, segment);
+                  // Note: replacePageWithBlobUrl causes page navigation, code after this won't run
                   break;
 
                 case "error":
                   console.error("[DynamicNav] Stream error:", data.message);
-                  this.hideStreamingIndicator();
+                  this.hideLoading();
                   break;
               }
             } catch (parseError) {
@@ -936,6 +948,7 @@
         }
       } catch (error) {
         console.error("[DynamicNav] Streaming failed:", error);
+        this.hideLoading();
 
         // Show error UI for timeout or fatal errors
         if (error.message.includes("timed out")) {
@@ -1119,7 +1132,7 @@
 
     /**
      * Navigate to topic with streaming (used for all topic/detail navigation)
-     * This provides progressive loading feedback to users
+     * Uses blob URL pattern for atomic page replacement (prevents layout distortion)
      */
     async navigateToTopicWithStreaming(parentSegment, topic) {
       if (this.streamingInProgress || this.isLoading) return;
@@ -1141,8 +1154,8 @@
         delete this.pageCache[cacheKey];
       }
 
-      // Show skeleton UI for streaming
-      this.showSkeleton();
+      // Show loading overlay (NOT skeleton UI - skeleton causes layout distortion)
+      this.showLoading();
 
       // Set up timeout (60 seconds)
       const STREAMING_TIMEOUT = 60000;
@@ -1217,51 +1230,37 @@
                   fullHtml = data.head + data.bodyOpen;
                   break;
                 case "section-start":
-                  this.updateStreamingProgress(data.id, "generating");
+                  // Section is starting - just log (no skeleton UI to update)
+                  console.log(`[DynamicNav] Generating topic section: ${data.id}`);
                   break;
                 case "section-chunk":
-                  // Buffer chunks silently - DON'T show raw HTML during streaming
-                  // The skeleton remains visible until section-complete fires
+                  // Buffer chunks silently - accumulate for final blob URL
                   if (!sectionHtml[data.id]) {
                     sectionHtml[data.id] = "";
-                    this.updateStreamingProgress(data.id, "generating");
                   }
                   sectionHtml[data.id] += data.chunk;
                   break;
                 case "section-complete":
-                  this.updateStreamingProgress(data.id, "complete");
+                  // Store final section HTML
                   sectionHtml[data.id] = data.html;
-                  this.revealSection(data.id, data.html);
-                  // Initialize Feather icons if present
-                  if (typeof feather !== "undefined") {
-                    setTimeout(() => feather.replace(), 100);
-                  }
+                  console.log(`[DynamicNav] Topic section complete: ${data.id}`);
                   break;
                 case "complete":
-                  this.hideStreamingIndicator();
+                  // Assemble full HTML
                   const sections = ["header", "content", "footer"];
                   let assembledHtml = fullHtml;
                   for (const sec of sections) assembledHtml += sectionHtml[sec] || "";
                   assembledHtml += "</body></html>";
 
-                  this.pageCache[cacheKey] = assembledHtml;
-                  this.currentPage = pageSlug;
-                  const baseUrl = window.location.href.split("#")[0];
-                  history.pushState(
-                    {
-                      page: pageSlug,
-                      siteId: config.siteId,
-                      versionId: config.versionId,
-                      navigationStack: [...this.navigationStack],
-                    },
-                    "",
-                    `${baseUrl}#${pageSlug}`
-                  );
-                  console.log("[DynamicNav] Topic page streaming complete:", pageSlug);
+                  console.log("[DynamicNav] Topic streaming complete, using blob URL:", pageSlug);
+
+                  // Use blob URL for atomic page replacement (prevents distortion)
+                  this.replacePageWithBlobUrl(assembledHtml, pageSlug);
+                  // Note: replacePageWithBlobUrl causes page navigation, code after this won't run
                   break;
                 case "error":
                   console.error("[DynamicNav] Stream error:", data.message);
-                  this.hideStreamingIndicator();
+                  this.hideLoading();
                   break;
               }
             } catch (parseError) {
@@ -1271,6 +1270,8 @@
         }
       } catch (error) {
         console.error("[DynamicNav] Topic streaming failed:", error);
+        this.hideLoading();
+
         if (error.message.includes("timed out")) {
           this.showErrorUI("Page generation timed out. Please try again.");
         } else {
@@ -1997,14 +1998,13 @@
 
     /**
      * Generate answer page with streaming (live preview)
-     * Shows skeleton UI and reveals sections as they're generated
+     * Uses blob URL pattern for atomic page replacement (prevents layout distortion)
      */
     async generateAnswerPageStreaming(question, questionSlug, questionTitle, content) {
       this.streamingInProgress = true;
 
-      // Show skeleton UI
-      this.showSkeleton();
-      this.showStreamingIndicator();
+      // Show loading overlay (NOT skeleton UI - skeleton causes layout distortion)
+      this.showLoading();
 
       const cacheKey = `answer_${questionSlug}`;
       let wrapper = { head: "", bodyOpen: "", bodyClose: "" };
@@ -2074,8 +2074,7 @@
                   // Cached response - display immediately
                   console.log("[DynamicNav] Using cached answer page from stream:", questionSlug);
                   this.pageCache[cacheKey] = data.html;
-                  this.hideSkeleton();
-                  this.hideStreamingIndicator();
+                  this.hideLoading();
                   this.displayAnswerPage(data.html, questionSlug, questionTitle);
                   this.streamingInProgress = false;
                   return;
@@ -2085,13 +2084,14 @@
                   break;
 
                 case "section-start":
-                  this.updateStreamingProgress(data.id, "generating");
+                  // Section is starting - just log (no skeleton UI to update)
+                  console.log(`[DynamicNav] Generating answer section: ${data.id}`);
                   break;
 
                 case "section-complete":
+                  // Store final section HTML (don't reveal - wait for complete)
                   sectionHtmls[data.id] = data.html;
-                  this.revealSection(data.id, data.html);
-                  this.updateStreamingProgress(data.id, "complete");
+                  console.log(`[DynamicNav] Answer section complete: ${data.id}`);
                   break;
 
                 case "complete":
@@ -2107,10 +2107,7 @@
                   // Cache it
                   this.pageCache[cacheKey] = fullHtml;
 
-                  // Hide streaming indicators
-                  this.hideStreamingIndicator();
-
-                  // Final display
+                  // Final display (displayAnswerPage will hide loading)
                   this.displayAnswerPage(fullHtml, questionSlug, questionTitle);
                   break;
 
@@ -2125,8 +2122,7 @@
       } catch (error) {
         console.error("[DynamicNav] Streaming answer page failed:", error);
 
-        this.hideSkeleton();
-        this.hideStreamingIndicator();
+        this.hideLoading();
 
         // Notify chat widget that generation failed
         window.dispatchEvent(new CustomEvent("ngw-answer-ready", { detail: { error: true } }));

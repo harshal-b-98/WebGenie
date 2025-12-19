@@ -14,6 +14,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { logger } from "@/lib/utils/logger";
 import { detectPersona, type PersonaSignals, getPersonaEmphasis } from "@/lib/ai/prompts/personas";
 import { extractColorsFromImage, generateColorPrompt } from "@/lib/utils/color-extractor";
+import { detectSegmentType } from "@/lib/ai/prompts/dynamic-segment";
 
 // CORS headers for widget requests
 const corsHeaders = {
@@ -538,29 +539,40 @@ export async function POST(request: NextRequest) {
       .eq("site_id", siteId)
       .single();
 
-    if (!contentStructureRow) {
-      return new Response(
-        JSON.stringify({ error: "No content structure found. Please upload documents first." }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Content structure is optional - we can use dynamic detection if not available
+    const contentStructure = contentStructureRow
+      ? {
+          segments: contentStructureRow.segments || [],
+          primaryCTA: contentStructureRow.primary_cta || { text: "Get Started", action: "signup" },
+          secondaryCTAs: contentStructureRow.secondary_ctas || [],
         }
-      );
-    }
+      : {
+          segments: [],
+          primaryCTA: { text: "Get Started", action: "signup" },
+          secondaryCTAs: [],
+        };
 
-    const contentStructure = {
-      segments: contentStructureRow.segments || [],
-      primaryCTA: contentStructureRow.primary_cta || { text: "Get Started", action: "signup" },
-      secondaryCTAs: contentStructureRow.secondary_ctas || [],
-    };
+    // Find the specific segment or use dynamic detection
+    let segmentData = contentStructure.segments.find((s: { slug: string }) => s.slug === segment);
 
-    // Find the specific segment
-    const segmentData = contentStructure.segments.find((s: { slug: string }) => s.slug === segment);
+    // If segment not found in content structure, use dynamic detection
     if (!segmentData) {
-      return new Response(JSON.stringify({ error: `Segment '${segment}' not found` }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const detectedType = detectSegmentType(segment);
+      const segmentName = formatSlugToName(segment);
+
+      logger.info("Using dynamic segment detection for streaming", {
+        segment,
+        detectedType,
+        segmentName,
       });
+
+      // Create a dynamic segment data object
+      segmentData = {
+        name: segmentName,
+        slug: segment,
+        description: `Explore ${segmentName} - comprehensive information and resources.`,
+        items: [], // Will be populated dynamically
+      };
     }
 
     // Get document content using service client
@@ -603,8 +615,9 @@ export async function POST(request: NextRequest) {
     // For detail pages, find the specific topic info
     let topicInfo: { name: string; slug: string; description: string } | undefined;
     if (pageType === "detail" && topicSlug) {
-      // Look for topic in segment items
-      topicInfo = segmentData.items.find((item: { slug: string }) => item.slug === topicSlug);
+      // Look for topic in segment items (safely handle empty/undefined items)
+      const items = segmentData.items || [];
+      topicInfo = items.find((item: { slug: string }) => item.slug === topicSlug);
 
       // If not found, create from slug
       if (!topicInfo) {
@@ -626,12 +639,12 @@ export async function POST(request: NextRequest) {
       segmentSlug: segment,
       segmentDescription:
         pageType === "detail" && topicInfo ? topicInfo.description : segmentData.description,
-      items: segmentData.items.map(
-        (item: { name: string; slug: string; description: string; hasDetailPage: boolean }) => ({
+      items: (segmentData.items || []).map(
+        (item: { name: string; slug: string; description: string; hasDetailPage?: boolean }) => ({
           name: item.name,
           slug: item.slug,
-          description: item.description,
-          hasDetailPage: item.hasDetailPage,
+          description: item.description || "",
+          hasDetailPage: item.hasDetailPage ?? true,
         })
       ),
       brandColors,
