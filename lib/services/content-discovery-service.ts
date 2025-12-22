@@ -63,31 +63,40 @@ export async function getContentStructure(siteId: string): Promise<ContentStruct
   const row = data as {
     id: string;
     site_id: string;
-    segments: DiscoveredSegment[];
-    max_depth: number;
-    lead_capture_points: string[];
-    primary_cta: CTA;
-    secondary_ctas: CTA[];
     business_type: BusinessType;
-    analysis_version: number;
-    last_analyzed_at: string;
-    document_hash: string;
-    analysis_confidence: number;
+    segments: DiscoveredSegment[];
+    metadata: {
+      max_depth?: number;
+      lead_capture_points?: string[];
+      primary_cta?: CTA;
+      secondary_ctas?: CTA[];
+      analysis_confidence?: number;
+      document_hash?: string;
+      last_analyzed_at?: string;
+    };
+    created_at: string;
+    updated_at: string;
   };
 
   return {
     id: row.id,
     siteId: row.site_id,
     segments: row.segments || [],
-    maxDepth: row.max_depth,
-    leadCapturePoints: row.lead_capture_points || [],
-    primaryCTA: row.primary_cta,
-    secondaryCTAs: row.secondary_ctas || [],
+    maxDepth: row.metadata?.max_depth || 2,
+    leadCapturePoints: row.metadata?.lead_capture_points || [],
+    primaryCTA: row.metadata?.primary_cta || {
+      text: "Get Started",
+      action: "contact",
+      style: "primary",
+    },
+    secondaryCTAs: row.metadata?.secondary_ctas || [],
     businessType: row.business_type,
-    analysisVersion: row.analysis_version,
-    lastAnalyzedAt: new Date(row.last_analyzed_at),
-    documentHash: row.document_hash,
-    analysisConfidence: row.analysis_confidence,
+    analysisVersion: 1, // Default version since it's not stored
+    lastAnalyzedAt: row.metadata?.last_analyzed_at
+      ? new Date(row.metadata.last_analyzed_at)
+      : new Date(),
+    documentHash: row.metadata?.document_hash || "",
+    analysisConfidence: row.metadata?.analysis_confidence || 0,
   };
 }
 
@@ -243,15 +252,17 @@ async function saveContentStructure(
     .upsert(
       {
         site_id: siteId,
-        segments: result.segments,
-        max_depth: result.maxDepth,
-        lead_capture_points: result.leadCapturePoints,
-        primary_cta: result.primaryCTA,
-        secondary_ctas: result.secondaryCTAs,
         business_type: result.businessType,
-        analysis_confidence: result.analysisConfidence,
-        document_hash: documentHash,
-        last_analyzed_at: new Date().toISOString(),
+        segments: result.segments,
+        metadata: {
+          max_depth: result.maxDepth,
+          lead_capture_points: result.leadCapturePoints,
+          primary_cta: result.primaryCTA,
+          secondary_ctas: result.secondaryCTAs,
+          analysis_confidence: result.analysisConfidence,
+          document_hash: documentHash,
+          last_analyzed_at: new Date().toISOString(),
+        },
       },
       { onConflict: "site_id" }
     )
@@ -266,31 +277,34 @@ async function saveContentStructure(
   const row = data as {
     id: string;
     site_id: string;
-    segments: DiscoveredSegment[];
-    max_depth: number;
-    lead_capture_points: string[];
-    primary_cta: CTA;
-    secondary_ctas: CTA[];
     business_type: BusinessType;
-    analysis_version: number;
-    last_analyzed_at: string;
-    document_hash: string;
-    analysis_confidence: number;
+    segments: DiscoveredSegment[];
+    metadata: {
+      max_depth: number;
+      lead_capture_points: string[];
+      primary_cta: CTA;
+      secondary_ctas: CTA[];
+      analysis_confidence: number;
+      document_hash: string;
+      last_analyzed_at: string;
+    };
+    created_at: string;
+    updated_at: string;
   };
 
   return {
     id: row.id,
     siteId: row.site_id,
     segments: row.segments,
-    maxDepth: row.max_depth,
-    leadCapturePoints: row.lead_capture_points,
-    primaryCTA: row.primary_cta,
-    secondaryCTAs: row.secondary_ctas,
+    maxDepth: row.metadata.max_depth,
+    leadCapturePoints: row.metadata.lead_capture_points,
+    primaryCTA: row.metadata.primary_cta,
+    secondaryCTAs: row.metadata.secondary_ctas,
     businessType: row.business_type,
-    analysisVersion: row.analysis_version,
-    lastAnalyzedAt: new Date(row.last_analyzed_at),
-    documentHash: row.document_hash,
-    analysisConfidence: row.analysis_confidence,
+    analysisVersion: 1, // Default version since it's not stored
+    lastAnalyzedAt: new Date(row.metadata.last_analyzed_at),
+    documentHash: row.metadata.document_hash,
+    analysisConfidence: row.metadata.analysis_confidence,
   };
 }
 
