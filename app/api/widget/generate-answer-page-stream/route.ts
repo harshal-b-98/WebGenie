@@ -15,6 +15,11 @@ import { logger } from "@/lib/utils/logger";
 import { generateAnswerPageRequestSchema, formatZodErrors } from "@/lib/validation";
 import { ZodError } from "zod";
 import { memoryCache, hashString } from "@/lib/cache";
+import {
+  injectChatWidget,
+  injectDynamicNav,
+  type ChatWidgetConfig,
+} from "@/lib/utils/widget-injection";
 
 // Service client for public widget access (bypasses RLS)
 function getServiceClient() {
@@ -287,13 +292,22 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceClient();
     const { data: siteData } = await supabase
       .from("sites")
-      .select("title, brand_assets")
+      .select(
+        "title, brand_assets, chat_widget_enabled, chat_widget_config, dynamic_pages_enabled, persona_detection_enabled, current_version_id"
+      )
       .eq("id", projectId)
       .single();
 
     const brandAssets = (siteData?.brand_assets as { logo?: { url?: string } }) || {};
     const logoUrl = brandAssets.logo?.url || null;
     const companyName = siteData?.title || "Company";
+
+    // Extract widget configuration for post-generation injection
+    const chatWidgetEnabled = siteData?.chat_widget_enabled ?? true;
+    const chatWidgetConfig = (siteData?.chat_widget_config as ChatWidgetConfig) || {};
+    const dynamicPagesEnabled = siteData?.dynamic_pages_enabled ?? true;
+    const personaDetectionEnabled = siteData?.persona_detection_enabled ?? false;
+    const versionIdForWidget = siteData?.current_version_id || projectId;
 
     // Get available segments
     const { data: contentStructure } = await supabase
@@ -384,8 +398,37 @@ export async function POST(request: NextRequest) {
           // Wait for all sections
           const results = await Promise.all(generationPromises);
 
-          // Assemble full HTML for caching
-          const fullHtml = `${wrapper.head}${wrapper.bodyOpen}${sectionResults.header || ""}${sectionResults.content || ""}${sectionResults.footer || ""}${wrapper.bodyClose}`;
+          // Assemble full HTML from wrapper + sections
+          let fullHtml = `${wrapper.head}${wrapper.bodyOpen}${sectionResults.header || ""}${sectionResults.content || ""}${sectionResults.footer || ""}${wrapper.bodyClose}`;
+
+          // Inject chat widget if enabled
+          if (chatWidgetEnabled) {
+            fullHtml = injectChatWidget(
+              fullHtml,
+              projectId,
+              versionIdForWidget,
+              true,
+              chatWidgetConfig,
+              "inline"
+            );
+            logger.debug("Chat widget injected into answer page", { projectId, questionSlug });
+          }
+
+          // Inject dynamic navigation if enabled
+          if (dynamicPagesEnabled) {
+            fullHtml = injectDynamicNav(
+              fullHtml,
+              projectId,
+              versionIdForWidget,
+              companyName,
+              personaDetectionEnabled,
+              "inline"
+            );
+            logger.debug("Dynamic navigation injected into answer page", {
+              projectId,
+              questionSlug,
+            });
+          }
 
           // Cache in memory
           memoryCache.pages.set(cacheKey, {

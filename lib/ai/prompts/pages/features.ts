@@ -119,14 +119,23 @@ REQUIRED SECTIONS
    - Links to other segments with data-segment attributes
    - Use Feather icons (arrow-right)
 
-6. CTA SECTION
+6. CTA SECTION (EXACT STRUCTURE - Match landing page)
+   - Gradient background: bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700
+   - Full width with py-16 sm:py-20
+   - Two buttons: Primary CTA + "Chat with Us"
    - Primary: data-action="cta-primary" data-cta-type="demo"
-   - Secondary: data-action="back-to-landing"
+   - Secondary: data-action="open-chat"
 
-7. FOOTER (consistent with other pages)
-   - Logo with data-action="back-to-landing"
-   - Quick links with data-segment attributes
-   - Copyright
+7. FOOTER (EXACT STRUCTURE - Match landing page)
+   ⚠️  CRITICAL: Use bg-gray-900 (NOT gray-800)
+   ⚠️  CRITICAL: DO NOT include Quick Links with segment navigation
+   ⚠️  CRITICAL: Use responsive grid: grid-cols-1 sm:grid-cols-2
+
+   STRUCTURE:
+   - Column 1: Logo (data-action="back-to-landing") + tagline + copyright
+   - Column 2: Quick Actions (Request Demo, Chat, Back to Home)
+   - Footer bottom: Privacy Policy | Terms | Support links
+   - End with: <script>if (typeof feather !== 'undefined') { feather.replace(); }</script>
 
 ================================================================================
 CRITICAL DATA ATTRIBUTES

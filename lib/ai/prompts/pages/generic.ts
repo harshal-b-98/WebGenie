@@ -222,16 +222,71 @@ REQUIRED SECTIONS:
    - Use data-segment="[slug]" for navigation
    - At least 2-3 related segment links with Feather icons
 
-5. CTA SECTION
-   - Primary: data-action="cta-primary" data-cta-type="demo"
-   - Secondary: data-action="back-to-landing"
+5. CTA SECTION (EXACT STRUCTURE - Copy this HTML)
+   - Gradient background: bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700
+   - Full width with py-16 sm:py-20 px-4 sm:px-6 lg:px-8
+   - Two buttons in flex layout (primary CTA + secondary "Chat with Us")
+   - Primary button MUST have: data-action="cta-primary" data-cta-type="demo"
+   - Secondary button MUST have: data-action="open-chat"
 
-6. FOOTER (consistent with other pages)
-   - Logo with data-action="back-to-landing"
-   - Quick links with data-segment attributes
-   - Copyright
-   - IMPORTANT: Only show Quick Links section if segments are provided
-   - If no segments available, omit the Quick Links column entirely (do NOT show empty section)
+   EXAMPLE CTA STRUCTURE:
+   <section class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+     <div class="max-w-4xl mx-auto text-center">
+       <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
+       <p class="text-xl text-indigo-100 mb-8">Transform your business with [Company Name]</p>
+       <div class="flex flex-col sm:flex-row gap-4 justify-center">
+         <a href="#" data-action="cta-primary" data-cta-type="demo" class="bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100">Get Started</a>
+         <a href="#" data-action="open-chat" class="bg-indigo-800 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-900 border-2 border-white/20">Chat with Us</a>
+       </div>
+     </div>
+   </section>
+
+6. FOOTER (EXACT STRUCTURE - Copy this HTML)
+   ⚠️  CRITICAL: Use bg-gray-900 (NOT gray-800)
+   ⚠️  CRITICAL: DO NOT include Quick Links or segment navigation
+   ⚠️  CRITICAL: Use responsive grid layout (grid grid-cols-1 sm:grid-cols-2)
+
+   STRUCTURE:
+   - Column 1: Logo + tagline + copyright
+   - Column 2: Quick Actions (Request Demo, Chat, Back to Home) - ONLY if no contact info provided
+   - OR Contact Info (if provided in requirements)
+   - Footer bottom: Privacy Policy | Terms of Use | Support
+   - Feather icon script call at end
+
+   EXAMPLE FOOTER STRUCTURE:
+   <footer class="bg-gray-900 text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+     <div class="max-w-7xl mx-auto">
+       <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+         <!-- Column 1: Logo + Copyright -->
+         <div class="text-center sm:text-left">
+           <span class="text-2xl font-bold cursor-pointer block" data-action="back-to-landing">[Company Logo/Name]</span>
+           <p class="text-gray-400 text-sm mt-4">Transforming businesses with innovative solutions.</p>
+           <p class="text-gray-500 text-xs mt-4">© 2025 [Company Name]. All rights reserved.</p>
+         </div>
+
+         <!-- Column 2: Quick Actions (if no contact info) -->
+         <div class="text-center sm:text-left">
+           <h3 class="font-semibold mb-4 text-lg">Get Started</h3>
+           <div class="space-y-3">
+             <a href="#" data-action="cta-primary" data-cta-type="demo" class="block text-gray-400 hover:text-white transition-colors text-sm">Request Demo</a>
+             <a href="#" data-action="open-chat" class="block text-gray-400 hover:text-white transition-colors text-sm">Chat with Us</a>
+             <a href="#" data-action="back-to-landing" class="block text-gray-400 hover:text-white transition-colors text-sm">Back to Home</a>
+           </div>
+         </div>
+       </div>
+
+       <!-- Footer Bottom -->
+       <div class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+         <div class="flex flex-wrap gap-6 text-gray-400 justify-center">
+           <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+           <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
+           <a href="#" data-action="open-chat" class="hover:text-white transition-colors">Support</a>
+         </div>
+         <div class="text-gray-500 text-xs">Powered by AI-driven insights</div>
+       </div>
+     </div>
+     <script>if (typeof feather !== 'undefined') { feather.replace(); }</script>
+   </footer>
 
 ================================================================================
 CRITICAL DATA ATTRIBUTES (MANDATORY)

@@ -15,6 +15,11 @@ import { logger } from "@/lib/utils/logger";
 import { detectPersona, type PersonaSignals, getPersonaEmphasis } from "@/lib/ai/prompts/personas";
 import { extractColorsFromImage, generateColorPrompt } from "@/lib/utils/color-extractor";
 import { detectSegmentType } from "@/lib/ai/prompts/dynamic-segment";
+import {
+  injectChatWidget,
+  injectDynamicNav,
+  type ChatWidgetConfig,
+} from "@/lib/utils/widget-injection";
 
 // CORS headers for widget requests
 const corsHeaders = {
@@ -103,6 +108,9 @@ interface SectionContext {
   primaryCTA: { text: string; action: string };
   personaEmphasis: string;
   documentContent: string;
+  // Brand assets for footer
+  contactInfo?: { email?: string; phone?: string; address?: string };
+  socialMedia?: Record<string, string>;
   // For detail pages
   pageType: "segment" | "detail";
   topicName?: string;
@@ -390,29 +398,192 @@ Output <section data-section="content">.`,
 
     // COMBINED: cta + footer
     case "footer":
+      // Build contact info section
+      const hasContactInfo =
+        context.contactInfo &&
+        (context.contactInfo.email || context.contactInfo.phone || context.contactInfo.address);
+      const contactSection = hasContactInfo
+        ? `Column 2: Contact Info
+  ${context.contactInfo?.email ? `- Email: ${context.contactInfo.email}` : ""}
+  ${context.contactInfo?.phone ? `- Phone: ${context.contactInfo.phone}` : ""}
+  ${context.contactInfo?.address ? `- Address: ${context.contactInfo.address}` : ""}`
+        : "Column 2: (Omit - no contact info provided)";
+
+      // Build social media section
+      const hasSocialMedia = context.socialMedia && Object.keys(context.socialMedia).length > 0;
+      const socialSection = hasSocialMedia
+        ? `Column 3: Social Media
+  ${Object.entries(context.socialMedia || {})
+    .map(([platform, url]) => `- ${platform}: ${url}`)
+    .join("\n  ")}`
+        : "Column 3: (Omit - no social media provided)";
+
       return {
         system: baseSystem,
-        prompt: `Generate COMBINED CTA + FOOTER section.
+        prompt: `Generate COMBINED CTA + FOOTER section using the EXACT HTML structure below.
 
-Company: ${context.companyName}
-Primary CTA: "${context.primaryCTA.text}"
+⚠️  CRITICAL: Copy the HTML structure EXACTLY - do NOT improvise or change the layout!
+⚠️  DO NOT invent contact info! Use ONLY the data provided in the structure below.
 
-⚠️  FOOTER STRUCTURE (NO QUICK LINKS):
-- Column 1: Company logo (data-action="back-to-landing") + tagline + copyright
-- Column 2: Contact info (if email/phone/address available)
-- Column 3: Social media icons (if provided)
+COMPANY INFO:
+- Name: ${context.companyName}
+- Logo: ${context.logoUrl || "none (use text logo)"}
+- Primary CTA: "${context.primaryCTA.text}"
+${
+  hasContactInfo
+    ? `- Contact Info:
+  ${context.contactInfo?.email ? `  * Email: ${context.contactInfo.email}` : ""}
+  ${context.contactInfo?.phone ? `  * Phone: ${context.contactInfo.phone}` : ""}
+  ${context.contactInfo?.address ? `  * Address: ${context.contactInfo.address}` : ""}`
+    : "- Contact Info: NONE PROVIDED (omit contact column)"
+}
+${
+  hasSocialMedia
+    ? `- Social Media:
+  ${Object.entries(context.socialMedia || {})
+    .map(([platform, url]) => `  * ${platform}: ${url}`)
+    .join("\n  ")}`
+    : "- Social Media: NONE PROVIDED (omit social column)"
+}
 
-⚠️  DO NOT include "Quick Links" or business segment links in footer
-⚠️  Logo MUST have data-action="back-to-landing"
-⚠️  CTA button MUST have data-action="cta-primary" data-cta-type="contact"
+===========================================
+EXACT HTML STRUCTURE TO OUTPUT (COPY THIS):
+===========================================
 
-VALIDATION:
-□ Logo has data-action="back-to-landing"
-□ CTA has data-action + data-cta-type
-□ No Quick Links section present
-□ Clean, minimal footer design
+<!-- CTA SECTION -->
+<section class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto text-center">
+    <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
+    <p class="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">Experience the power of ${context.companyName} and transform your business.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="#" data-action="cta-primary" data-cta-type="demo" class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg">${context.primaryCTA.text}</a>
+      <a href="#" data-action="open-chat" class="w-full sm:w-auto bg-indigo-800 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-900 transition-colors border-2 border-white/20">Chat with Us</a>
+    </div>
+  </div>
+</section>
 
-Output: <footer data-section="footer">`,
+<!-- FOOTER SECTION -->
+<footer data-section="footer" class="bg-gray-900 text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 ${hasContactInfo || hasSocialMedia ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-8">
+
+      <!-- Column 1: Logo + Copyright -->
+      <div class="col-span-1 ${!hasContactInfo && !hasSocialMedia ? "sm:col-span-2" : ""} text-center sm:text-left">
+        ${
+          context.logoUrl
+            ? `<img src="${context.logoUrl}" alt="${context.companyName}" class="h-8 mx-auto sm:mx-0 cursor-pointer" data-action="back-to-landing">`
+            : `<span class="text-2xl font-bold cursor-pointer block" data-action="back-to-landing">${context.companyName}</span>`
+        }
+        <p class="text-gray-400 text-sm mt-4 max-w-xs mx-auto sm:mx-0">Transforming businesses with innovative solutions.</p>
+        <p class="text-gray-500 text-xs mt-4">© ${new Date().getFullYear()} ${context.companyName}. All rights reserved.</p>
+      </div>
+
+      ${
+        hasContactInfo
+          ? `<!-- Column 2: Contact Info -->
+      <div class="text-center sm:text-left">
+        <h3 class="font-semibold mb-4 text-lg">Contact</h3>
+        <div class="space-y-2">
+          ${
+            context.contactInfo?.email
+              ? `<p class="text-gray-400 text-sm flex items-center justify-center sm:justify-start gap-2">
+            <i data-feather="mail" class="w-4 h-4"></i>
+            <a href="mailto:${context.contactInfo.email}" class="hover:text-white transition-colors">${context.contactInfo.email}</a>
+          </p>`
+              : ""
+          }
+          ${
+            context.contactInfo?.phone
+              ? `<p class="text-gray-400 text-sm flex items-center justify-center sm:justify-start gap-2">
+            <i data-feather="phone" class="w-4 h-4"></i>
+            <a href="tel:${context.contactInfo.phone}" class="hover:text-white transition-colors">${context.contactInfo.phone}</a>
+          </p>`
+              : ""
+          }
+          ${
+            context.contactInfo?.address
+              ? `<p class="text-gray-400 text-sm flex items-center justify-center sm:justify-start gap-2">
+            <i data-feather="map-pin" class="w-4 h-4"></i>
+            <span>${context.contactInfo.address}</span>
+          </p>`
+              : ""
+          }
+        </div>
+      </div>`
+          : ""
+      }
+
+      ${
+        hasSocialMedia
+          ? `<!-- Column 3: Social Media -->
+      <div class="text-center sm:text-left">
+        <h3 class="font-semibold mb-4 text-lg">Follow Us</h3>
+        <div class="flex gap-4 justify-center sm:justify-start">
+          ${Object.entries(context.socialMedia || {})
+            .map(([platform, url]) => {
+              const iconName =
+                platform.toLowerCase() === "twitter"
+                  ? "twitter"
+                  : platform.toLowerCase() === "linkedin"
+                    ? "linkedin"
+                    : platform.toLowerCase() === "facebook"
+                      ? "facebook"
+                      : platform.toLowerCase() === "instagram"
+                        ? "instagram"
+                        : "link";
+              return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors" aria-label="${platform}">
+              <i data-feather="${iconName}" class="w-5 h-5"></i>
+            </a>`;
+            })
+            .join("\n          ")}
+        </div>
+      </div>`
+          : ""
+      }
+
+      ${
+        !hasContactInfo && !hasSocialMedia
+          ? `<!-- Column 2: Quick Actions -->
+      <div class="text-center sm:text-left">
+        <h3 class="font-semibold mb-4 text-lg">Get Started</h3>
+        <div class="space-y-3">
+          <a href="#" data-action="cta-primary" data-cta-type="demo" class="block text-gray-400 hover:text-white transition-colors text-sm">Request Demo</a>
+          <a href="#" data-action="open-chat" class="block text-gray-400 hover:text-white transition-colors text-sm">Chat with Us</a>
+          <a href="#" data-action="back-to-landing" class="block text-gray-400 hover:text-white transition-colors text-sm">Back to Home</a>
+        </div>
+      </div>`
+          : ""
+      }
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+      <div class="flex flex-wrap gap-6 text-gray-400 justify-center">
+        <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
+        <a href="#" data-action="open-chat" class="hover:text-white transition-colors">Support</a>
+      </div>
+      <div class="text-gray-500 text-xs">
+        Powered by AI-driven insights
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof feather !== 'undefined') { feather.replace(); }
+  </script>
+</footer>
+
+===========================================
+END OF STRUCTURE
+===========================================
+
+IMPORTANT:
+1. Copy the HTML EXACTLY as shown above
+2. The conditional columns (Contact, Social) are already handled in the structure
+3. DO NOT add Quick Links or navigation segments
+4. All data-action attributes are already included
+5. Feather icons will be replaced by the script at the end`,
       };
 
     default:
@@ -542,9 +713,30 @@ export async function POST(request: NextRequest) {
     const site = siteRow as {
       id: string;
       title?: string;
-      brand_assets?: { logo?: { url?: string } };
+      brand_assets?: {
+        logo?: { url?: string };
+        contactInfo?: { email?: string; phone?: string; address?: string };
+        socialMedia?: Record<string, string>;
+        aboutInfo?: {
+          companyHistory?: string;
+          missionStatement?: string;
+          visionStatement?: string;
+          companyValues?: string;
+        };
+      };
       persona_detection_enabled?: boolean;
+      chat_widget_enabled?: boolean;
+      chat_widget_config?: ChatWidgetConfig;
+      dynamic_pages_enabled?: boolean;
+      current_version_id?: string;
     };
+
+    // Extract widget configuration for post-generation injection
+    const chatWidgetEnabled = site.chat_widget_enabled ?? true;
+    const chatWidgetConfig = site.chat_widget_config || {};
+    const dynamicPagesEnabled = site.dynamic_pages_enabled ?? true;
+    const personaDetectionEnabled = site.persona_detection_enabled ?? false;
+    const versionIdForWidget = site.current_version_id || versionId || siteId;
 
     // Get content structure using service client (widget routes are unauthenticated)
     const { data: contentStructureRow } = await serviceSupabase
@@ -670,6 +862,9 @@ export async function POST(request: NextRequest) {
       primaryCTA: contentStructure.primaryCTA,
       personaEmphasis,
       documentContent,
+      // Pass real brand assets for footer
+      contactInfo: site.brand_assets?.contactInfo,
+      socialMedia: site.brand_assets?.socialMedia,
       // Detail page specific
       pageType: pageType || "segment",
       topicName: topicInfo?.name,
@@ -769,11 +964,65 @@ export async function POST(request: NextRequest) {
           const successCount = results.filter((r) => r.success).length;
           const failedSections = results.filter((r) => !r.success).map((r) => r.section);
 
-          // Send completion event with validation status
+          // Assemble complete HTML from wrapper + sections
+          let fullHtml = `${wrapper.head}${wrapper.bodyOpen}${sectionResults.header || ""}${sectionResults.content || ""}${sectionResults.footer || ""}${wrapper.bodyClose}`;
+
+          // Inject chat widget if enabled
+          if (chatWidgetEnabled) {
+            const htmlLengthBefore = fullHtml.length;
+            const hasWidgetBefore = fullHtml.includes("NEXTGENWEB_CONFIG");
+
+            fullHtml = injectChatWidget(
+              fullHtml,
+              siteId,
+              versionIdForWidget,
+              true,
+              chatWidgetConfig,
+              "inline"
+            );
+
+            const htmlLengthAfter = fullHtml.length;
+            const hasWidgetAfter = fullHtml.includes("NEXTGENWEB_CONFIG");
+
+            logger.debug("Chat widget injection details", {
+              siteId,
+              pageSlug,
+              htmlLengthBefore,
+              htmlLengthAfter,
+              lengthChange: htmlLengthAfter - htmlLengthBefore,
+              hasWidgetBefore,
+              hasWidgetAfter,
+              injectionWorked: hasWidgetAfter && !hasWidgetBefore,
+            });
+          }
+
+          // Inject dynamic navigation if enabled
+          if (dynamicPagesEnabled) {
+            fullHtml = injectDynamicNav(
+              fullHtml,
+              siteId,
+              versionIdForWidget,
+              context.companyName,
+              personaDetectionEnabled,
+              "inline"
+            );
+            logger.debug("Dynamic navigation injected into streaming page", { siteId, pageSlug });
+          }
+
+          // Send completion event with validation status and assembled HTML
+          logger.debug("Sending complete event", {
+            siteId,
+            pageSlug,
+            htmlLength: fullHtml.length,
+            hasWidget: fullHtml.includes("NEXTGENWEB_CONFIG"),
+            hasDynamicNav: fullHtml.includes("nav-controller.js"),
+          });
+
           sendEvent("complete", {
             pageSlug,
             pageType: context.pageType,
             cached: false,
+            html: fullHtml,
             sectionsGenerated: Object.keys(sectionResults).length,
             validationStatus: {
               allValid: failedSections.length === 0,
