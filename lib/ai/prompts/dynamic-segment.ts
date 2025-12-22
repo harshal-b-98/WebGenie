@@ -18,6 +18,8 @@ import {
 } from "./pages";
 
 import { generateGenericPagePrompt, GENERIC_PAGE_SYSTEM_PROMPT } from "./pages/generic";
+import { generateContactPagePrompt, CONTACT_PAGE_SYSTEM_PROMPT } from "./pages/contact";
+import { generateAboutPagePrompt, ABOUT_PAGE_SYSTEM_PROMPT } from "./pages/about";
 
 /**
  * Extended segment types - includes both specific and generic
@@ -87,6 +89,10 @@ export function getSystemPromptForSegment(segmentType: ExtendedSegmentType): str
       return PLATFORM_PAGE_SYSTEM_PROMPT;
     case "faq":
       return FAQ_PAGE_SYSTEM_PROMPT;
+    case "contact":
+      return CONTACT_PAGE_SYSTEM_PROMPT;
+    case "about":
+      return ABOUT_PAGE_SYSTEM_PROMPT;
     // All other types use the generic prompt which adapts to content
     default:
       return GENERIC_PAGE_SYSTEM_PROMPT;
@@ -102,6 +108,24 @@ export interface BaseSegmentRequirements {
   logoUrl?: string | null;
   brandColors?: string;
   personaEmphasis?: string;
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  aboutInfo?: {
+    companyHistory?: string;
+    missionStatement?: string;
+    visionStatement?: string;
+    companyValues?: string;
+  };
+  socialMedia?: {
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+  };
 }
 
 /**
@@ -216,6 +240,23 @@ export function generateDynamicSegmentPrompt(
       break;
     case "faq":
       basePrompt = generateFAQPagePrompt(baseRequirements);
+      break;
+    case "contact":
+      basePrompt = generateContactPagePrompt({
+        companyName: requirements.companyName,
+        logoUrl: requirements.logoUrl,
+        brandColors: requirements.brandColors,
+        contactInfo: requirements.contactInfo,
+        socialMedia: requirements.socialMedia,
+      });
+      break;
+    case "about":
+      basePrompt = generateAboutPagePrompt({
+        companyName: requirements.companyName,
+        logoUrl: requirements.logoUrl,
+        brandColors: requirements.brandColors,
+        aboutInfo: requirements.aboutInfo,
+      });
       break;
     // All other types use the generic prompt which adapts
     default:

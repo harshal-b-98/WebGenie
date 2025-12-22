@@ -26,6 +26,21 @@ interface BrandAssets {
     instagram?: string;
     youtube?: string;
   };
+  pageSettings?: {
+    includeContactPage?: boolean;
+    includeAboutPage?: boolean;
+  };
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  aboutInfo?: {
+    companyHistory?: string;
+    missionStatement?: string;
+    visionStatement?: string;
+    companyValues?: string;
+  };
 }
 
 interface ChatWidgetConfig {
@@ -79,6 +94,21 @@ export default function SettingsPage() {
     youtube: "",
   });
 
+  const [contactInfo, setContactInfo] = useState({
+    email: "",
+    phone: "",
+    address: "",
+    includeContactPage: false,
+  });
+
+  const [aboutInfo, setAboutInfo] = useState({
+    companyHistory: "",
+    missionStatement: "",
+    visionStatement: "",
+    companyValues: "",
+    includeAboutPage: false,
+  });
+
   const [widgetEnabled, setWidgetEnabled] = useState(true);
   const [widgetConfig, setWidgetConfig] = useState<ChatWidgetConfig>({
     position: "bottom-right",
@@ -115,6 +145,23 @@ export default function SettingsPage() {
             ...prev,
             ...data.brand_assets.socialMedia,
           }));
+        }
+        if (data.brand_assets?.contactInfo) {
+          setContactInfo({
+            email: data.brand_assets.contactInfo.email || "",
+            phone: data.brand_assets.contactInfo.phone || "",
+            address: data.brand_assets.contactInfo.address || "",
+            includeContactPage: data.brand_assets.pageSettings?.includeContactPage || false,
+          });
+        }
+        if (data.brand_assets?.aboutInfo) {
+          setAboutInfo({
+            companyHistory: data.brand_assets.aboutInfo.companyHistory || "",
+            missionStatement: data.brand_assets.aboutInfo.missionStatement || "",
+            visionStatement: data.brand_assets.aboutInfo.visionStatement || "",
+            companyValues: data.brand_assets.aboutInfo.companyValues || "",
+            includeAboutPage: data.brand_assets.pageSettings?.includeAboutPage || false,
+          });
         }
         setWidgetEnabled(data.chat_widget_enabled ?? true);
         if (data.chat_widget_config) {
@@ -262,6 +309,81 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Failed to save:", error);
       toast.error("Failed to save description");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveContactInfo = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand_assets: {
+            ...settings?.brand_assets,
+            contactInfo: {
+              email: contactInfo.email,
+              phone: contactInfo.phone,
+              address: contactInfo.address,
+            },
+            pageSettings: {
+              ...settings?.brand_assets?.pageSettings,
+              includeContactPage: contactInfo.includeContactPage,
+            },
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save contact information");
+      }
+
+      toast.success("Contact information saved!");
+      fetchSettings();
+      setShowRegenerateOption(true);
+    } catch (error) {
+      console.error("Failed to save:", error);
+      toast.error("Failed to save contact information");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAboutInfo = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand_assets: {
+            ...settings?.brand_assets,
+            aboutInfo: {
+              companyHistory: aboutInfo.companyHistory,
+              missionStatement: aboutInfo.missionStatement,
+              visionStatement: aboutInfo.visionStatement,
+              companyValues: aboutInfo.companyValues,
+            },
+            pageSettings: {
+              ...settings?.brand_assets?.pageSettings,
+              includeAboutPage: aboutInfo.includeAboutPage,
+            },
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save about information");
+      }
+
+      toast.success("About information saved!");
+      fetchSettings();
+      setShowRegenerateOption(true);
+    } catch (error) {
+      console.error("Failed to save:", error);
+      toast.error("Failed to save about information");
     } finally {
       setSaving(false);
     }
@@ -429,6 +551,8 @@ export default function SettingsPage() {
             <TabsTrigger value="description">Website Description</TabsTrigger>
             <TabsTrigger value="brand">Brand Assets</TabsTrigger>
             <TabsTrigger value="social">Social Media</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="about">About</TabsTrigger>
             <TabsTrigger value="widget">Chat Widget</TabsTrigger>
             <TabsTrigger value="persona">Dynamic UI</TabsTrigger>
           </TabsList>
@@ -741,6 +865,172 @@ export default function SettingsPage() {
                 <div className="flex justify-end pt-4">
                   <Button onClick={handleSaveSocialMedia} disabled={saving}>
                     {saving ? "Saving..." : "Save Social Media Links"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact Tab */}
+          <TabsContent value="contact">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Information</CardTitle>
+                <CardDescription>Manage contact details displayed on your website</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Include Contact Page</Label>
+                    <p className="text-sm text-gray-500">
+                      Generate a dedicated Contact page with contact form
+                    </p>
+                  </div>
+                  <Switch
+                    checked={contactInfo.includeContactPage}
+                    onCheckedChange={(checked) =>
+                      setContactInfo({ ...contactInfo, includeContactPage: checked })
+                    }
+                  />
+                </div>
+
+                {contactInfo.includeContactPage && (
+                  <div className="border-t pt-4 space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={contactInfo.email}
+                        onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                        placeholder="contact@company.com"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={contactInfo.phone}
+                        onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="address">Address</Label>
+                      <textarea
+                        id="address"
+                        rows={3}
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={contactInfo.address}
+                        onChange={(e) =>
+                          setContactInfo({ ...contactInfo, address: e.target.value })
+                        }
+                        placeholder="123 Main St, City, State 12345"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={handleSaveContactInfo} disabled={saving}>
+                    {saving ? "Saving..." : "Save Contact Info"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* About Tab */}
+          <TabsContent value="about">
+            <Card>
+              <CardHeader>
+                <CardTitle>About Information</CardTitle>
+                <CardDescription>
+                  Manage company information displayed on About page
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Include About Page</Label>
+                    <p className="text-sm text-gray-500">
+                      Generate a dedicated About page with company information
+                    </p>
+                  </div>
+                  <Switch
+                    checked={aboutInfo.includeAboutPage}
+                    onCheckedChange={(checked) =>
+                      setAboutInfo({ ...aboutInfo, includeAboutPage: checked })
+                    }
+                  />
+                </div>
+
+                {aboutInfo.includeAboutPage && (
+                  <div className="border-t pt-4 space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="companyHistory">Company History</Label>
+                      <textarea
+                        id="companyHistory"
+                        rows={4}
+                        className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={aboutInfo.companyHistory}
+                        onChange={(e) =>
+                          setAboutInfo({ ...aboutInfo, companyHistory: e.target.value })
+                        }
+                        placeholder="Tell your company's story..."
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="missionStatement">Mission Statement</Label>
+                      <textarea
+                        id="missionStatement"
+                        rows={3}
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={aboutInfo.missionStatement}
+                        onChange={(e) =>
+                          setAboutInfo({ ...aboutInfo, missionStatement: e.target.value })
+                        }
+                        placeholder="What is your mission?"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="visionStatement">Vision Statement</Label>
+                      <textarea
+                        id="visionStatement"
+                        rows={3}
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={aboutInfo.visionStatement}
+                        onChange={(e) =>
+                          setAboutInfo({ ...aboutInfo, visionStatement: e.target.value })
+                        }
+                        placeholder="What is your vision for the future?"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="companyValues">Company Values</Label>
+                      <textarea
+                        id="companyValues"
+                        rows={2}
+                        className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={aboutInfo.companyValues}
+                        onChange={(e) =>
+                          setAboutInfo({ ...aboutInfo, companyValues: e.target.value })
+                        }
+                        placeholder="Innovation, Integrity, Excellence..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={handleSaveAboutInfo} disabled={saving}>
+                    {saving ? "Saving..." : "Save About Info"}
                   </Button>
                 </div>
               </CardContent>

@@ -146,6 +146,18 @@ function validateHtmlCompleteness(html: string, pageType: PageType): HtmlValidat
 }
 
 /**
+ * Inject siteId into Contact form JavaScript
+ * Replaces the ${siteId} template variable with the actual siteId
+ */
+function injectSiteIdIntoForms(html: string, siteId: string): string {
+  // Replace siteId template variable in JavaScript code
+  if (html.includes("siteId: '${siteId}'")) {
+    return html.replace(/siteId: '\$\{siteId\}'/g, `siteId: '${siteId}'`);
+  }
+  return html;
+}
+
+/**
  * Inject dynamic navigation scripts into generated HTML
  * This enables navigation between pages in the dynamic UI system
  */
@@ -341,9 +353,25 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
   }
 
   // Extract brand assets
-  const siteData = site as { brand_assets?: { logo?: { url?: string } }; title?: string };
+  const siteData = site as {
+    brand_assets?: {
+      logo?: { url?: string };
+      socialMedia?: Record<string, string>;
+      contactInfo?: { email?: string; phone?: string; address?: string };
+      aboutInfo?: {
+        companyHistory?: string;
+        missionStatement?: string;
+        visionStatement?: string;
+        companyValues?: string;
+      };
+    };
+    title?: string;
+  };
   const brandAssets = siteData.brand_assets || {};
   const logoUrl = brandAssets.logo?.url || null;
+  const socialMedia = brandAssets.socialMedia || {};
+  const contactInfo = brandAssets.contactInfo;
+  const aboutInfo = brandAssets.aboutInfo;
 
   // Extract colors from logo if available
   let colorPromptSection = "";
@@ -413,6 +441,9 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
       availableSegments,
       relatedSegments,
       availableDetailPages: Array.from(availableDetailPages),
+      contactInfo,
+      aboutInfo,
+      socialMedia,
     });
 
     logger.info("Using dynamic segment detection", {
@@ -494,6 +525,9 @@ export async function generateDynamicPage(input: GeneratePageInput): Promise<Gen
   const personaEnabled = siteRow.persona_detection_enabled ?? false;
   const chatWidgetEnabled = siteRow.chat_widget_enabled ?? true;
   const chatWidgetConfig = siteRow.chat_widget_config || {};
+
+  // Inject siteId into Contact form JavaScript (replaces ${siteId} template variable)
+  cleanedHtml = injectSiteIdIntoForms(cleanedHtml, siteId);
 
   // Inject dynamic navigation scripts so this page can navigate to other pages
   // Use versionId if provided, otherwise use siteId as fallback for cache key
