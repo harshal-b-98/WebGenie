@@ -319,10 +319,29 @@ async function saveDefaultStructure(
 ): Promise<ContentStructure> {
   const documentHash = computeDocumentHash(documentContent || "");
 
-  // FIXED: Return empty structure - About/Contact are NOT business segments
-  // They are supplementary pages stored in brand_assets, not content segments
+  // Provide About/Contact as fallback segments when no business content discovered
+  // Landing page needs segments to display navigation cards
   const defaultResult: ContentDiscoveryResult = {
-    segments: [], // Empty - no business content discovered
+    segments: [
+      {
+        id: "about",
+        name: "About",
+        slug: "about",
+        description: "Learn more about us",
+        items: [],
+        suggestedInteractions: ["contact-sales"],
+        priority: 1,
+      },
+      {
+        id: "contact",
+        name: "Contact",
+        slug: "contact",
+        description: "Get in touch with our team",
+        items: [],
+        suggestedInteractions: [],
+        priority: 2,
+      },
+    ],
     maxDepth: 1,
     leadCapturePoints: ["contact"],
     primaryCTA: { text: "Get Started", action: "contact", style: "primary" },

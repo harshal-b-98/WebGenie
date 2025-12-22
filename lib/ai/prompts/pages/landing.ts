@@ -300,9 +300,9 @@ REQUIRED SECTIONS (IN THIS ORDER ONLY):
    - RESPONSIVE GRID for footer columns:
      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
    - Logo and copyright (centered on mobile): class="text-center sm:text-left"
-   - Quick links for discovered segments (with data-segment attributes)
-   - IMPORTANT: Only show Quick Links section if segments exist
-   - If no segments are discovered, show only logo, copyright, and social icons (no empty columns)
+   - IMPORTANT: Do NOT show Quick Links section (removed per design requirements)
+   - About and Contact are accessed via navbar and cards, not footer links
+   - Footer should only contain: logo, copyright, social icons (no segment/page links)
    - Social media icons row: class="flex gap-4 justify-center sm:justify-start mt-6"
    - Footer bottom: class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4"
    - Any footer CTAs MUST have: data-action="cta-footer" data-cta-type="contact"
@@ -825,7 +825,6 @@ ADDITIONAL NAVBAR & FOOTER LINKS (User-Enabled)
       prompt += `
 ABOUT US PAGE ENABLED:
 - Add "About" link to navbar: <a href="#" data-segment="about" class="hover:underline">About</a>
-- Add "About" link to footer Quick Links section
 - User provided company info:`;
       if (requirements.aboutInfo?.companyHistory) {
         prompt += `\n  - Company History: Available`;
@@ -845,7 +844,6 @@ ABOUT US PAGE ENABLED:
       prompt += `
 CONTACT US PAGE ENABLED:
 - Add "Contact" link to navbar: <a href="#" data-segment="contact" class="hover:underline">Contact</a>
-- Add "Contact" link to footer Quick Links section
 - User provided contact info:`;
       if (requirements.contactInfo?.email) {
         prompt += `\n  - Email: ${requirements.contactInfo.email}`;

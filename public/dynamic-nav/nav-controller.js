@@ -143,46 +143,6 @@
       });
     }
 
-    /**
-     * Replace page content using blob URL (atomic replacement)
-     * This prevents layout distortion by rendering everything at once
-     * Uses the same pattern as the initial landing page generation (which works correctly)
-     */
-    replacePageWithBlobUrl(fullHtml, pageSlug) {
-      // Create blob URL from complete HTML
-      const blob = new Blob([fullHtml], { type: "text/html" });
-      const blobUrl = URL.createObjectURL(blob);
-
-      // Revoke previous blob URL to prevent memory leaks
-      if (this.currentBlobUrl) {
-        URL.revokeObjectURL(this.currentBlobUrl);
-      }
-      this.currentBlobUrl = blobUrl;
-
-      // Update state before navigation
-      this.currentPage = pageSlug;
-
-      // Cache in memory for back navigation
-      const cacheKey = pageSlug.includes("/")
-        ? `topic_${pageSlug.replace("/", "_")}`
-        : `segment_${pageSlug}`;
-      this.pageCache[cacheKey] = fullHtml;
-
-      // Store in sessionStorage as backup for persistence
-      const sessionKey = `ngw_page_${config.siteId}_${pageSlug}`;
-      try {
-        sessionStorage.setItem(sessionKey, fullHtml);
-      } catch (e) {
-        console.warn("[DynamicNav] SessionStorage quota exceeded, skipping cache");
-      }
-
-      console.log("[DynamicNav] Navigating to blob URL for:", pageSlug);
-
-      // Navigate to blob URL (atomic page replacement)
-      // This causes the entire page to reload with the new content
-      location.href = blobUrl;
-    }
-
     saveLandingPage() {
       // Only save if not already saved and we're on landing page
       // Include versionId in key to support version-specific navigation
@@ -929,11 +889,14 @@
                   }
                   assembledHtml += "</body></html>";
 
-                  console.log("[DynamicNav] Streaming complete, using blob URL:", segment);
+                  console.log("[DynamicNav] Streaming complete, displaying page:", segment);
 
-                  // Use blob URL for atomic page replacement (prevents distortion)
-                  this.replacePageWithBlobUrl(assembledHtml, segment);
-                  // Note: replacePageWithBlobUrl causes page navigation, code after this won't run
+                  // Cache the assembled HTML
+                  const cacheKey = `segment_${segment}`;
+                  this.pageCache[cacheKey] = assembledHtml;
+
+                  // Display using in-place DOM update (preserves nav controller)
+                  this.displayPage(assembledHtml, segment);
                   break;
 
                 case "error":
@@ -1252,11 +1215,14 @@
                   for (const sec of sections) assembledHtml += sectionHtml[sec] || "";
                   assembledHtml += "</body></html>";
 
-                  console.log("[DynamicNav] Topic streaming complete, using blob URL:", pageSlug);
+                  console.log("[DynamicNav] Topic streaming complete, displaying page:", pageSlug);
 
-                  // Use blob URL for atomic page replacement (prevents distortion)
-                  this.replacePageWithBlobUrl(assembledHtml, pageSlug);
-                  // Note: replacePageWithBlobUrl causes page navigation, code after this won't run
+                  // Cache the result
+                  const cacheKey = `topic_${parentSegment}_${topic}`;
+                  this.pageCache[cacheKey] = assembledHtml;
+
+                  // Display using in-place DOM update (preserves nav controller)
+                  this.displayPage(assembledHtml, pageSlug);
                   break;
                 case "error":
                   console.error("[DynamicNav] Stream error:", data.message);
