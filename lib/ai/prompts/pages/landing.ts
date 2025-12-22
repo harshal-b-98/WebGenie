@@ -42,6 +42,31 @@ MANDATORY UI/UX RULES (MUST FOLLOW)
 ${UI_GUIDELINES_SHORT}
 ================================================================================
 
+================================================================================
+🚨 CRITICAL: DATA ATTRIBUTES FOR NAVIGATION (READ FIRST!)
+================================================================================
+
+⚠️  EVERY clickable element MUST have a data attribute!
+⚠️  Navigation system REQUIRES these - NOT optional!
+
+✅ CORRECT:
+  <a href="#" data-segment="features">Features</a>
+  <button data-action="cta-primary" data-cta-type="demo">Get Demo</button>
+  <a href="#" data-action="back-to-landing"><img src="logo.png"></a>
+  <div data-segment="solutions" class="cursor-pointer">Card</div>
+
+❌ WRONG:
+  <a href="#">Link</a>  ← NO data-segment = BROKEN!
+  <button>Click</button>  ← NO data-action = BROKEN!
+
+--- SELF-CHECK BEFORE RETURNING: ---
+□ Logo has data-action="back-to-landing"
+□ ALL nav links have data-segment
+□ ALL cards have data-segment
+□ ALL CTAs have data-action + data-cta-type
+
+================================================================================
+
 CRITICAL UNDERSTANDING:
 The segments and navigation items are DYNAMICALLY DETERMINED by AI analysis of the business documents.
 They could be anything: Products, Services, Industries, Integrations, Pricing, Team, Case Studies, etc.
@@ -704,7 +729,15 @@ ${structure.segments.map((seg, idx) => `   ${idx + 1}. "${seg.name}" (data-segme
    - ⚠️ SKIP this section - user disabled Contact page`
     }
 7. CTA SECTION: "${structure.primaryCTA.text}" as primary button
-8. FOOTER: Quick links for business segments${includeAbout || includeContact ? ` + ${[includeAbout && "About", includeContact && "Contact"].filter(Boolean).join(" + ")}` : ""}
+8. FOOTER: Standard footer with Company info, Copyright, Social links
+   ⚠️  DO NOT include "Quick Links" section - OMIT business segment links from footer
+
+   Footer structure:
+   - Column 1: Company logo + tagline + copyright
+   - Column 2: Contact info (if available)
+   - Column 3: Social media icons
+
+   ⚠️  CRITICAL: Footer must have data-action="back-to-landing" on logo
 
 DATA-SEGMENT ATTRIBUTES (copy these exactly):
 

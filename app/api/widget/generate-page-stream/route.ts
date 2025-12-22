@@ -124,15 +124,28 @@ function generateSectionPrompt(
 ): { system: string; prompt: string } {
   const baseSystem = `Generate HTML using Tailwind CSS. Output raw HTML only - no markdown.
 
-MANDATORY UI RULES:
-1. NAV LINKS: Max 20 chars - abbreviate long names (e.g., "Intelligent Enterprise Solutions" → "Enterprise")
-2. ICONS: Use Feather icons ONLY: <i data-feather="icon-name" class="w-5 h-5"></i> (never smaller than w-5)
-3. HOME: Logo MUST have data-action="back-to-landing", breadcrumb "Home" must also have this
-4. BUTTONS: data-action="cta-primary" data-cta-type="demo|signup|contact" required
-5. NO PLACEHOLDERS: No "?", no Lorem ipsum, only real content
+╔═══════════════════════════════════════════════════════════╗
+║  🚨 DATA ATTRIBUTES REQUIRED FOR ALL NAVIGATION 🚨     ║
+╚═══════════════════════════════════════════════════════════╝
 
-Navigation links use data-segment="[slug]". Clickable items use data-item-id="[slug]".
-Include <script src="https://unpkg.com/feather-icons"></script> in head and call feather.replace() at end.`;
+MANDATORY RULES:
+1. NAV LINKS: data-segment="slug" REQUIRED
+2. BUTTONS: data-action="cta-primary" data-cta-type="demo" REQUIRED
+3. LOGO: data-action="back-to-landing" REQUIRED
+4. CARDS: data-topic="slug" data-parent-segment="parent" REQUIRED
+
+✅ CORRECT:
+  <a href="#" data-segment="features">Features</a>
+  <button data-action="cta-primary" data-cta-type="demo">Demo</button>
+  <div data-topic="topic" data-parent-segment="parent" class="cursor-pointer">Card</div>
+
+❌ WRONG:
+  <a href="#">Link</a>  ← NO DATA ATTRIBUTE!
+  <button>Click</button>  ← NO data-action!
+
+Use Feather icons: <i data-feather="icon" class="w-5 h-5"></i>
+Include: <script src="https://unpkg.com/feather-icons"></script>
+Call: feather.replace() at end`;
 
   // Abbreviate long nav names
   const abbreviate = (name: string) => {
@@ -379,35 +392,27 @@ Output <section data-section="content">.`,
     case "footer":
       return {
         system: baseSystem,
-        prompt: `Generate footer section with CTA AND footer combined.
+        prompt: `Generate COMBINED CTA + FOOTER section.
 
 Company: ${context.companyName}
-CTA: "${context.primaryCTA.text}"
-Nav: ${navItems}
-Page Type: ${context.pageType === "detail" ? "Detail Page" : "Segment Page"}
+Primary CTA: "${context.primaryCTA.text}"
 
-${
-  context.pageType === "detail"
-    ? `
-DETAIL PAGE FOOTER:
-- Include "Back to ${formatSlugToName(context.parentSegment || context.segmentSlug)}" link with data-segment="${context.parentSegment || context.segmentSlug}"
-- CTA should encourage exploring more or getting in touch
-`
-    : ""
-}
+⚠️  FOOTER STRUCTURE (NO QUICK LINKS):
+- Column 1: Company logo (data-action="back-to-landing") + tagline + copyright
+- Column 2: Contact info (if email/phone/address available)
+- Column 3: Social media icons (if provided)
 
-Structure:
-1. CTA band: gradient bg, headline, 2 buttons
-   - Primary: data-action="cta-primary" data-cta-type="demo"
-   - Secondary: data-action="cta-primary" data-cta-type="contact"
-2. Footer: dark bg, logo (data-action="back-to-landing"), quick links with data-segment, copyright
+⚠️  DO NOT include "Quick Links" or business segment links in footer
+⚠️  Logo MUST have data-action="back-to-landing"
+⚠️  CTA button MUST have data-action="cta-primary" data-cta-type="contact"
 
-NAVIGATION ATTRIBUTES (REQUIRED):
-- Logo/Home: data-action="back-to-landing"
-- Segment links: data-segment="segment-slug"
-- CTA buttons: data-action="cta-primary" data-cta-type="demo|contact|signup"
+VALIDATION:
+□ Logo has data-action="back-to-landing"
+□ CTA has data-action + data-cta-type
+□ No Quick Links section present
+□ Clean, minimal footer design
 
-Output <footer data-section="footer"> containing CTA section and footer.`,
+Output: <footer data-section="footer">`,
       };
 
     default:

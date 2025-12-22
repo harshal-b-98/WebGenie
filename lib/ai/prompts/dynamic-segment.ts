@@ -147,27 +147,29 @@ function generateCrossNavigationPrompt(
   availableDetailPages?: string[],
   currentSegment?: string
 ): string {
-  let prompt = "\n\n--- CRITICAL NAVIGATION REQUIREMENTS ---\n";
+  let prompt = "\n\n";
+  prompt += "╔════════════════════════════════════════════════════════╗\n";
+  prompt += "║  🚨 DATA ATTRIBUTES REQUIRED - READ THIS FIRST! 🚨  ║\n";
+  prompt += "╚════════════════════════════════════════════════════════╝\n\n";
+  prompt += "⚠️  WITHOUT data attributes, ALL navigation will BREAK!\n";
+  prompt += "⚠️  EVERY clickable element REQUIRES a data attribute!\n\n";
 
-  prompt += `
-MANDATORY: ALL clickable elements MUST have proper data attributes. NEVER use plain href="#" links.
+  prompt += "✅ CORRECT PATTERNS (COPY EXACTLY):\n\n";
+  prompt += "Segment link:\n";
+  prompt += '  <a href="#" data-segment="segment-slug">Segment Name</a>\n\n';
+  prompt += "Topic/detail link:\n";
+  prompt += `  <button data-topic="topic-slug" data-parent-segment="${currentSegment || "general"}">Topic</button>\n\n`;
+  prompt += "Back to home:\n";
+  prompt += '  <a href="#" data-action="back-to-landing">Home</a>\n\n';
+  prompt += "CTA button:\n";
+  prompt += '  <button data-action="cta-primary" data-cta-type="demo">Get Demo</button>\n\n';
+  prompt += "Clickable card:\n";
+  prompt += `  <div data-topic="item-slug" data-parent-segment="${currentSegment || "general"}" class="cursor-pointer">\n`;
+  prompt += "    <h3>Title</h3>\n  </div>\n\n";
 
-CORRECT DATA ATTRIBUTE PATTERNS:
-1. Segment navigation: <a href="#" data-segment="segment-slug">Segment Name</a>
-2. Topic/Item detail: <button data-topic="topic-slug" data-parent-segment="${currentSegment || "general"}">Topic Name</button>
-3. Back to home: <a href="#" data-action="back-to-landing">Home</a>
-4. CTA buttons: <button data-action="cta-primary" data-cta-type="demo">Schedule Demo</button>
-
-WRONG (causes navigation to break):
-- <a href="#">Link</a>  ← NEVER DO THIS
-- <a href="#section">Link</a>  ← Only for same-page anchors
-
-FOR CARDS/ITEMS that should open detail pages:
-<div data-topic="item-slug" data-parent-segment="${currentSegment || "general"}" class="cursor-pointer ...">
-  <h3>Item Title</h3>
-  <p>Description</p>
-</div>
-`;
+  prompt += "❌ WRONG PATTERNS (DO NOT USE):\n";
+  prompt += '  <a href="#">Link</a>  ← NO DATA ATTRIBUTE = BROKEN!\n';
+  prompt += '  <div class="cursor-pointer">Card</div>  ← NO data-topic = NOT CLICKABLE!\n\n';
 
   if (relatedSegments && relatedSegments.length > 0) {
     prompt += '\n\nRELATED SEGMENTS FOR "EXPLORE MORE" SECTION:\n';
@@ -190,6 +192,13 @@ FOR CARDS/ITEMS that should open detail pages:
     prompt += "\nNo specific topic pages available. For 'Learn More' actions, use CTA form:\n";
     prompt += '<button data-action="cta-primary" data-cta-type="contact">Learn More</button>\n';
   }
+
+  prompt += "\n\n--- FINAL SELF-CHECK ---\n";
+  prompt += "Before returning HTML, verify:\n";
+  prompt += "□ Logo has data-action='back-to-landing'\n";
+  prompt += "□ ALL clickable cards have data-topic or data-segment\n";
+  prompt += "□ ALL buttons have data-action\n";
+  prompt += "□ NO plain href='#' links without data attributes\n";
 
   return prompt;
 }
