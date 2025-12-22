@@ -270,7 +270,12 @@ async function saveContentStructure(
     .single();
 
   if (error) {
-    logger.error("Failed to save content structure", error, { siteId });
+    logger.error("Failed to save content structure", {
+      error: JSON.stringify(error),
+      siteId,
+      errorMessage: error.message,
+      errorCode: error.code,
+    });
     throw error;
   }
 
