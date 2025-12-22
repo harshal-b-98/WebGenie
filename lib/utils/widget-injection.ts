@@ -77,6 +77,12 @@ export function injectChatWidget(
 ): string {
   if (!enabled) return html;
 
+  // CHECK FOR DUPLICATE: Skip injection if widget already exists
+  if (html.includes("NEXTGENWEB_CONFIG") || html.includes("nextgenweb-widget-styles")) {
+    logger.debug("Chat widget already present, skipping injection", { siteId });
+    return html;
+  }
+
   // Remove trailing slash to prevent double-slash URLs (e.g., https://example.com//api)
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
   const position = config.position || "bottom-right";

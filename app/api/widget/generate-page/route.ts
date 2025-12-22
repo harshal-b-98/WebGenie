@@ -16,6 +16,7 @@ import { logger } from "@/lib/utils/logger";
 import { generatePageRequestSchema, formatZodErrors } from "@/lib/validation";
 import { ZodError } from "zod";
 import { memoryCache, CacheKeys } from "@/lib/cache";
+import { injectChatWidget, type ChatWidgetConfig } from "@/lib/utils/widget-injection";
 
 // Service client for public widget access (bypasses RLS)
 function getServiceClient() {
@@ -68,6 +69,9 @@ export async function POST(request: NextRequest) {
       id: string;
       dynamic_pages_enabled?: boolean;
       persona_detection_enabled?: boolean;
+      chat_widget_enabled?: boolean;
+      chat_widget_config?: Record<string, unknown>;
+      current_version_id?: string;
     };
 
     const siteConfigKey = `${CacheKeys.site(siteId)}:config`;
@@ -78,7 +82,9 @@ export async function POST(request: NextRequest) {
       const supabase = getServiceClient();
       const { data: siteRow, error: siteError } = await supabase
         .from("sites")
-        .select("id, dynamic_pages_enabled, persona_detection_enabled")
+        .select(
+          "id, dynamic_pages_enabled, persona_detection_enabled, chat_widget_enabled, chat_widget_config, current_version_id"
+        )
         .eq("id", siteId)
         .single();
 
@@ -127,6 +133,39 @@ export async function POST(request: NextRequest) {
 
     const result = await generateDynamicPage(input);
 
+    // Get chat widget settings (default: enabled)
+    // This is CRITICAL to ensure widget appears on both cached and newly generated pages
+    const chatWidgetEnabled = site.chat_widget_enabled ?? true;
+    const chatWidgetConfig = site.chat_widget_config || {};
+    const versionId = site.current_version_id || siteId;
+
+    // RE-INJECT widget (handles both cached and new pages)
+    let enhancedHtml = result.html;
+    if (chatWidgetEnabled) {
+      try {
+        enhancedHtml = injectChatWidget(
+          enhancedHtml,
+          siteId,
+          versionId,
+          true, // inline mode for blob URL compatibility
+          chatWidgetConfig as ChatWidgetConfig,
+          "inline"
+        );
+
+        logger.debug("Chat widget re-injected into page", {
+          siteId,
+          cached: result.cached,
+          htmlLengthBefore: result.html.length,
+          htmlLengthAfter: enhancedHtml.length,
+          hasWidget: enhancedHtml.includes("NEXTGENWEB_CONFIG"),
+        });
+      } catch (error) {
+        logger.error("Failed to inject chat widget", { error, siteId, pageSlug: result.pageSlug });
+        // GRACEFUL DEGRADATION: Return page without widget rather than failing
+        enhancedHtml = result.html;
+      }
+    }
+
     logger.info("Dynamic page request completed", {
       siteId,
       pageType,
@@ -135,11 +174,12 @@ export async function POST(request: NextRequest) {
       cached: result.cached,
       generationTime: result.generationTime,
       persona: result.persona,
+      widgetInjected: chatWidgetEnabled,
     });
 
     return NextResponse.json(
       {
-        html: result.html,
+        html: enhancedHtml, // Return enhanced HTML with widget
         pageSlug: result.pageSlug,
         cached: result.cached,
         generationTime: result.generationTime,
