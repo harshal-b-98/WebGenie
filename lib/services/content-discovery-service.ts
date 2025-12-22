@@ -46,9 +46,14 @@ export interface ContentStructure {
 
 /**
  * Get content structure for a site
+ * Uses service role client to bypass RLS for server-side access
  */
 export async function getContentStructure(siteId: string): Promise<ContentStructure | null> {
-  const supabase = await createClient();
+  // Use service role to bypass RLS - content structure is not sensitive
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   const { data, error } = await supabase
     .from("site_content_structure")
