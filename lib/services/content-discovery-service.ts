@@ -303,33 +303,16 @@ async function saveDefaultStructure(
 ): Promise<ContentStructure> {
   const documentHash = computeDocumentHash(documentContent || "");
 
+  // FIXED: Return empty structure - About/Contact are NOT business segments
+  // They are supplementary pages stored in brand_assets, not content segments
   const defaultResult: ContentDiscoveryResult = {
-    segments: [
-      {
-        id: "about",
-        name: "About",
-        slug: "about",
-        description: "Learn more about us",
-        items: [],
-        suggestedInteractions: ["contact-sales"],
-        priority: 1,
-      },
-      {
-        id: "contact",
-        name: "Contact",
-        slug: "contact",
-        description: "Get in touch",
-        items: [],
-        suggestedInteractions: ["contact-sales"],
-        priority: 2,
-      },
-    ],
+    segments: [], // Empty - no business content discovered
     maxDepth: 1,
     leadCapturePoints: ["contact"],
-    primaryCTA: { text: "Contact Us", action: "contact", style: "primary" },
-    secondaryCTAs: [{ text: "Learn More", action: "learn-more", style: "secondary" }],
+    primaryCTA: { text: "Get Started", action: "contact", style: "primary" },
+    secondaryCTAs: [{ text: "Learn More", action: "about", style: "secondary" }],
     businessType: "other",
-    analysisConfidence: 0.2,
+    analysisConfidence: 0.0, // Low confidence - no documents analyzed
   };
 
   return saveContentStructure(siteId, defaultResult, documentHash);

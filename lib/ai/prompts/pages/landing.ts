@@ -633,20 +633,27 @@ ${formatCTAsForPrompt(structure.primaryCTA, structure.secondaryCTAs)}
 Lead Capture Points: ${structure.leadCapturePoints.join(", ") || "None specified"}
 ========================================\n\n`;
 
-    // Build navbar links description including Contact/About if enabled
-    let navbarLinks = `navigation links for EACH segment (use "Nav Text" for link text, max 15 chars)`;
-    if (includeAbout || includeContact) {
-      const additionalLinks = [];
-      if (includeAbout) additionalLinks.push('"About" link (data-segment="about")');
-      if (includeContact) additionalLinks.push('"Contact" link (data-segment="contact")');
-      navbarLinks += ` + ${additionalLinks.join(" + ")} AFTER segment links`;
+    // Build navbar links - ONLY About/Contact, NO business segments
+    let navbarLinks = "";
+    const navItems = [];
+    if (includeAbout) navItems.push('"About" link (data-segment="about")');
+    if (includeContact) navItems.push('"Contact" link (data-segment="contact")');
+
+    if (navItems.length > 0) {
+      navbarLinks = navItems.join(" + ");
+    } else {
+      navbarLinks = "no additional links";
     }
 
     prompt += `CRITICAL REQUIREMENTS (Using AI-Discovered Structure):
-1. NAVBAR: Logo + ${navbarLinks} + "${structure.primaryCTA.text}" button
-2. Each nav link MUST use the EXACT data-segment value: data-segment="${structure.segments[0]?.slug || "segment"}", etc.${includeAbout ? '\n   - ALSO ADD: <a href="#" data-segment="about" class="hover:underline">About</a>' : ""}${includeContact ? '\n   - ALSO ADD: <a href="#" data-segment="contact" class="hover:underline">Contact</a>' : ""}
-3. HERO: Dark gradient background, white text, compelling headline
-4. Hero CTAs: "${structure.primaryCTA.text}"`;
+
+⚠️ NAVBAR STRUCTURE (SIMPLIFIED) ⚠️
+1. NAVBAR: Logo (left) + ${navbarLinks} + "${structure.primaryCTA.text}" button (right)
+   - DO NOT ADD BUSINESS SEGMENT LINKS TO NAVBAR
+   - Business segments are navigated via clickable cards below, NOT navbar links
+   - Only About/Contact appear in navbar (if enabled)
+2. HERO: Dark gradient background, white text, compelling headline
+3. Hero CTAs: "${structure.primaryCTA.text}"`;
 
     // Add first 2 secondary CTAs to hero if they exist
     if (structure.secondaryCTAs.length > 0) {
@@ -657,50 +664,96 @@ Lead Capture Points: ${structure.leadCapturePoints.join(", ") || "None specified
     }
 
     prompt += `
-5. SEGMENT CARDS: Create a card for EACH discovered segment with:
-   - Card title: Use "Full Name" (e.g., "Competitive Intelligence") - NEVER use abbreviated "Nav Text"!
+4. BUSINESS SEGMENT CARDS (Main Content - Cards ONLY, NOT navbar):
+   ⚠️ CRITICAL: Create cards for BUSINESS SEGMENTS ONLY (from documents)
+   - DO NOT create cards for "About" or "Contact"
+   - About and Contact appear in navbar and separate sections below
+
+   Create a card for EACH of these business segments:
+${structure.segments.map((seg, idx) => `   ${idx + 1}. "${seg.name}" (data-segment="${seg.slug}")`).join("\n")}
+
+   Each card must have:
+   - Card title: Use "Full Name" - NEVER use abbreviated "Nav Text"!
    - data-segment="[segment-slug]" attribute
    - cursor-pointer class
    - hover:shadow-lg hover:scale-105 transition
-6. CTA SECTION: "${structure.primaryCTA.text}" as primary button
-7. FOOTER: Quick links for ALL ${structure.segments.length} segments${includeAbout || includeContact ? ` PLUS ${[includeAbout && '"About"', includeContact && '"Contact"'].filter(Boolean).join(" and ")} links` : ""} (can use "Nav Text" for footer links)
+5. ABOUT SECTION (${includeAbout ? "REQUIRED" : "SKIP"}):${
+      includeAbout
+        ? `
+   - Full-width section BELOW segment cards
+   - Background: bg-white or bg-gray-50
+   - Padding: py-12 sm:py-16 lg:py-24 px-4
+   - Container: max-w-4xl mx-auto
+   - Title: "About Us" (text-3xl font-bold)
+   - Display company information from brand assets
+   - Button: "Learn More" with data-segment="about"`
+        : `
+   - ⚠️ SKIP this section - user disabled About page`
+    }
+6. CONTACT SECTION (${includeContact ? "REQUIRED" : "SKIP"}):${
+      includeContact
+        ? `
+   - Full-width section BELOW About section
+   - Background: bg-gray-50
+   - Padding: py-12 sm:py-16 lg:py-24 px-4
+   - Container: max-w-5xl mx-auto
+   - Title: "Get In Touch" (text-3xl font-bold text-center)
+   - Display contact info in 3-column grid:${requirements.contactInfo?.email ? `\n     * Email: ${requirements.contactInfo.email}` : ""}${requirements.contactInfo?.phone ? `\n     * Phone: ${requirements.contactInfo.phone}` : ""}${requirements.contactInfo?.address ? `\n     * Address: ${requirements.contactInfo.address}` : ""}
+   - Button: "Contact Us" with data-segment="contact"`
+        : `
+   - ⚠️ SKIP this section - user disabled Contact page`
+    }
+7. CTA SECTION: "${structure.primaryCTA.text}" as primary button
+8. FOOTER: Quick links for business segments${includeAbout || includeContact ? ` + ${[includeAbout && "About", includeContact && "Contact"].filter(Boolean).join(" + ")}` : ""}
 
-⚠️ NAME USAGE REMINDER:
-- Navbar links → Use "Nav Text" (abbreviated, max 15 chars)
-- Card titles → Use "Full Name" (complete, NO abbreviation)
-- Section headers → Use "Full Name" (complete, NO abbreviation)
+DATA-SEGMENT ATTRIBUTES (copy these exactly):
 
-SEGMENT DATA-ATTRIBUTES (copy these exactly):`;
+BUSINESS SEGMENTS (for cards only):`;
 
     structure.segments.forEach((seg) => {
-      prompt += `\n- ${seg.name}: data-segment="${seg.slug}"`;
+      prompt += `\n- ${seg.name} card: data-segment="${seg.slug}"`;
     });
 
-    // Add Contact/About data-attributes if enabled
+    prompt += `\n\nSUPPLEMENTARY PAGES (for navbar links and section buttons, NOT cards):`;
     if (includeAbout) {
-      prompt += `\n- About: data-segment="about"`;
+      prompt += `\n- About link: data-segment="about"`;
     }
     if (includeContact) {
-      prompt += `\n- Contact: data-segment="contact"`;
+      prompt += `\n- Contact link: data-segment="contact"`;
     }
   } else {
-    // Fallback to default segments if no content structure available
+    // Fallback when no content structure available
     prompt += `\n========================================
-DEFAULT STRUCTURE (No AI analysis available)
+NO BUSINESS CONTENT DISCOVERED
 ========================================
-Using default segments: About, Contact
+No business segments were discovered from uploaded documents.
 
-DISCOVERED SEGMENTS:
-   1. "About" (data-segment="about")
-   2. "Contact" (data-segment="contact")
+Create a minimal landing page with:
+- Hero section with company description
+- Call-to-action buttons
+- About section (if enabled)
+- Contact section (if enabled)
+- Footer
+
+DO NOT CREATE SEGMENT CARDS - no business content available.
 ========================================\n\n`;
 
     prompt += `REQUIREMENTS:
-1. NAVBAR: Logo + About link (data-segment="about") + Contact link (data-segment="contact") + "Contact Us" button
-2. HERO: Dark gradient background, white text
-3. SEGMENT CARDS: Cards for About and Contact with data-segment attributes
-4. CTA: "Contact Us" button
-5. FOOTER: Quick links with data-segment attributes`;
+1. NAVBAR: Logo${includeAbout ? ' + About link (data-segment="about")' : ""}${includeContact ? ' + Contact link (data-segment="contact")' : ""} + "Get Started" CTA button
+   - DO NOT add placeholder cards or fake business segments
+2. HERO: Compelling headline based on company description, dark gradient background
+3. CTA: Primary call-to-action button${
+      includeAbout
+        ? `
+4. ABOUT SECTION: Display company information with "Learn More" button (data-segment="about")`
+        : ""
+    }${
+      includeContact
+        ? `
+5. CONTACT SECTION: Display contact information with "Contact Us" button (data-segment="contact")`
+        : ""
+    }
+6. FOOTER: Simple footer with social links (no segment links)`;
   }
 
   // Add social media links if provided

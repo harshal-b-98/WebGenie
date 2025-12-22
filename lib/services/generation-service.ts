@@ -299,9 +299,28 @@ export async function generateWebsite(input: GenerationInput) {
       try {
         contentStructure = await contentDiscoveryService.getContentStructure(siteId);
         if (contentStructure) {
+          // DEFENSE: Filter About/Contact if they somehow ended up in segments
+          const originalCount = contentStructure.segments.length;
+          contentStructure.segments = contentStructure.segments.filter(
+            (seg) =>
+              seg.slug !== "about" &&
+              seg.slug !== "contact" &&
+              !seg.name.toLowerCase().includes("about") &&
+              !seg.name.toLowerCase().includes("contact")
+          );
+
+          if (contentStructure.segments.length !== originalCount) {
+            logger.warn("Filtered About/Contact from content structure", {
+              siteId,
+              originalCount,
+              filteredCount: contentStructure.segments.length,
+            });
+          }
+
           logger.info("Using AI-discovered content structure", {
             siteId,
             segments: contentStructure.segments.length,
+            segmentNames: contentStructure.segments.map((s) => s.name),
             businessType: contentStructure.businessType,
           });
         } else {

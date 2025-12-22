@@ -98,6 +98,14 @@ ${companyName ? `COMPANY NAME: ${companyName}` : ""}
 DOCUMENTS TO ANALYZE:
 ${documentContent}
 
+⚠️ CRITICAL RULE: NEVER CREATE "ABOUT" OR "CONTACT" SEGMENTS ⚠️
+About and Contact pages are supplementary pages managed separately by the system.
+They are NOT business content segments and must NEVER appear in your segment analysis.
+
+Focus ONLY on discovering BUSINESS content from the documents:
+- Products, Services, Features, Solutions, Industries, Use Cases, Integrations, Pricing, Team, etc.
+- DO NOT include: About, Contact, About Us, Contact Us, Company Info
+
 ANALYSIS TASKS:
 
 1. IDENTIFY SEGMENTS
