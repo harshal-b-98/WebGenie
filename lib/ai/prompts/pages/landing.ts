@@ -704,7 +704,7 @@ ${structure.segments.map((seg, idx) => `   ${idx + 1}. "${seg.name}" (data-segme
    - ⚠️ SKIP this section - user disabled Contact page`
     }
 7. CTA SECTION: "${structure.primaryCTA.text}" as primary button
-8. FOOTER: ${structure.segments.length > 0 ? `Quick Links section with business segments${includeAbout || includeContact ? ` + ${[includeAbout && "About", includeContact && "Contact"].filter(Boolean).join(" + ")}` : ""}` : includeAbout || includeContact ? `Quick Links section with ONLY ${[includeAbout && "About", includeContact && "Contact"].filter(Boolean).join(" + ")} (NO business segments)` : "DO NOT include Quick Links section - show only logo, copyright, and social media icons"}
+8. FOOTER: Quick links for business segments${includeAbout || includeContact ? ` + ${[includeAbout && "About", includeContact && "Contact"].filter(Boolean).join(" + ")}` : ""}
 
 DATA-SEGMENT ATTRIBUTES (copy these exactly):
 
