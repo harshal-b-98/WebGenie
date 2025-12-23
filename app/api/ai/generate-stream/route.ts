@@ -162,9 +162,23 @@ export async function POST(request: Request) {
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
+        let controllerClosed = false;
+
         const sendEvent = (event: string, data: unknown) => {
-          const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(payload));
+          // Check if controller is already closed to prevent "Invalid state" errors
+          if (controllerClosed) {
+            logger.debug("Stream already closed, skipping event", { event, siteId });
+            return;
+          }
+
+          try {
+            const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(payload));
+          } catch (error) {
+            // Controller closed (client disconnected) - mark as closed to prevent further attempts
+            controllerClosed = true;
+            logger.debug("Controller closed during event send", { event, siteId, error });
+          }
         };
 
         const startTime = Date.now();
@@ -330,7 +344,14 @@ export async function POST(request: Request) {
             message: error instanceof Error ? error.message : "Generation failed",
           });
         } finally {
-          controller.close();
+          // Mark as closed before closing to prevent race conditions
+          controllerClosed = true;
+          try {
+            controller.close();
+          } catch (error) {
+            // Controller already closed - this is fine
+            logger.debug("Controller already closed in finally", { siteId });
+          }
         }
       },
     });
