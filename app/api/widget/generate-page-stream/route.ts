@@ -424,6 +424,9 @@ Output <section data-section="content">.`,
 
 ⚠️  CRITICAL: Copy the HTML structure EXACTLY - do NOT improvise or change the layout!
 ⚠️  DO NOT invent contact info! Use ONLY the data provided in the structure below.
+⚠️  DO NOT add any chat buttons, "Chat with Us" links, or data-action="open-chat" attributes!
+⚠️  The chat widget is injected separately as a floating bubble - DO NOT include it in the HTML!
+⚠️  ONLY include the single CTA button shown below - do NOT add secondary buttons!
 
 COMPANY INFO:
 - Name: ${context.companyName}
