@@ -58,6 +58,13 @@ export const behaviorSignalsSchema = z
   })
   .partial();
 
+// Navigation path item schema (for breadcrumb context)
+const navigationPathItemSchema = z.object({
+  slug: z.string().max(100),
+  name: z.string().max(200),
+  type: z.enum(["segment", "topic"]),
+});
+
 // Generate page request schema
 export const generatePageRequestSchema = z
   .object({
@@ -76,6 +83,12 @@ export const generatePageRequestSchema = z
       .optional()
       .transform((v) => v ?? undefined),
     sessionId: sessionIdSchema.nullable().transform((v) => v ?? undefined),
+    navigationPath: z
+      .array(navigationPathItemSchema)
+      .max(20)
+      .nullable()
+      .optional()
+      .transform((v) => v ?? undefined),
     behaviorSignals: behaviorSignalsSchema
       .nullable()
       .optional()

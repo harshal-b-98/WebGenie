@@ -653,6 +653,83 @@
   height: 16px;
 }
 
+/* Breadcrumb Dropdown (for long paths > 4 levels) */
+.ngw-breadcrumb-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ngw-breadcrumb-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ngw-breadcrumb-dropdown-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #4f46e5;
+}
+
+.ngw-breadcrumb-dropdown-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ngw-breadcrumb-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  min-width: 180px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+  z-index: 10000;
+  overflow: hidden;
+}
+
+.ngw-breadcrumb-dropdown-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ngw-breadcrumb-dropdown-item {
+  display: block;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  color: #374151;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ngw-breadcrumb-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.ngw-breadcrumb-dropdown-item:hover {
+  background: #f9fafb;
+  color: #4f46e5;
+  padding-left: 20px;
+}
+
 /* CTA Button */
 .ngw-nav-cta {
   flex-shrink: 0;

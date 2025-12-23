@@ -118,6 +118,9 @@
       // Save the original landing page HTML immediately
       this.saveLandingPage();
 
+      // Restore navigation from URL hash if present (e.g., #features/shelf-selection/usecase)
+      this.restoreNavigationFromHash();
+
       this.setupEventListeners();
       this.setupScrollTracking();
       this.injectLoadingOverlay();
@@ -279,6 +282,29 @@
           const capabilityId = capabilityCard.dataset.capabilityId;
           console.log("[DynamicNav] Navigating to capability detail:", capabilityId);
           this.navigateToDetail("platform", capabilityId);
+          return;
+        }
+
+        // Breadcrumb navigation clicks
+        const breadcrumbLink = e.target.closest("[data-breadcrumb-index]");
+        if (breadcrumbLink) {
+          e.preventDefault();
+          const index = parseInt(breadcrumbLink.dataset.breadcrumbIndex, 10);
+          console.log("[DynamicNav] Breadcrumb clicked, navigating to index:", index);
+          this.navigateToBreadcrumbIndex(index);
+          return;
+        }
+
+        // Breadcrumb dropdown toggle
+        const dropdownToggle = e.target.closest('[data-action="toggle-breadcrumb-dropdown"]');
+        if (dropdownToggle) {
+          e.preventDefault();
+          const dropdownMenu = dropdownToggle.parentElement.querySelector(
+            ".ngw-breadcrumb-dropdown-menu"
+          );
+          if (dropdownMenu) {
+            dropdownMenu.classList.toggle("visible");
+          }
           return;
         }
 
@@ -788,6 +814,11 @@
               pageType: "segment",
               segment: segment,
               sessionId: this.sessionId,
+              navigationPath: this.navigationStack.map((item) => ({
+                slug: item.slug,
+                name: item.name,
+                type: item.type,
+              })),
               behaviorSignals: config.personaDetectionEnabled ? behaviorTracker.getSignals() : null,
             }),
           }),
@@ -933,9 +964,25 @@
     async navigateToSegment(segment) {
       if (this.isLoading || this.streamingInProgress) return;
 
-      // Update navigation stack - reset to just this segment
+      // Update navigation stack - check if this is a new root-level navigation or sub-navigation
       const segmentName = this.slugToName(segment);
-      this.navigationStack = [{ slug: segment, name: segmentName, type: "segment" }];
+      const newItem = { slug: segment, name: segmentName, type: "segment" };
+
+      // If navigating from landing page (empty stack), start fresh
+      if (this.navigationStack.length === 0) {
+        this.navigationStack = [newItem];
+      } else {
+        // Check if this segment is already in the stack
+        const existingIndex = this.navigationStack.findIndex((item) => item.slug === segment);
+
+        if (existingIndex >= 0) {
+          // User clicked a breadcrumb - truncate stack to that point (clear forward history)
+          this.navigationStack = this.navigationStack.slice(0, existingIndex + 1);
+        } else {
+          // New segment navigation - APPEND to stack (preserves full path)
+          this.navigationStack.push(newItem);
+        }
+      }
 
       behaviorTracker.trackPageVisit(segment);
       behaviorTracker.trackClick(`segment-${segment}`);
@@ -969,6 +1016,11 @@
             pageType: "segment",
             segment: segment,
             sessionId: this.sessionId,
+            navigationPath: this.navigationStack.map((item) => ({
+              slug: item.slug,
+              name: item.name,
+              type: item.type,
+            })),
             behaviorSignals: config.personaDetectionEnabled ? behaviorTracker.getSignals() : null,
           }),
         });
@@ -998,20 +1050,32 @@
     async navigateToTopicFallback(parentSegment, topic) {
       if (this.isLoading) return;
 
-      // Update navigation stack - ensure parent segment is there, then add topic
+      // Update navigation stack - APPEND topic to existing path
       const segmentName = this.slugToName(parentSegment);
       const topicName = this.slugToName(topic);
 
-      // If stack is empty or first item doesn't match parent, reset to parent
-      if (this.navigationStack.length === 0 || this.navigationStack[0].slug !== parentSegment) {
+      // If stack is empty, initialize with parent segment
+      if (this.navigationStack.length === 0) {
         this.navigationStack = [{ slug: parentSegment, name: segmentName, type: "segment" }];
       }
 
-      // Add topic if not already the last item
-      const lastItem = this.navigationStack[this.navigationStack.length - 1];
-      if (!lastItem || lastItem.slug !== topic) {
-        // Remove any existing topics (keep only the segment)
-        this.navigationStack = this.navigationStack.filter((item) => item.type === "segment");
+      // Ensure parent segment is in the stack
+      const parentIndex = this.navigationStack.findIndex((item) => item.slug === parentSegment);
+      if (parentIndex < 0) {
+        // Parent segment not in stack - add it first
+        this.navigationStack.push({ slug: parentSegment, name: segmentName, type: "segment" });
+      } else if (parentIndex < this.navigationStack.length - 1) {
+        // Parent exists but is not last - truncate stack to parent (user went back, then navigated)
+        this.navigationStack = this.navigationStack.slice(0, parentIndex + 1);
+      }
+
+      // Check if topic already exists in stack
+      const topicIndex = this.navigationStack.findIndex((item) => item.slug === topic);
+      if (topicIndex >= 0) {
+        // Topic exists - truncate to that point (breadcrumb click)
+        this.navigationStack = this.navigationStack.slice(0, topicIndex + 1);
+      } else {
+        // New topic - APPEND to stack (preserves full navigation path)
         this.navigationStack.push({ slug: topic, name: topicName, type: "topic" });
       }
 
@@ -1046,6 +1110,11 @@
             segment: parentSegment,
             topic: topic,
             sessionId: this.sessionId,
+            navigationPath: this.navigationStack.map((item) => ({
+              slug: item.slug,
+              name: item.name,
+              type: item.type,
+            })),
             behaviorSignals: config.personaDetectionEnabled ? behaviorTracker.getSignals() : null,
           }),
         });
@@ -1359,6 +1428,34 @@
     }
 
     /**
+     * Navigate to a specific point in the breadcrumb navigation
+     * Truncates navigation stack to the clicked breadcrumb (clears forward history)
+     */
+    navigateToBreadcrumbIndex(index) {
+      if (index < 0 || index >= this.navigationStack.length) {
+        console.warn("[DynamicNav] Invalid breadcrumb index:", index);
+        return;
+      }
+
+      const targetItem = this.navigationStack[index];
+      console.log("[DynamicNav] Navigating to breadcrumb:", targetItem.name);
+
+      // Truncate navigation stack to this point (clear forward history)
+      this.navigationStack = this.navigationStack.slice(0, index + 1);
+
+      // Navigate to the target page
+      if (targetItem.type === "segment") {
+        this.navigateToSegment(targetItem.slug);
+      } else {
+        // Topic - need to find parent segment
+        const parentSegment = this.navigationStack.find((item) => item.type === "segment");
+        if (parentSegment) {
+          this.navigateToTopicFallback(parentSegment.slug, targetItem.slug);
+        }
+      }
+    }
+
+    /**
      * Handle CTA button actions (demo, signup, contact, etc.)
      * Shows appropriate lead capture forms based on CTA type
      */
@@ -1620,8 +1717,10 @@
       this.replaceContent(html);
       this.currentPage = pageSlug;
 
-      // Update history within iframe context - use hash for segment pages
-      const baseUrl = window.location.href.split("#")[0];
+      // Update URL hash from navigation stack
+      this.updateUrlHash();
+
+      // Also update history for browser back/forward support
       history.pushState(
         {
           page: pageSlug,
@@ -1630,7 +1729,7 @@
           navigationStack: [...this.navigationStack],
         },
         "",
-        `${baseUrl}#${pageSlug}`
+        window.location.href // Use current URL with hash
       );
 
       this.hideLoading();
@@ -1639,7 +1738,7 @@
       // Re-inject dynamic nav elements after content replacement
       this.injectLoadingOverlay();
 
-      console.log("[DynamicNav] Page displayed:", pageSlug);
+      console.log("[DynamicNav] Page displayed:", pageSlug, "Stack:", this.navigationStack);
     }
 
     /**
@@ -1654,28 +1753,161 @@
     }
 
     /**
+     * Encode navigation stack to URL hash
+     * e.g., [{slug: 'features', ...}, {slug: 'shelf-selection', ...}] -> '#features/shelf-selection'
+     */
+    encodeNavigationHash() {
+      if (this.navigationStack.length === 0) return "";
+      const path = this.navigationStack.map((item) => item.slug).join("/");
+      return `#${path}`;
+    }
+
+    /**
+     * Decode URL hash to navigation stack
+     * e.g., '#features/shelf-selection/usecase' -> [{slug: 'features', ...}, {slug: 'shelf-selection', ...}, {slug: 'usecase', ...}]
+     */
+    decodeNavigationHash(hash) {
+      if (!hash || hash === "#") return [];
+
+      // Remove leading # and split by /
+      const segments = hash
+        .replace(/^#/, "")
+        .split("/")
+        .filter((s) => s.trim());
+
+      // Build navigation stack from segments
+      // First segment is always a segment type, subsequent ones are topics
+      return segments.map((slug, index) => ({
+        slug: slug,
+        name: this.slugToName(slug),
+        type: index === 0 ? "segment" : "topic",
+      }));
+    }
+
+    /**
+     * Restore navigation from URL hash on page load
+     * This enables deep linking and preserves navigation state across page reloads
+     */
+    restoreNavigationFromHash() {
+      const hash = window.location.hash;
+      if (!hash || hash === "#") return;
+
+      console.log("[DynamicNav] Restoring navigation from hash:", hash);
+
+      // Decode hash to navigation stack
+      this.navigationStack = this.decodeNavigationHash(hash);
+
+      // Navigate to the last page in the stack
+      if (this.navigationStack.length > 0) {
+        const lastItem = this.navigationStack[this.navigationStack.length - 1];
+        const firstItem = this.navigationStack[0];
+
+        if (this.navigationStack.length === 1) {
+          // Single segment - navigate to segment page
+          this.navigateToSegment(lastItem.slug);
+        } else {
+          // Multiple levels - navigate to topic with full context
+          this.navigateToTopicFallback(firstItem.slug, lastItem.slug);
+        }
+      }
+    }
+
+    /**
+     * Update URL hash from current navigation stack
+     * Called after navigation to keep URL in sync with navigation state
+     */
+    updateUrlHash() {
+      const newHash = this.encodeNavigationHash();
+      const baseUrl = window.location.href.split("#")[0];
+      const newUrl = newHash ? `${baseUrl}${newHash}` : baseUrl;
+
+      // Only update if hash changed (prevents infinite loops)
+      if (window.location.href !== newUrl) {
+        history.replaceState(
+          {
+            page: this.currentPage,
+            siteId: config.siteId,
+            versionId: config.versionId,
+            navigationStack: [...this.navigationStack],
+          },
+          "",
+          newUrl
+        );
+      }
+    }
+
+    /**
      * Build breadcrumb HTML from navigation stack
+     * Supports collapsible dropdown for long paths (>4 levels)
+     * Format: Home > First > ... > Last (when path exceeds 4 levels)
      */
     buildBreadcrumb() {
       if (this.navigationStack.length === 0) return "";
 
-      const items = this.navigationStack.map((item, i) => {
-        const isLast = i === this.navigationStack.length - 1;
-        if (isLast) {
-          return `<li class="ngw-breadcrumb-current">${item.name}</li>`;
-        }
-        return `<li><a href="#" data-segment="${item.slug}" class="ngw-breadcrumb-link">${item.name}</a></li>`;
-      });
+      const maxVisibleItems = 4; // Home + 3 items before collapsing
+      const shouldCollapse = this.navigationStack.length > maxVisibleItems;
 
-      return `
+      let breadcrumbHtml = `
         <nav class="ngw-breadcrumb" aria-label="Breadcrumb">
           <ol>
             <li><a href="#" data-action="back-to-landing" class="ngw-breadcrumb-link">Home</a></li>
             <li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>
-            ${items.join('<li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>')}
+      `;
+
+      if (shouldCollapse) {
+        // Show: Home > First > ... (dropdown) > Last
+        const firstItem = this.navigationStack[0];
+        const lastItem = this.navigationStack[this.navigationStack.length - 1];
+        const hiddenItems = this.navigationStack.slice(1, -1);
+
+        // First item
+        breadcrumbHtml += `
+          <li><a href="#" data-breadcrumb-index="0" class="ngw-breadcrumb-link">${firstItem.name}</a></li>
+          <li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>
+        `;
+
+        // Dropdown for hidden items
+        breadcrumbHtml += `
+          <li class="ngw-breadcrumb-dropdown">
+            <button class="ngw-breadcrumb-dropdown-btn" data-action="toggle-breadcrumb-dropdown">
+              <i data-feather="more-horizontal"></i>
+            </button>
+            <div class="ngw-breadcrumb-dropdown-menu">
+              ${hiddenItems
+                .map(
+                  (item, i) => `
+                <a href="#" data-breadcrumb-index="${i + 1}" class="ngw-breadcrumb-dropdown-item">${item.name}</a>
+              `
+                )
+                .join("")}
+            </div>
+          </li>
+          <li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>
+        `;
+
+        // Last item (current page)
+        breadcrumbHtml += `<li class="ngw-breadcrumb-current">${lastItem.name}</li>`;
+      } else {
+        // Show all items (no collapse needed)
+        const items = this.navigationStack.map((item, i) => {
+          const isLast = i === this.navigationStack.length - 1;
+          if (isLast) {
+            return `<li class="ngw-breadcrumb-current">${item.name}</li>`;
+          }
+          return `<li><a href="#" data-breadcrumb-index="${i}" class="ngw-breadcrumb-link">${item.name}</a></li>`;
+        });
+
+        breadcrumbHtml += items.join(
+          '<li class="ngw-breadcrumb-separator"><i data-feather="chevron-right"></i></li>'
+        );
+      }
+
+      breadcrumbHtml += `
           </ol>
         </nav>
       `;
+
+      return breadcrumbHtml;
     }
 
     /**
