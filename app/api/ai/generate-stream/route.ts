@@ -132,13 +132,21 @@ export async function POST(request: Request) {
       };
     }
 
-    // Get content structure for landing page
+    // Get or analyze content structure for landing page
     let contentStructure = null;
     if (dynamicPagesEnabled) {
       try {
+        // Check if content structure exists
         contentStructure = await contentDiscoveryService.getContentStructure(siteId);
-      } catch {
-        // Ignore
+
+        // If not found, trigger content discovery analysis
+        if (!contentStructure) {
+          logger.info("Content structure not found, triggering analysis", { siteId });
+          contentStructure = await contentDiscoveryService.analyzeContentStructure(siteId);
+        }
+      } catch (error) {
+        logger.warn("Failed to get/analyze content structure", { error, siteId });
+        // Continue with null - landing page will use fallback
       }
     }
 
