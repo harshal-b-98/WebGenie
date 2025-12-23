@@ -299,9 +299,12 @@ export async function generateWebsite(input: GenerationInput) {
       try {
         contentStructure = await contentDiscoveryService.getContentStructure(siteId);
         if (contentStructure) {
-          // DEFENSE: Filter About/Contact if they somehow ended up in segments
+          // DEFENSE: Filter About/Contact ONLY if there are OTHER business segments
+          // Do NOT filter if About/Contact are the ONLY segments (they're the fallback)
           const originalCount = contentStructure.segments.length;
-          contentStructure.segments = contentStructure.segments.filter(
+
+          // Check if there are segments OTHER than About/Contact
+          const hasBusinessSegments = contentStructure.segments.some(
             (seg) =>
               seg.slug !== "about" &&
               seg.slug !== "contact" &&
@@ -309,11 +312,26 @@ export async function generateWebsite(input: GenerationInput) {
               !seg.name.toLowerCase().includes("contact")
           );
 
-          if (contentStructure.segments.length !== originalCount) {
-            logger.warn("Filtered About/Contact from content structure", {
+          // Only filter if we have business segments to replace About/Contact
+          if (hasBusinessSegments) {
+            contentStructure.segments = contentStructure.segments.filter(
+              (seg) =>
+                seg.slug !== "about" &&
+                seg.slug !== "contact" &&
+                !seg.name.toLowerCase().includes("about") &&
+                !seg.name.toLowerCase().includes("contact")
+            );
+
+            logger.info("Filtered About/Contact (business segments available)", {
               siteId,
               originalCount,
               filteredCount: contentStructure.segments.length,
+            });
+          } else {
+            logger.info("Keeping About/Contact (no business segments found)", {
+              siteId,
+              segmentCount: contentStructure.segments.length,
+              confidence: contentStructure.analysisConfidence,
             });
           }
 
