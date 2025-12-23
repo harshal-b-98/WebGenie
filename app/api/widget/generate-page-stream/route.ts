@@ -455,9 +455,8 @@ EXACT HTML STRUCTURE TO OUTPUT (COPY THIS):
   <div class="max-w-4xl mx-auto text-center">
     <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
     <p class="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">Experience the power of ${context.companyName} and transform your business.</p>
-    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="#" data-action="cta-primary" data-cta-type="demo" class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg">${context.primaryCTA.text}</a>
-      <a href="#" data-action="open-chat" class="w-full sm:w-auto bg-indigo-800 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-900 transition-colors border-2 border-white/20">Chat with Us</a>
+    <div class="flex justify-center">
+      <a href="#" data-action="cta-primary" data-cta-type="demo" class="inline-block bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg">${context.primaryCTA.text}</a>
     </div>
   </div>
 </section>
@@ -548,7 +547,6 @@ EXACT HTML STRUCTURE TO OUTPUT (COPY THIS):
         <h3 class="font-semibold mb-4 text-lg">Get Started</h3>
         <div class="space-y-3">
           <a href="#" data-action="cta-primary" data-cta-type="demo" class="block text-gray-400 hover:text-white transition-colors text-sm">Request Demo</a>
-          <a href="#" data-action="open-chat" class="block text-gray-400 hover:text-white transition-colors text-sm">Chat with Us</a>
           <a href="#" data-action="back-to-landing" class="block text-gray-400 hover:text-white transition-colors text-sm">Back to Home</a>
         </div>
       </div>`
@@ -561,7 +559,7 @@ EXACT HTML STRUCTURE TO OUTPUT (COPY THIS):
       <div class="flex flex-wrap gap-6 text-gray-400 justify-center">
         <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
         <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
-        <a href="#" data-action="open-chat" class="hover:text-white transition-colors">Support</a>
+        <span class="text-gray-500">Support</span>
       </div>
       <div class="text-gray-500 text-xs">
         Powered by AI-driven insights
