@@ -345,7 +345,7 @@ async function saveDefaultStructure(
     maxDepth: 1,
     leadCapturePoints: ["contact"],
     primaryCTA: { text: "Get Started", action: "contact", style: "primary" },
-    secondaryCTAs: [{ text: "Learn More", action: "about", style: "secondary" }],
+    secondaryCTAs: [{ text: "Learn More", action: "learn-more", style: "secondary" }],
     businessType: "other",
     analysisConfidence: 0.0, // Low confidence - no documents analyzed
   };
