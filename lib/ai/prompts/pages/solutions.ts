@@ -70,9 +70,10 @@ REQUIRED SECTIONS
      <nav class="p-6 space-y-6"><!-- Nav links with py-3 --></nav>
    </div>
 
-2. PAGE HEADER WITH BREADCRUMB (RESPONSIVE)
+2. PAGE HEADER WITH BREADCRUMB (RESPONSIVE - VISUALLY IMPRESSIVE)
    - Dark gradient: from-slate-900 via-gray-900 to-slate-800
-   - RESPONSIVE PADDING: py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8
+   - RESPONSIVE PADDING: py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-8
+   - MUST include visual enhancements like landing page
 
    RESPONSIVE BREADCRUMB HTML:
    <nav class="bg-gray-50 border-b">
@@ -87,7 +88,48 @@ REQUIRED SECTIONS
      </div>
    </nav>
 
-   - RESPONSIVE H1: class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white"
+   HERO SECTION STRUCTURE (MANDATORY - MUST MATCH LANDING PAGE QUALITY):
+   <section class="relative bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 py-16 sm:py-20 lg:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
+     <!-- Decorative gradient orbs (REQUIRED for visual richness) -->
+     <div class="absolute top-20 right-10 sm:right-20 w-48 sm:w-64 h-48 sm:h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+     <div class="absolute bottom-10 left-10 sm:left-20 w-32 sm:w-48 h-32 sm:h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
+
+     <div class="max-w-4xl mx-auto text-center relative z-10">
+       <!-- Badge/pill at top (REQUIRED) -->
+       <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-sm text-gray-300 mb-6">
+         <i data-feather="target" class="w-4 h-4"></i>
+         <span>Tailored Solutions</span>
+       </div>
+
+       <!-- Main heading -->
+       <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
+         Solutions Built for Your Success
+       </h1>
+
+       <!-- Intro paragraph -->
+       <p class="text-base sm:text-lg lg:text-xl text-gray-300 mt-4 sm:mt-6 max-w-2xl mx-auto">
+         Explore custom solutions designed to address your unique challenges and drive measurable results.
+       </p>
+
+       <!-- Feature highlights row (REQUIRED - 3 key benefits) -->
+       <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-8 max-w-3xl mx-auto">
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>Industry-specific expertise</span>
+         </span>
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>Scalable architecture</span>
+         </span>
+         <span class="flex items-center gap-2 text-gray-300 text-sm sm:text-base">
+           <i data-feather="check-circle" class="w-5 h-5 text-indigo-400"></i>
+           <span>Proven track record</span>
+         </span>
+       </div>
+     </div>
+   </section>
+
+   SELF-CHECK: □ Gradient orbs present □ Badge present □ 3+ feature highlights
 
 3. SOLUTIONS BY USE CASE (RESPONSIVE)
    - RESPONSIVE GRID: class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
@@ -109,12 +151,11 @@ REQUIRED SECTIONS
 6. EXPLORE OTHER SECTIONS
    - Links with data-segment attributes
 
-7. CTA SECTION (EXACT STRUCTURE - Match landing page)
+7. CTA SECTION (RESPONSIVE)
    - Gradient background: bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700
-   - Full width with py-16 sm:py-20
-   - Two buttons: Primary CTA + "Chat with Us"
-   - Primary: data-action="cta-primary" data-cta-type="demo"
-   - Secondary: data-action="open-chat"
+   - Full width with py-16 sm:py-20 px-4 sm:px-6 lg:px-8
+   - Single primary button: data-action="cta-primary" data-cta-type="demo"
+   - NO chat button (chat widget injected separately as floating bubble)
 
 8. FOOTER (EXACT STRUCTURE - Match landing page)
    ⚠️  CRITICAL: Use bg-gray-900 (NOT gray-800)

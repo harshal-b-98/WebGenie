@@ -222,22 +222,18 @@ REQUIRED SECTIONS:
    - Use data-segment="[slug]" for navigation
    - At least 2-3 related segment links with Feather icons
 
-5. CTA SECTION (EXACT STRUCTURE - Copy this HTML)
+5. CTA SECTION (RESPONSIVE)
    - Gradient background: bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700
    - Full width with py-16 sm:py-20 px-4 sm:px-6 lg:px-8
-   - Two buttons in flex layout (primary CTA + secondary "Chat with Us")
-   - Primary button MUST have: data-action="cta-primary" data-cta-type="demo"
-   - Secondary button MUST have: data-action="open-chat"
+   - Single primary button: data-action="cta-primary" data-cta-type="demo"
+   - NO chat button (chat widget injected separately as floating bubble)
 
    EXAMPLE CTA STRUCTURE:
    <section class="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
      <div class="max-w-4xl mx-auto text-center">
        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
        <p class="text-xl text-indigo-100 mb-8">Transform your business with [Company Name]</p>
-       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-         <a href="#" data-action="cta-primary" data-cta-type="demo" class="bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100">Get Started</a>
-         <a href="#" data-action="open-chat" class="bg-indigo-800 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-900 border-2 border-white/20">Chat with Us</a>
-       </div>
+       <a href="#" data-action="cta-primary" data-cta-type="demo" class="inline-block bg-white text-indigo-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors">Get Started</a>
      </div>
    </section>
 
@@ -269,7 +265,6 @@ REQUIRED SECTIONS:
            <h3 class="font-semibold mb-4 text-lg">Get Started</h3>
            <div class="space-y-3">
              <a href="#" data-action="cta-primary" data-cta-type="demo" class="block text-gray-400 hover:text-white transition-colors text-sm">Request Demo</a>
-             <a href="#" data-action="open-chat" class="block text-gray-400 hover:text-white transition-colors text-sm">Chat with Us</a>
              <a href="#" data-action="back-to-landing" class="block text-gray-400 hover:text-white transition-colors text-sm">Back to Home</a>
            </div>
          </div>
@@ -280,7 +275,7 @@ REQUIRED SECTIONS:
          <div class="flex flex-wrap gap-6 text-gray-400 justify-center">
            <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
            <a href="#" class="hover:text-white transition-colors">Terms of Use</a>
-           <a href="#" data-action="open-chat" class="hover:text-white transition-colors">Support</a>
+           <a href="#" class="hover:text-white transition-colors">Support</a>
          </div>
          <div class="text-gray-500 text-xs">Powered by AI-driven insights</div>
        </div>

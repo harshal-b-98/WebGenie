@@ -114,11 +114,31 @@ export async function POST(request: Request) {
       cached: !!memoryCache.embeddings.has(searchCacheKey),
     });
 
-    // Build context from search results
-    const context =
-      relevantChunks.length > 0
-        ? relevantChunks.map((chunk) => chunk.chunkText).join("\n\n")
-        : "No specific information found.";
+    // Build context from search results with context-aware error messages
+    let context: string;
+    if (relevantChunks.length === 0) {
+      // Check if ANY embeddings exist for this project
+      const supabase = getServiceClient();
+      const { count } = await supabase
+        .from("document_embeddings")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .limit(1);
+
+      if (count === 0) {
+        // No knowledge base at all - inform AI to respond appropriately
+        context =
+          "⚠️ IMPORTANT: No knowledge base available. The system has no documents uploaded yet. Respond politely: 'I don't have access to information about this company yet. The knowledge base is being set up. Please contact us directly for assistance or check back soon.'";
+        logger.warn("No embeddings found for site", { projectId });
+      } else {
+        // Knowledge base exists but query didn't match
+        context =
+          "No specific information found for this query in our documentation. The knowledge base exists but this particular topic wasn't covered. Suggest browsing our main topics or contacting us directly for more specific information.";
+        logger.info("Query didn't match any documents", { projectId, queryLength: message.length });
+      }
+    } else {
+      context = relevantChunks.map((chunk) => chunk.chunkText).join("\n\n");
+    }
 
     // Build conversation history for AI
     const previousMessages = (conversationHistory || [])

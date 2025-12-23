@@ -261,6 +261,37 @@ async function checkCache(
         return null; // Force regeneration
       }
 
+      // Check if chat widget is enabled but missing from cached page
+      const { data: siteSettings } = await supabase
+        .from("sites")
+        .select("chat_widget_enabled")
+        .eq("id", siteId)
+        .single();
+
+      const chatWidgetEnabled =
+        (siteSettings as { chat_widget_enabled?: boolean } | null)?.chat_widget_enabled ?? true;
+      const hasWidget = page.html_content.includes("NEXTGENWEB_CONFIG");
+
+      if (chatWidgetEnabled && !hasWidget) {
+        logger.warn("Cached page missing widget, invalidating", {
+          siteId,
+          pageSlug,
+          persona,
+          chatWidgetEnabled,
+          hasWidget,
+        });
+
+        // Delete the cached page without widget
+        await supabase
+          .from("site_pages")
+          .delete()
+          .eq("site_id", siteId)
+          .eq("page_slug", pageSlug)
+          .eq("persona_type", persona || "general");
+
+        return null; // Force regeneration with widget
+      }
+
       logger.info("Cache hit for page", { siteId, pageSlug, persona });
       return page.html_content;
     }
